@@ -1,0 +1,10 @@
+/.idea/
+/.vscode/
+
+/.venv/
+__pycache__/
+.coverage
+
+.DS_Store
+*.py[co]
+*.swp
