@@ -71,6 +71,19 @@ l: lint
 lint: ## Run various linting tools
 	@pre-commit run --all-files
 
+.PHONY: extractdocstring
+extractdocstring: ## Use docstring as README
+	@. .venv/bin/activate
+	@python -c \
+		'import textcanvas.textcanvas; \
+		docstring = textcanvas.textcanvas.__doc__; \
+		docstring = docstring.replace("TextCanvas.", "# TextCanvas"); \
+		docstring = docstring.replace("How It Works:", "## How It Works"); \
+		docstring = docstring.replace("See Also:", "## See Also"); \
+		f = open("README.md", "w"); \
+		f.write(docstring); \
+		f.close();'
+
 %:
 	@$(call show_error_message,Unknown command '$@')
 	@$(show_help_message)
