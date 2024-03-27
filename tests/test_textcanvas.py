@@ -31,26 +31,6 @@ class TestTextCanvas(unittest.TestCase):
         self.assertEqual(buffer_width, 7 * 2, "Incorrect number of rows in buffer.")
         self.assertEqual(buffer_height, 4 * 4, "Incorrect number of columns in buffer.")
 
-    def test_color_buffer_size_at_init(self) -> None:
-        canvas = TextCanvas(7, 4)
-
-        self.assertEqual(len(canvas.color_buffer), 0, "Color buffer should be empty.")
-
-    def test_color_buffer_size_with_color(self) -> None:
-        canvas = TextCanvas(7, 4)
-
-        canvas.set_color(Color.BG_BLUE)
-
-        buffer_width = len(canvas.color_buffer[0])
-        buffer_height = len(canvas.color_buffer)
-
-        self.assertEqual(
-            buffer_width, 7, "Color buffer width should match output buffer width."
-        )
-        self.assertEqual(
-            buffer_height, 4, "Color buffer height should match output buffer height."
-        )
-
     def test_default_size(self) -> None:
         canvas = TextCanvas()
 
@@ -96,43 +76,6 @@ class TestTextCanvas(unittest.TestCase):
             "Incorrect string representation.",
         )
 
-    def test_clear(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        # Fill canvas.
-        for x in range(canvas.screen.width):
-            for y in range(canvas.screen.height):
-                canvas.set_pixel(x, y, True)
-
-        canvas.clear()
-
-        self.assertEqual(canvas.to_string(), "⠀⠀\n⠀⠀\n", "Output not empty.")
-
-    def test_clear_edits_buffer_in_place(self) -> None:
-        canvas = TextCanvas(1, 1)
-
-        buffer = canvas.buffer
-        row_0 = canvas.buffer[0]
-        row_1 = canvas.buffer[1]
-        row_2 = canvas.buffer[2]
-        row_3 = canvas.buffer[3]
-
-        canvas.clear()
-
-        self.assertIs(buffer, canvas.buffer, "Container should be the same as before.")
-        self.assertIs(
-            row_0, canvas.buffer[0], "Container should be the same as before."
-        )
-        self.assertIs(
-            row_1, canvas.buffer[1], "Container should be the same as before."
-        )
-        self.assertIs(
-            row_2, canvas.buffer[2], "Container should be the same as before."
-        )
-        self.assertIs(
-            row_3, canvas.buffer[3], "Container should be the same as before."
-        )
-
     def test_turn_all_pixels_on(self) -> None:
         canvas = TextCanvas(2, 2)
 
@@ -141,87 +84,6 @@ class TestTextCanvas(unittest.TestCase):
                 canvas.set_pixel(x, y, True)
 
         self.assertEqual(canvas.to_string(), "⣿⣿\n⣿⣿\n", "Output not fully on.")
-
-    def test_is_colorized(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        self.assertFalse(
-            canvas.is_colorized, "Canvas should not be colorized by default."
-        )
-
-        canvas.set_color(Color.BG_BLUE)
-
-        self.assertTrue(
-            canvas.is_colorized, "Canvas should be colorized after a color is set."
-        )
-
-    def test_set_color(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        canvas.set_color(Color.BG_BLUE)
-        canvas.set_pixel(3, 3, True)
-
-        self.assertEqual(
-            canvas.color_buffer,
-            [
-                [Color.NO_COLOR, Color.BG_BLUE],
-                [Color.NO_COLOR, Color.NO_COLOR],
-            ],
-            "Incorrect color buffer.",
-        )
-
-    def test_set_color_multiple(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        canvas.set_color(Color.BG_BLUE)
-        canvas.set_pixel(3, 3, True)
-        canvas.set_pixel(1, 5, True)
-
-        self.assertEqual(
-            canvas.color_buffer,
-            [
-                [Color.NO_COLOR, Color.BG_BLUE],
-                [Color.BG_BLUE, Color.NO_COLOR],
-            ],
-            "Incorrect color buffer.",
-        )
-
-    def test_set_color_override(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        canvas.set_color(Color.BG_BLUE)
-        canvas.set_pixel(3, 3, True)
-        canvas.set_pixel(1, 5, True)
-
-        canvas.set_color(Color.BG_RED)
-        canvas.set_pixel(3, 3, True)
-
-        self.assertEqual(
-            canvas.color_buffer,
-            [
-                [Color.NO_COLOR, Color.BG_RED],
-                [Color.BG_BLUE, Color.NO_COLOR],
-            ],
-            "Incorrect color buffer.",
-        )
-
-    def test_color_is_reset_if_pixel_turned_off(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        canvas.set_color(Color.BG_BLUE)
-        canvas.set_pixel(3, 3, True)
-        canvas.set_pixel(1, 5, True)
-
-        canvas.set_pixel(3, 3, False)
-
-        self.assertEqual(
-            canvas.color_buffer,
-            [
-                [Color.NO_COLOR, Color.NO_COLOR],
-                [Color.BG_BLUE, Color.NO_COLOR],
-            ],
-            "Incorrect color buffer.",
-        )
 
     def test_get_pixel(self) -> None:
         canvas = TextCanvas(2, 2)
@@ -331,15 +193,41 @@ class TestTextCanvas(unittest.TestCase):
 
         self.assertEqual(canvas.to_string(), "⠑⢄⠀\n⠀⠀⠑\n", "Incorrect output string.")
 
-    def test_get_as_string_colored(self) -> None:
-        canvas = TextCanvas(3, 2)
-        canvas.set_color(Color.GREEN)
-        stroke_line_accros_canvas(canvas)
+    def test_clear(self) -> None:
+        canvas = TextCanvas(2, 2)
 
-        self.assertEqual(
-            canvas.to_string(),
-            "\x1b[0;92m⠑\x1b[0m\x1b[0;92m⢄\x1b[0m⠀\n⠀⠀\x1b[0;92m⠑\x1b[0m\n",
-            "Incorrect output string.",
+        # Fill canvas.
+        for x in range(canvas.screen.width):
+            for y in range(canvas.screen.height):
+                canvas.set_pixel(x, y, True)
+
+        canvas.clear()
+
+        self.assertEqual(canvas.to_string(), "⠀⠀\n⠀⠀\n", "Output not empty.")
+
+    def test_clear_edits_buffer_in_place(self) -> None:
+        canvas = TextCanvas(1, 1)
+
+        buffer = canvas.buffer
+        row_0 = canvas.buffer[0]
+        row_1 = canvas.buffer[1]
+        row_2 = canvas.buffer[2]
+        row_3 = canvas.buffer[3]
+
+        canvas.clear()
+
+        self.assertIs(buffer, canvas.buffer, "Container should be the same as before.")
+        self.assertIs(
+            row_0, canvas.buffer[0], "Container should be the same as before."
+        )
+        self.assertIs(
+            row_1, canvas.buffer[1], "Container should be the same as before."
+        )
+        self.assertIs(
+            row_2, canvas.buffer[2], "Container should be the same as before."
+        )
+        self.assertIs(
+            row_3, canvas.buffer[3], "Container should be the same as before."
         )
 
     def test_iter_buffer_by_blocks_lrtb(self) -> None:
@@ -442,4 +330,351 @@ class TestTextCanvas(unittest.TestCase):
             "⠀⠀⠀⣀⠤⠊⠁⢸⠀⠑⠢⣀⠀⠀⠀\n"
             "⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄\n",
             "Lines not drawn correctly.",
+        )
+
+
+class TestTextCanvasColor(unittest.TestCase):
+    def test_color_buffer_size_at_init(self) -> None:
+        canvas = TextCanvas(7, 4)
+
+        self.assertEqual(len(canvas.color_buffer), 0, "Color buffer should be empty.")
+
+    def test_color_buffer_size_with_color(self) -> None:
+        canvas = TextCanvas(7, 4)
+
+        canvas.set_color(Color.BG_BLUE)
+
+        buffer_width = len(canvas.color_buffer[0])
+        buffer_height = len(canvas.color_buffer)
+
+        self.assertEqual(
+            buffer_width, 7, "Color buffer width should match output buffer width."
+        )
+        self.assertEqual(
+            buffer_height, 4, "Color buffer height should match output buffer height."
+        )
+
+    def test_is_colorized(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        self.assertFalse(
+            canvas.is_colorized, "Canvas should not be colorized by default."
+        )
+
+        canvas.set_color(Color.BG_BLUE)
+
+        self.assertTrue(
+            canvas.is_colorized, "Canvas should be colorized after a color is set."
+        )
+
+    def test_set_color(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        canvas.set_color(Color.BG_BLUE)
+        canvas.set_pixel(3, 3, True)
+
+        self.assertEqual(
+            canvas.color_buffer,
+            [
+                [Color.NO_COLOR, Color.BG_BLUE],
+                [Color.NO_COLOR, Color.NO_COLOR],
+            ],
+            "Incorrect color buffer.",
+        )
+
+    def test_set_color_multiple(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        canvas.set_color(Color.BG_BLUE)
+        canvas.set_pixel(3, 3, True)
+        canvas.set_pixel(1, 5, True)
+
+        self.assertEqual(
+            canvas.color_buffer,
+            [
+                [Color.NO_COLOR, Color.BG_BLUE],
+                [Color.BG_BLUE, Color.NO_COLOR],
+            ],
+            "Incorrect color buffer.",
+        )
+
+    def test_set_color_override(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        canvas.set_color(Color.BG_BLUE)
+        canvas.set_pixel(3, 3, True)
+        canvas.set_pixel(1, 5, True)
+
+        canvas.set_color(Color.BG_RED)
+        canvas.set_pixel(3, 3, True)
+
+        self.assertEqual(
+            canvas.color_buffer,
+            [
+                [Color.NO_COLOR, Color.BG_RED],
+                [Color.BG_BLUE, Color.NO_COLOR],
+            ],
+            "Incorrect color buffer.",
+        )
+
+    def test_color_is_reset_if_pixel_turned_off(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        canvas.set_color(Color.BG_BLUE)
+        canvas.set_pixel(3, 3, True)
+        canvas.set_pixel(1, 5, True)
+
+        canvas.set_pixel(3, 3, False)
+
+        self.assertEqual(
+            canvas.color_buffer,
+            [
+                [Color.NO_COLOR, Color.NO_COLOR],
+                [Color.BG_BLUE, Color.NO_COLOR],
+            ],
+            "Incorrect color buffer.",
+        )
+
+    def test_get_as_string_colored(self) -> None:
+        canvas = TextCanvas(3, 2)
+        canvas.set_color(Color.GREEN)
+        stroke_line_accros_canvas(canvas)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "\x1b[0;92m⠑\x1b[0m\x1b[0;92m⢄\x1b[0m⠀\n⠀⠀\x1b[0;92m⠑\x1b[0m\n",
+            "Incorrect output string.",
+        )
+
+    def test_clear_clears_color_buffer(self) -> None:
+        canvas = TextCanvas(2, 1)
+
+        self.assertEqual(canvas.color_buffer, [], "Color buffer should be empty.")
+
+        canvas.set_color(Color.RED)
+
+        self.assertEqual(
+            canvas.color_buffer,
+            [[Color.NO_COLOR, Color.NO_COLOR]],
+            "Color buffer should be full of no-color.",
+        )
+
+        canvas.set_pixel(0, 0, True)
+
+        self.assertEqual(
+            canvas.color_buffer,
+            [[Color.RED, Color.NO_COLOR]],
+            "First pixel should be red.",
+        )
+
+        canvas.clear()
+
+        self.assertEqual(
+            canvas.color_buffer,
+            [[Color.NO_COLOR, Color.NO_COLOR]],
+            "Color buffer should be full of no-color.",
+        )
+
+    def test_clear_edits_color_buffer_in_place(self) -> None:
+        canvas = TextCanvas(2, 2)
+        canvas.set_color(Color.RED)
+
+        color_buffer = canvas.color_buffer
+        row_0 = canvas.color_buffer[0]
+        row_1 = canvas.color_buffer[1]
+
+        canvas.clear()
+
+        self.assertIs(
+            color_buffer, canvas.color_buffer, "Container should be the same as before."
+        )
+        self.assertIs(
+            row_0, canvas.color_buffer[0], "Container should be the same as before."
+        )
+        self.assertIs(
+            row_1, canvas.color_buffer[1], "Container should be the same as before."
+        )
+
+
+class TestTextCanvasText(unittest.TestCase):
+    def test_text_buffer_size_at_init(self) -> None:
+        canvas = TextCanvas(7, 4)
+
+        self.assertEqual(len(canvas.text_buffer), 0, "Text buffer should be empty.")
+
+    def test_text_buffer_size_with_color(self) -> None:
+        canvas = TextCanvas(7, 4)
+
+        canvas.draw_text(0, 0, "foo")
+
+        buffer_width = len(canvas.text_buffer[0])
+        buffer_height = len(canvas.text_buffer)
+
+        self.assertEqual(
+            buffer_width, 7, "Text buffer width should match output buffer width."
+        )
+        self.assertEqual(
+            buffer_height, 4, "Text buffer height should match output buffer height."
+        )
+
+    def test_is_textual(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        self.assertFalse(
+            canvas.is_colorized, "Canvas should not be textual by default."
+        )
+
+        canvas.draw_text(0, 0, "hi")
+
+        self.assertTrue(
+            canvas.is_textual, "Canvas should be textual after text is drawn."
+        )
+
+    def test_draw_text(self) -> None:
+        canvas = TextCanvas(5, 1)
+
+        canvas.draw_text(1, 0, "bar")
+
+        self.assertEqual(
+            canvas.text_buffer, [["", "b", "a", "r", ""]], "Incorrect text buffer."
+        )
+
+    def test_draw_text_over_text(self) -> None:
+        canvas = TextCanvas(5, 1)
+
+        canvas.draw_text(1, 0, "bar")
+        canvas.draw_text(2, 0, "foo")
+
+        self.assertEqual(
+            canvas.text_buffer, [["", "b", "f", "o", "o"]], "Incorrect text buffer."
+        )
+
+    def test_space_is_transparent(self) -> None:
+        canvas = TextCanvas(9, 1)
+
+        canvas.draw_text(1, 0, "foo bar")
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [["", "f", "o", "o", "", "b", "a", "r", ""]],
+            "Incorrect text buffer.",
+        )
+
+    def test_space_clears_text(self) -> None:
+        canvas = TextCanvas(5, 1)
+
+        canvas.draw_text(1, 0, "bar")
+        canvas.draw_text(2, 0, "  ")
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [["", "b", "", "", ""]],
+            "Incorrect text buffer.",
+        )
+
+    def test_draw_text_with_overflow(self) -> None:
+        canvas = TextCanvas(5, 2)
+
+        # Show partially.
+        canvas.draw_text(-1, 0, "foo")
+        canvas.draw_text(3, 1, "bar")
+
+        # Completely out of bounds.
+        canvas.draw_text(-10, -1, "baz1")
+        canvas.draw_text(10, -1, "baz2")
+        canvas.draw_text(-10, 2, "baz3")
+        canvas.draw_text(10, 2, "baz4")
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [
+                ["o", "o", "", "", ""],
+                ["", "", "", "b", "a"],
+            ],
+            "Incorrect text buffer.",
+        )
+
+    def test_draw_text_with_color(self) -> None:
+        canvas = TextCanvas(3, 1)
+
+        self.assertEqual(canvas.text_buffer, [], "Text buffer should be empty.")
+
+        canvas.draw_text(0, 0, "hi!")
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [["h", "i", "!"]],
+            "Text should not be colorized.",
+        )
+
+        canvas.set_color(Color.RED)
+        canvas.draw_text(1, 0, "o!")
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [["h", "\x1b[0;91mo\x1b[0m", "\x1b[0;91m!\x1b[0m"]],
+            "'o!' should be red.",
+        )
+
+    def test_get_text_as_string(self) -> None:
+        canvas = TextCanvas(5, 3)
+
+        canvas.draw_text(1, 1, "foo")
+
+        self.assertEqual(
+            canvas.to_string(), "⠀⠀⠀⠀⠀\n⠀foo⠀\n⠀⠀⠀⠀⠀\n", "Incorrect output string."
+        )
+
+    def test_get_text_as_string_colored(self) -> None:
+        canvas = TextCanvas(5, 3)
+
+        canvas.set_color(Color.GREEN)
+        canvas.draw_text(1, 1, "foo")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀\n⠀\x1b[0;92mf\x1b[0m\x1b[0;92mo\x1b[0m\x1b[0;92mo\x1b[0m⠀\n⠀⠀⠀⠀⠀\n",
+            "Incorrect output string.",
+        )
+
+    def test_clear_clears_text_buffer(self) -> None:
+        canvas = TextCanvas(2, 1)
+
+        self.assertEqual(canvas.text_buffer, [], "Text buffer should be empty.")
+
+        canvas.set_color(Color.RED)
+        canvas.draw_text(0, 0, "hi")
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [["\x1b[0;91mh\x1b[0m", "\x1b[0;91mi\x1b[0m"]],
+            "Text should be colorized.",
+        )
+
+        canvas.clear()
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [["", ""]],
+            "Text buffer should be full of no-colored empty chars.",
+        )
+
+    def test_clear_edits_text_buffer_in_place(self) -> None:
+        canvas = TextCanvas(2, 2)
+        canvas.draw_text(0, 0, "hi")
+
+        text_buffer = canvas.text_buffer
+        row_0 = canvas.text_buffer[0]
+        row_1 = canvas.text_buffer[1]
+
+        canvas.clear()
+
+        self.assertIs(
+            text_buffer, canvas.text_buffer, "Container should be the same as before."
+        )
+        self.assertIs(
+            row_0, canvas.text_buffer[0], "Container should be the same as before."
+        )
+        self.assertIs(
+            row_1, canvas.text_buffer[1], "Container should be the same as before."
         )

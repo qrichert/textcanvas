@@ -21,8 +21,17 @@ SHOW_TEXT_CURSOR_SEQUENCE: str = "\033[?25h"
 class GameOfLife:
     def __init__(self) -> None:
         self.canvas: TextCanvas = TextCanvas(80, 24)
+        self._draw_title()
         self.old_buffer: PixelBuffer = []
         self._init_game()
+
+    def _draw_title(self) -> None:
+        title: str = "Conway's Game of Life"
+        self.canvas.draw_text(
+            self.canvas.output.width // 2 - len(title) // 2,
+            self.canvas.output.height // 2 - 1,
+            title,
+        )
 
     def _init_game(self) -> None:
         for x, y in self.canvas.iter_buffer():

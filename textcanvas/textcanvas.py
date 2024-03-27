@@ -90,6 +90,7 @@ from .color import Color
 
 type PixelBuffer = list[list[bool]]
 type ColorBuffer = list[list[str]]
+type TextBuffer = list[list[str]]
 type BrailleChar = int
 type PixelBlock = tuple[
     tuple[bool, bool],
@@ -125,7 +126,6 @@ class Surface:
 # TODO:
 #  move_to(), line_to(), stroke()
 #  canvas.x,xw,cx, y,yh,cy
-#  draw text (text buffer on top?)
 class TextCanvas:
     def __init__(self, width: int = 80, height: int = 24) -> None:
         self._validate_size(width, height)
@@ -134,10 +134,11 @@ class TextCanvas:
         self.screen: Surface = Surface(width * 2, height * 4)
         self.buffer: PixelBuffer
         self.color_buffer: ColorBuffer = []
+        self.text_buffer: TextBuffer = []
 
         self._color: Color = Color.NO_COLOR
 
-        self.clear()
+        self._clear_buffer()
 
     def _validate_size(self, width: int, height: int) -> None:
         if width <= 0 or height <= 0:
@@ -154,10 +155,11 @@ class TextCanvas:
         return self.to_string()
 
     def clear(self) -> None:
-        """
-        TODO: This is NOT the same buffer anymore, old references will be
-         invalid.
-        """
+        self._clear_buffer()
+        self._clear_color_buffer()
+        self._clear_text_buffer()
+
+    def _clear_buffer(self) -> None:
         if hasattr(self, "buffer"):
             for x, y in self.iter_buffer():
                 self.buffer[y][x] = False
@@ -167,17 +169,36 @@ class TextCanvas:
                 for _ in range(self.screen.height)
             ]
 
+    def _clear_color_buffer(self) -> None:
+        if self.color_buffer:
+            for y, _ in enumerate(self.color_buffer):
+                for x, _ in enumerate(self.color_buffer[y]):
+                    self.color_buffer[y][x] = Color.NO_COLOR
+
+    def _clear_text_buffer(self) -> None:
+        if self.text_buffer:
+            for y, _ in enumerate(self.text_buffer):
+                for x, _ in enumerate(self.text_buffer[y]):
+                    self.text_buffer[y][x] = ""
+
     @property
     def is_colorized(self) -> bool:
         return bool(self.color_buffer)
 
+    @property
+    def is_textual(self) -> bool:
+        return bool(self.text_buffer)
+
     def set_color(self, color: Color) -> None:
         if not self.is_colorized:
-            self.color_buffer = [
-                [Color.NO_COLOR for _ in range(self.output.width)]
-                for _ in range(self.output.height)
-            ]
+            self._init_color_buffer()
         self._color = color
+
+    def _init_color_buffer(self) -> None:
+        self.color_buffer = [
+            [Color.NO_COLOR for _ in range(self.output.width)]
+            for _ in range(self.output.height)
+        ]
 
     def get_pixel(self, x: int, y: int) -> bool | None:
         if not 0 <= x < self.screen.width or not 0 <= y < self.screen.height:
@@ -204,37 +225,77 @@ class TextCanvas:
     def _decolor_pixel(self, x: int, y: int) -> None:
         self.color_buffer[y // 4][x // 2] = Color.NO_COLOR
 
+    def draw_text(self, x: int, y: int, text: str) -> None:
+        """
+        TODO: text is a layer on top with is own buffer
+        spaces are treated as transparent (like no char was there)
+        """
+        if not self.is_textual:
+            self._init_text_buffer()
+        for char in text:
+            if not 0 <= x < self.output.width or not 0 <= y < self.output.height:
+                x += 1
+                continue
+            if char == " ":
+                char = ""
+            self.text_buffer[y][x] = self._color.format(char)
+            x += 1
+
+    def _init_text_buffer(self) -> None:
+        self.text_buffer = [
+            ["" for _ in range(self.output.width)] for _ in range(self.output.height)
+        ]
+
     def to_string(self) -> str:
         res: str = ""
         for i, pixel_block in enumerate(self._iter_buffer_by_blocks_lrtb()):
-            output_char: BrailleChar = BRAILLE_UNICODE_0
-            # Iterate over individual pixels to turn them on or off.
-            for row in range(len(pixel_block)):
-                for col in range(len(pixel_block[row])):
-                    if pixel_block[row][col] is ON:
-                        output_char += BRAILLE_UNICODE_OFFSET_MAP[row][col]
-            # Convert Unicode value to string and append to output.
-            final_char: str = chr(output_char)
-            if self.is_colorized:
-                # TODO: cleanup
-                final_char = self.color_buffer[i // self.output.width][
-                    i % self.output.width
-                ].format(final_char)
-            res += final_char
+            x: int = i % self.output.width
+            y: int = i // self.output.width
+
+            # Text layer.
+            if (text_char := self._get_text_char(x, y)) != "":
+                res += text_char
+                continue
+            # Pixel layer.
+            braille_char: str = self._pixel_block_to_braille_char(pixel_block)
+
+            res += self._color_pixel_char(x, y, braille_char)
+
             # If end of line is reached, go to next line.
             if (i + 1) % self.output.width == 0:
                 res += "\n"
         return res
 
+    def _get_text_char(self, x: int, y: int) -> str:
+        if self.is_textual:
+            return self.text_buffer[y][x]
+        return ""
+
+    def _pixel_block_to_braille_char(self, pixel_block: PixelBlock) -> str:
+        braille_char: BrailleChar = BRAILLE_UNICODE_0
+        # Iterate over individual pixels to turn them on or off.
+        for y, _ in enumerate(pixel_block):
+            for x, _ in enumerate(pixel_block[y]):
+                if pixel_block[y][x] is ON:
+                    braille_char += BRAILLE_UNICODE_OFFSET_MAP[y][x]
+        # Convert Unicode integer value to string.
+        return chr(braille_char)
+
+    def _color_pixel_char(self, x: int, y: int, pixel_char: str) -> str:
+        if self.is_colorized:
+            color: str = self.color_buffer[y][x]
+            return color.format(pixel_char)
+        return pixel_char
+
     def _iter_buffer_by_blocks_lrtb(self) -> Generator[PixelBlock, None, None]:
         """Advance block by block (2x4), left-right, top-bottom."""
-        for row in range(0, self.screen.height, 4):
-            for col in range(0, self.screen.width, 2):
+        for y in range(0, self.screen.height, 4):
+            for x in range(0, self.screen.width, 2):
                 yield (
-                    (self.buffer[row + 0][col + 0], self.buffer[row + 0][col + 1]),
-                    (self.buffer[row + 1][col + 0], self.buffer[row + 1][col + 1]),
-                    (self.buffer[row + 2][col + 0], self.buffer[row + 2][col + 1]),
-                    (self.buffer[row + 3][col + 0], self.buffer[row + 3][col + 1]),
+                    (self.buffer[y + 0][x + 0], self.buffer[y + 0][x + 1]),
+                    (self.buffer[y + 1][x + 0], self.buffer[y + 1][x + 1]),
+                    (self.buffer[y + 2][x + 0], self.buffer[y + 2][x + 1]),
+                    (self.buffer[y + 3][x + 0], self.buffer[y + 3][x + 1]),
                 )
 
     def iter_buffer(self) -> Generator[tuple[int, int], None, None]:
@@ -321,21 +382,37 @@ if __name__ == "__main__":
 
     print(canvas)
 
-    # TODO: Examples + use canvas.move_to(), line_to
+    # TODO: Clean this up and move it to examples.
+    import math
+
     canvas = TextCanvas()
+
+    x_offset = -canvas.screen.width // 2
+    y_offset = canvas.screen.height // 2
+    x_scale = 17
+    y_scale = 23
+
     canvas.stroke_line(
         canvas.screen.width // 2, 0, canvas.screen.width // 2, canvas.screen.height - 1
     )
     canvas.stroke_line(
         0, canvas.screen.height // 2, canvas.screen.width - 1, canvas.screen.height // 2
     )
-    canvas.set_color(Color.BOLD_RED)
-    import math
 
-    x_offset = canvas.screen.width // 2 - 1.45
-    y_offset = canvas.screen.height // 2
-    x_scale = 17
-    y_scale = 23
+    canvas.draw_text(canvas.output.width // 2 - 2, canvas.output.height // 2 + 1, "0")
+    canvas.draw_text(
+        canvas.output.width // 2 - 17, canvas.output.height // 2 + 1, "-π/2"
+    )
+    canvas.draw_text(canvas.output.width // 2 - 28, canvas.output.height // 2 + 1, "-π")
+    canvas.draw_text(
+        canvas.output.width // 2 + 13, canvas.output.height // 2 + 1, "π/2"
+    )
+    canvas.draw_text(canvas.output.width // 2 + 26, canvas.output.height // 2 + 1, "π")
+    canvas.draw_text(canvas.output.width // 2 - 3, canvas.output.height // 2 + 5, "-1")
+    canvas.draw_text(canvas.output.width // 2 - 2, canvas.output.height // 2 - 6, "1")
+
+    canvas.set_color(Color.BOLD_BLUE)
+
     prevx = None
     prevy = None
     for x in range(canvas.screen.width):
@@ -348,7 +425,7 @@ if __name__ == "__main__":
         prevy = y
     prevx = None
     prevy = None
-    canvas.set_color(Color.BOLD_BLUE)
+    canvas.set_color(Color.BOLD_RED)
     for x in range(canvas.screen.width):
         y = math.cos(x / x_scale + x_offset) * y_scale + y_offset
         x = int(x)
