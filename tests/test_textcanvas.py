@@ -594,6 +594,20 @@ class TestTextCanvasText(unittest.TestCase):
             "Incorrect text buffer.",
         )
 
+    def test_draw_text_on_boundaries(self) -> None:
+        canvas = TextCanvas(3, 3)
+
+        canvas.draw_text(0, 1, "a")
+        canvas.draw_text(1, 0, "b")
+        canvas.draw_text(2, 1, "c")
+        canvas.draw_text(1, 2, "d")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀b⠀\na⠀c\n⠀d⠀\n",
+            "Incorrect text output.",
+        )
+
     def test_draw_text_with_color(self) -> None:
         canvas = TextCanvas(3, 1)
 

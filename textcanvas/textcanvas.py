@@ -255,11 +255,10 @@ class TextCanvas:
             # Text layer.
             if (text_char := self._get_text_char(x, y)) != "":
                 res += text_char
-                continue
             # Pixel layer.
-            braille_char: str = self._pixel_block_to_braille_char(pixel_block)
-
-            res += self._color_pixel_char(x, y, braille_char)
+            else:
+                braille_char: str = self._pixel_block_to_braille_char(pixel_block)
+                res += self._color_pixel_char(x, y, braille_char)
 
             # If end of line is reached, go to next line.
             if (i + 1) % self.output.width == 0:
