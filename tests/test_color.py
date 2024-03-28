@@ -2,7 +2,7 @@ import doctest
 import unittest
 
 import textcanvas.color
-from textcanvas.color import Color
+from textcanvas.color import Color, custom_color_from_hex, custom_color_from_rgb
 
 
 def load_tests(
@@ -140,4 +140,69 @@ class TestColor(unittest.TestCase):
         )
         self.assertEqual(
             Color.BG_BOLD_WHITE.format("hello, world"), "\x1b[1;107mhello, world\x1b[0m"
+        )
+
+
+class TestHelperFunctions(unittest.TestCase):
+    def test_custom_color_from_hex(self) -> None:
+        self.assertEqual(
+            custom_color_from_hex("#2de33d"), "\x1b[0;38;2;45;227;61m{}\x1b[0m"
+        )
+
+    def test_custom_color_from_hex_base_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_hex("#2de33d", Color.CUSTOM),
+            "\x1b[0;38;2;45;227;61m{}\x1b[0m",
+        )
+
+    def test_custom_color_from_hex_base_bold_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_hex("#2de33d", Color.BOLD_CUSTOM),
+            "\x1b[1;38;2;45;227;61m{}\x1b[0m",
+        )
+
+    def test_custom_color_from_hex_base_bg_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_hex("#2de33d", Color.BG_CUSTOM),
+            "\x1b[0;48;2;45;227;61m{}\x1b[0m",
+        )
+
+    def test_custom_color_from_hex_base_bg_bold_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_hex("#2de33d", Color.BG_BOLD_CUSTOM),
+            "\x1b[1;48;2;45;227;61m{}\x1b[0m",
+        )
+
+    def test_custom_color_from_hex_without_hash(self) -> None:
+        self.assertEqual(
+            custom_color_from_hex("2de33d"), "\x1b[0;38;2;45;227;61m{}\x1b[0m"
+        )
+
+    def test_custom_color_from_rgb(self) -> None:
+        self.assertEqual(
+            custom_color_from_rgb(45, 227, 61), "\x1b[0;38;2;45;227;61m{}\x1b[0m"
+        )
+
+    def test_custom_color_from_rgb_base_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_rgb(45, 227, 61, Color.CUSTOM),
+            "\x1b[0;38;2;45;227;61m{}\x1b[0m",
+        )
+
+    def test_custom_color_from_rgb_base_bold_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_rgb(45, 227, 61, Color.BOLD_CUSTOM),
+            "\x1b[1;38;2;45;227;61m{}\x1b[0m",
+        )
+
+    def test_custom_color_from_rgb_base_bg_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_rgb(45, 227, 61, Color.BG_CUSTOM),
+            "\x1b[0;48;2;45;227;61m{}\x1b[0m",
+        )
+
+    def test_custom_color_from_rgb_base_bg_bold_custom(self) -> None:
+        self.assertEqual(
+            custom_color_from_rgb(45, 227, 61, Color.BG_BOLD_CUSTOM),
+            "\x1b[1;48;2;45;227;61m{}\x1b[0m",
         )

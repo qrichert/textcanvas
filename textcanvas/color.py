@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Literal
 
 
 class Color(StrEnum):
@@ -71,6 +72,31 @@ class Color(StrEnum):
     BG_BOLD_MAGENTA = "\033[1;105m{}\033[0m"
     BG_BOLD_GRAY = "\033[1;100m{}\033[0m"
     BG_BOLD_WHITE = "\033[1;107m{}\033[0m"
+
+
+type CustomColor = Literal[
+    Color.CUSTOM,
+    Color.BOLD_CUSTOM,
+    Color.BG_CUSTOM,
+    Color.BG_BOLD_CUSTOM,
+]
+
+
+def custom_color_from_rgb(
+    red: int, green: int, blue: int, base: CustomColor = Color.CUSTOM
+) -> str:
+    # Replace '{}' by '{}' to keep it as is.
+    return base.format("{}", red=red, green=green, blue=blue)
+
+
+def custom_color_from_hex(hex_color: str, base: CustomColor = Color.CUSTOM) -> str:
+    hex_color = hex_color.lstrip("#")
+    return custom_color_from_rgb(
+        red=int(hex_color[:2], 16),
+        green=int(hex_color[2:4], 16),
+        blue=int(hex_color[4:], 16),
+        base=base,
+    )
 
 
 if __name__ == "__main__":

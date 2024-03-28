@@ -1,6 +1,7 @@
 import unittest
 
-from textcanvas.textcanvas import Color, TextCanvas
+from textcanvas.color import Color, custom_color_from_rgb
+from textcanvas.textcanvas import TextCanvas
 
 
 def stroke_line_accros_canvas(canvas: TextCanvas) -> None:
@@ -381,6 +382,32 @@ class TestTextCanvasColor(unittest.TestCase):
             ],
             "Incorrect color buffer.",
         )
+
+    def test_set_color_with_color_string(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        color: str = custom_color_from_rgb(200, 150, 72)
+        assert "{}" in color, "Color should contain '{}' for this test."
+
+        canvas.set_color(color)
+
+        canvas.set_pixel(3, 3, True)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀\x1b[0;38;2;200;150;72m⢀\x1b[0m\n⠀⠀\n",
+            "Incorrect output string.",
+        )
+
+    def test_set_color_with_invalid_color_string(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        color: str = "rgb(200, 150, 72)"
+        assert "{}" not in color, "Color should not contain '{}' for this test."
+
+        with self.assertRaises(ValueError) as ctx:
+            ctx.msg = "No error raised on invalid color."
+            canvas.set_color(color)
 
     def test_set_color_multiple(self) -> None:
         canvas = TextCanvas(2, 2)

@@ -84,7 +84,7 @@ See Also:
 """
 
 from dataclasses import dataclass
-from typing import Generator
+from typing import Generator, cast
 
 from .color import Color
 
@@ -189,7 +189,11 @@ class TextCanvas:
     def is_textual(self) -> bool:
         return bool(self.text_buffer)
 
-    def set_color(self, color: Color) -> None:
+    def set_color(self, color: Color | str) -> None:
+        if isinstance(color, str):
+            if "{}" not in color:
+                raise ValueError("Color must contain '{}' to be '.format()'-able.")
+            color = cast(Color, color)
         if not self.is_colorized:
             self._init_color_buffer()
         self._color = color
