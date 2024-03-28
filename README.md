@@ -1,16 +1,17 @@
 # TextCanvas
 
-TextCanvas is JavaScript Canvas-like surface that can be used to draw to
-the console. Other use cases include visual checks of mathematical
-computations (i.e. does the graph at least look correct?), or even
-snapshot testing (may not be the most accurate, but can have great
-documentation value).
+TextCanvas is an HTML Canvas-like surface that can be used to draw to
+the terminal. Other use cases include visual checks for mathematical
+computations (i.e. does the graph at least look correct?), or snapshot
+testing (may not be the most accurate, but can have great documentation
+value).
 
 It is inspired by drawille[^1], which uses Braille Unicode characters to
-increase the resolution of the console by a factor of 8 (8 Braille dots
-in one console character).
+increase the resolution of the terminal by a factor of 8 (8 Braille dots
+in one terminal character).
 
-The API is inspired by JavaScript's Canvas, but has almost no features.
+The API is inspired by JavaScript Canvas's API, but has barely any
+features.
 
 ## How It Works
 
@@ -56,12 +57,12 @@ historical, 7 and 8 were added later):
     Bits: 0 0 0 0 0 0 0 0
     Dots: 8 7 6 5 4 3 2 1
 
-For example, to turn on the first two rows, we would activate bit 1, 2,
-4, and 5:
+For example, to turn on the first two rows, we would activate bit 1, 4,
+2, and 5:
 
     0 0 0 1 1 0 1 1
 
-    Note that: 0b11011 = 0x1b = 0x1 + 0x2 + 0x8 + 0x10
+    Note that: 0b11011 = 0x1b = 0x1 + 0x8 + 0x2 + 0x10 (see hex chart)
 
 Carrying on with this example, we could turn off the first row and turn
 on the last row like so:

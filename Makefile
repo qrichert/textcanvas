@@ -77,9 +77,8 @@ extractdocstring: ## Use docstring as README
 	@python -c \
 		'import textcanvas.textcanvas; \
 		docstring = textcanvas.textcanvas.__doc__; \
+		docstring = docstring.replace("# ", "## "); \
 		docstring = docstring.replace("TextCanvas.", "# TextCanvas"); \
-		docstring = docstring.replace("How It Works:", "## How It Works"); \
-		docstring = docstring.replace("See Also:", "## See Also"); \
 		f = open("README.md", "w"); \
 		f.write(docstring); \
 		f.close();'

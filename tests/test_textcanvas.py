@@ -1,7 +1,17 @@
+import doctest
 import unittest
 
+import textcanvas.textcanvas
 from textcanvas.color import Color, custom_color_from_rgb
 from textcanvas.textcanvas import TextCanvas
+
+
+def load_tests(
+    loader: unittest.TestLoader, tests: unittest.TestSuite, ignore: str
+) -> unittest.TestSuite:
+    """Add module doctests."""
+    tests.addTests(doctest.DocTestSuite(textcanvas.textcanvas))
+    return tests
 
 
 def stroke_line_accros_canvas(canvas: TextCanvas) -> None:
@@ -722,3 +732,7 @@ class TestTextCanvasText(unittest.TestCase):
         self.assertIs(
             row_1, canvas.text_buffer[1], "Container should be the same as before."
         )
+
+
+if __name__ == "__main__":
+    unittest.main()

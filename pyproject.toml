@@ -4,7 +4,7 @@ version = "1.2.0"
 authors = [
     { name="Quentin Richert", email="noreply@richert.co" },
 ]
-description = "Draw to the console like an HTML Canvas."
+description = "Draw to the terminal like an HTML Canvas."
 readme = "README.md"
 requires-python = ">= 3.12"
 classifiers = [
@@ -14,7 +14,7 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 license = { file="LICENSE" }
-keywords = ["tui", "canvas", "draw", "console", "terminal"]
+keywords = ["tui", "canvas", "draw", "terminal", "console"]
 
 [project.urls]
 "Homepage" = "https://github.com/qrichert/textcanvas"

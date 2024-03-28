@@ -1,18 +1,19 @@
 """TextCanvas.
 
-TextCanvas is JavaScript Canvas-like surface that can be used to draw to
-the console. Other use cases include visual checks of mathematical
-computations (i.e. does the graph at least look correct?), or even
-snapshot testing (may not be the most accurate, but can have great
-documentation value).
+TextCanvas is an HTML Canvas-like surface that can be used to draw to
+the terminal. Other use cases include visual checks for mathematical
+computations (i.e. does the graph at least look correct?), or snapshot
+testing (may not be the most accurate, but can have great documentation
+value).
 
 It is inspired by drawille[^1], which uses Braille Unicode characters to
-increase the resolution of the console by a factor of 8 (8 Braille dots
-in one console character).
+increase the resolution of the terminal by a factor of 8 (8 Braille dots
+in one terminal character).
 
-The API is inspired by JavaScript's Canvas, but has almost no features.
+The API is inspired by JavaScript Canvas's API, but has barely any
+features.
 
-How It Works:
+# How It Works
 
 Braille characters start at Unicode offset `U2800` (hexadecimal), and
 work by addition (binary flags really, just like chmod):
@@ -56,12 +57,12 @@ historical, 7 and 8 were added later):
     Bits: 0 0 0 0 0 0 0 0
     Dots: 8 7 6 5 4 3 2 1
 
-For example, to turn on the first two rows, we would activate bit 1, 2,
-4, and 5:
+For example, to turn on the first two rows, we would activate bit 1, 4,
+2, and 5:
 
     0 0 0 1 1 0 1 1
 
-    Note that: 0b11011 = 0x1b = 0x1 + 0x2 + 0x8 + 0x10
+    Note that: 0b11011 = 0x1b = 0x1 + 0x8 + 0x2 + 0x10 (see hex chart)
 
 Carrying on with this example, we could turn off the first row and turn
 on the last row like so:
@@ -75,7 +76,7 @@ on the last row like so:
 
     0x2800 + 0b11010010 = 0x28d2 (⣒)
 
-See Also:
+# See Also
 
 - https://en.wikipedia.org/wiki/Braille_Patterns
 - https://www.unicode.org/charts/PDF/U2800.pdf
@@ -123,10 +124,68 @@ class Surface:
     height: int
 
 
-# TODO:
-#  move_to(), line_to(), stroke()
-#  canvas.x,xw,cx, y,yh,cy
 class TextCanvas:
+    """Draw to the terminal like an HTML Canvas.
+
+    Examples:
+        >>> canvas = TextCanvas(15, 5)
+        >>> repr(canvas)
+        'Canvas(output=(15×5), screen=(30×20)))'
+        >>> canvas.w, canvas.h, canvas.cx, canvas.cy
+        (29, 19, 15, 10)
+        >>> canvas.stroke_line(0, 0, canvas.w, canvas.h)
+        >>> canvas.draw_text(1, 2, "hello, world")
+        >>> print(canvas, end="")
+        ⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀hello,⠢world⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄
+
+    Attributes:
+        output (Surface): Properties of the output surface, whose size
+            is given as parameter to the constructor. One unit in width
+            and in height represents exactly one character on the
+            terminal.
+        screen (Surface): Properties of the virtual output surface. This
+            surface benefits from the increase in resolution. One unit
+            in width and in height represents one Braille dot. There are
+            2 dots per character in width, and 4 per character in
+            height. So this surface is 2× wider and 4× higher than the
+            output surface.
+        buffer (PixelBuffer): The in-memory pixel buffer. This maps
+            1-to-1 to the virtual screen. Each pixel is this buffer is
+            either _on_ or _off_.
+        color_buffer (ColorBuffer): The in-memory color buffer. This
+            maps 1-to-1 to the output buffer (and so to the physical
+            screen). This contains color data for characters. Screen
+            dots, being part of one output character, cannot be colored
+            individually. Color is thus less precise than screen pixels.
+            Note that a call to `set_color()` is valid for both pixels
+            and text, but text embeds color in its own buffer, and does
+            not use this buffer at all. Note also that this buffer is
+            empty until the first call to `set_color()`. The first call
+            to `set_color()` initializes the buffer and sets
+            `is_colorized` to `True`.
+        text_buffer (TextBuffer): The in-memory text buffer. This maps
+            1-to-1 to the output buffer (and so to the physical screen).
+            This contains regular text characters. Text is drawn on top
+            of the pixel buffer on a separate layer. Drawing text does
+            not affect pixels. Pixels and text do not share the same
+            color buffer either. Color info is embeded in the text
+            buffer with each character directly. Note also that this
+            buffer is empty until the first call to `draw_text()`. The
+            first call to `draw_text()` initializes the buffer and sets
+            `is_textual` to `True`.
+
+    Raises:
+        ValueError: If width and height of canvas are < 1×1.
+
+    Todo:
+        - `move_to()`, `line_to()`, `stroke()` and other JS Canvas
+          primitives.
+    """
+
     def __init__(self, width: int = 80, height: int = 24) -> None:
         self._validate_size(width, height)
 
@@ -140,7 +199,8 @@ class TextCanvas:
 
         self._clear_buffer()
 
-    def _validate_size(self, width: int, height: int) -> None:
+    @staticmethod
+    def _validate_size(width: int, height: int) -> None:
         if width <= 0 or height <= 0:
             raise ValueError("TextCanvas' minimal size is 1×1.")
 
@@ -175,6 +235,13 @@ class TextCanvas:
         return self.screen.height // 2
 
     def clear(self) -> None:
+        """Turn all pixels off and remove color and text.
+
+        Note:
+            This method does not drop the color and text buffers, it
+            only clears them. No memory is freed, and all references
+            remain valid (buffers are cleared in-place, not replaced).
+        """
         self._clear_buffer()
         self._clear_color_buffer()
         self._clear_text_buffer()
@@ -203,13 +270,58 @@ class TextCanvas:
 
     @property
     def is_colorized(self) -> bool:
+        """Whether the canvas can contain colors.
+
+        Note:
+            This does not mean that any colors are displayed. This only
+            means the color buffer is active.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.is_colorized
+            False
+            >>> canvas.set_color(Color.NO_COLOR)  # Buffer is initialized.
+            >>> canvas.is_colorized
+            True
+        """
         return bool(self.color_buffer)
 
     @property
     def is_textual(self) -> bool:
+        """Whether the canvas can contain text.
+
+        Note:
+            This does not mean that any text is displayed. This only
+            means the text buffer is active.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.is_textual
+            False
+            >>> canvas.draw_text(0, 0, "")  # Buffer is initialized.
+            >>> canvas.is_textual
+            True
+        """
         return bool(self.text_buffer)
 
     def set_color(self, color: Color | str) -> None:
+        """Set context color.
+
+        Note:
+            A color can be any `format()`-able string (i.e., a string
+            containing `{}`). Its intended design is to be an ANSI
+            color sequence like `\x1b[0;92m{}\x1b[0m`. During rendering,
+            `{}` will be replaced by the appropriate character.
+
+        Examples:
+            >>> canvas = TextCanvas(3, 1)
+            >>> canvas.set_color(Color.GREEN)
+            >>> canvas.is_colorized
+            True
+            >>> canvas.draw_text(0, 0, "foo")
+            >>> print(canvas, end="")
+            \x1b[0;92mf\x1b[0m\x1b[0;92mo\x1b[0m\x1b[0;92mo\x1b[0m
+        """
         if isinstance(color, str):
             if "{}" not in color:
                 raise ValueError("Color must contain '{}' to be '.format()'-able.")
@@ -225,13 +337,39 @@ class TextCanvas:
         ]
 
     def get_pixel(self, x: int, y: int) -> bool | None:
+        """Get the state of a screen pixel.
+
+        Note:
+            Coordinates outside the screen bounds are ignored.
+
+        Args:
+            x (int): Screen X (high resolution).
+            y (int): Screen Y (high resolution).
+
+        Returns:
+            `True` if the pixel is turned _on_, `False` if it is turned
+            _off_, and `None` if the coordinates are outside the bounds
+            of the buffer.
+        """
         if not 0 <= x < self.screen.width or not 0 <= y < self.screen.height:
             return None
         return self.buffer[y][x]
 
     def set_pixel(self, x: int, y: int, state: bool) -> None:
-        # TODO[doc]: In screen coordinates, part of public API.
+        """Set the state of a screen pixel.
 
+        Note:
+            Coordinates outside the screen bounds are ignored.
+
+        Note:
+            Turning a pixel _off_ also removes color. This side effect
+            does not affect text, as text has a separate color buffer.
+
+        Args:
+            x (int): Screen X (high resolution).
+            y (int): Screen Y (high resolution).
+            state (bool): `True` means _on_, `False` means _off_.
+        """
         if not 0 <= x < self.screen.width or not 0 <= y < self.screen.height:
             return
 
@@ -250,9 +388,25 @@ class TextCanvas:
         self.color_buffer[y // 4][x // 2] = Color.NO_COLOR
 
     def draw_text(self, x: int, y: int, text: str) -> None:
-        """
-        TODO: text is a layer on top with is own buffer
-        spaces are treated as transparent (like no char was there)
+        """Draw text onto the canvas.
+
+        Note:
+            Coordinates outside the screen bounds are ignored.
+
+        Note:
+            Text is rendered on top of pixels, as a separate layer.
+
+        Note:
+            `set_color()` works for text as well, but text does not
+            share its color buffer with pixels. Rather, color data is
+            stored with the text characters themselves.
+
+        Args:
+            x (int): Output X (true resolution).
+            y (int): Output Y (true resolution).
+            text (str): The text to draw. Spaces are transparent (you
+                see pixels through), and can be used to erase previously
+                drawn characters.
         """
         if not self.is_textual:
             self._init_text_buffer()
@@ -271,6 +425,18 @@ class TextCanvas:
         ]
 
     def to_string(self) -> str:
+        """Render canvas as a `print()`-able string.
+
+        Note:
+            This is used by `str()`, and so is also what's printed to
+            the screen by a call to `print(canvas)`.
+
+        Returns:
+            Rendered canvas, with pixels, text and colors. Each canvas
+            row becomes a line of text (lines are separated by `\n`s),
+            and each canvas column becomes a single character in each
+            line. What you would expect. It can be printed as-is.
+        """
         res: str = ""
         for i, pixel_block in enumerate(self._iter_buffer_by_blocks_lrtb()):
             x: int = i % self.output.width
@@ -294,7 +460,8 @@ class TextCanvas:
             return self.text_buffer[y][x]
         return ""
 
-    def _pixel_block_to_braille_char(self, pixel_block: PixelBlock) -> str:
+    @staticmethod
+    def _pixel_block_to_braille_char(pixel_block: PixelBlock) -> str:
         braille_char: BrailleChar = BRAILLE_UNICODE_0
         # Iterate over individual pixels to turn them on or off.
         for y, _ in enumerate(pixel_block):
@@ -324,7 +491,7 @@ class TextCanvas:
     def iter_buffer(self) -> Generator[tuple[int, int], None, None]:
         for y in range(self.screen.height):
             for x in range(self.screen.width):
-                yield (x, y)
+                yield x, y
 
     def stroke_line(self, x1: int, y1: int, x2: int, y2: int) -> None:
         """Stroke line using Bresenham's line algorithm."""

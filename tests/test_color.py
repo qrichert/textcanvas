@@ -206,3 +206,7 @@ class TestHelperFunctions(unittest.TestCase):
             custom_color_from_rgb(45, 227, 61, Color.BG_BOLD_CUSTOM),
             "\x1b[1;48;2;45;227;61m{}\x1b[0m",
         )
+
+
+if __name__ == "__main__":
+    unittest.main()
