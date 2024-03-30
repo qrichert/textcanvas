@@ -13,9 +13,9 @@ from typing import Literal
 from textcanvas.textcanvas import PixelBuffer, TextCanvas
 
 CLEAR_CMD: Literal["clear", "cls"] = "cls" if os.name == "nt" else "clear"
-CLEAR_SEQUENCE: str = "\033[2J\033[1;1H"
-HIDE_TEXT_CURSOR_SEQUENCE: str = "\033[?25l"
-SHOW_TEXT_CURSOR_SEQUENCE: str = "\033[?25h"
+CLEAR_SEQUENCE: str = "\x1b[2J\x1b[1;1H"
+HIDE_TEXT_CURSOR_SEQUENCE: str = "\x1b[?25l"
+SHOW_TEXT_CURSOR_SEQUENCE: str = "\x1b[?25h"
 
 
 class GameOfLife:
