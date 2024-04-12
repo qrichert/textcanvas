@@ -79,6 +79,14 @@ extractdocstring: ## Use docstring as README
 		docstring = textcanvas.textcanvas.__doc__; \
 		docstring = docstring.replace("# ", "## "); \
 		docstring = docstring.replace("TextCanvas.", "# TextCanvas"); \
+		lines = docstring.split("## How It Works"); \
+		lines.insert(1, "## Examples\n"); \
+		lines.insert(2, "\n<p align=\"center\">\n"); \
+		lines.insert(3, "  <img src=\"./examples/game_of_life.png\" alt=\"Game of Life\" style=\"width: 47%;\" />\n"); \
+		lines.insert(4, "  <img src=\"./examples/graph.png\" alt=\"Graph\" style=\"width: 47%;\" />\n"); \
+		lines.insert(5, "</p>\n"); \
+		lines.insert(6, "\n## How It Works"); \
+		docstring = "".join(lines); \
 		f = open("README.md", "w"); \
 		f.write(docstring); \
 		f.close();'

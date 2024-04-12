@@ -13,6 +13,13 @@ in one terminal character).
 The API is inspired by JavaScript Canvas's API, but has barely any
 features.
 
+## Examples
+
+<p align="center">
+  <img src="./examples/game_of_life.png" alt="Game of Life" style="width: 47%;" />
+  <img src="./examples/graph.png" alt="Graph" style="width: 47%;" />
+</p>
+
 ## How It Works
 
 Braille characters start at Unicode offset `U2800` (hexadecimal), and
