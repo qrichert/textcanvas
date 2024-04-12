@@ -1,7 +1,7 @@
 """Conway's Game of Life.
 
 ```shell-session
-$ python -m demo.game_of_life
+$ python -m examples.game_of_life
 ```
 """
 

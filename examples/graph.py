@@ -1,7 +1,7 @@
 """Graph of sin(x) and cos(x).
 
 ```shell-session
-$ python -m demo.graph
+$ python -m examples.graph
 ```
 """
 
