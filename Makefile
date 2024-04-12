@@ -83,6 +83,10 @@ extractdocstring: ## Use docstring as README
 		f = open("README.md", "w"); \
 		f.write(docstring); \
 		f.close();'
+	@echo "\n## Installation\n" >> README.md
+	@echo '```shell' >> README.md
+	@echo "pip install git+https://github.com/qrichert/textcanvas.git" >> README.md
+	@echo '```' >> README.md
 
 %:
 	@$(call show_error_message,Unknown command '$@')

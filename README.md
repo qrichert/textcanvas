@@ -81,3 +81,9 @@ on the last row like so:
 - https://www.unicode.org/charts/PDF/U2800.pdf
 
 [^1]: https://github.com/asciimoo/drawille
+
+## Installation
+
+```shell
+pip install git+https://github.com/qrichert/textcanvas.git
+```

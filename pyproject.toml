@@ -1,6 +1,26 @@
 [project]
-name = "TextCanvas"
+name = "textcanvas"
+version = "1.1.0"
+authors = [
+    { name="Quentin Richert", email="noreply@richert.co" },
+]
+description = "Draw to the console like an HTML Canvas."
+readme = "README.md"
 requires-python = ">= 3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+]
+license = { file="LICENSE" }
+keywords = ["tui", "canvas", "draw", "console", "terminal"]
+
+[project.urls]
+"Homepage" = "https://github.com/qrichert/textcanvas"
+
+[tool.setuptools]
+packages = ["textcanvas"]
 
 [tool.ruff.lint]
 extend-select = ["I"]
