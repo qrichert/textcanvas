@@ -154,6 +154,26 @@ class TextCanvas:
     def __str__(self) -> str:
         return self.to_string()
 
+    @property
+    def w(self) -> int:
+        """Shortcut for width of pixel screen (index of last column)."""
+        return self.screen.width - 1
+
+    @property
+    def h(self) -> int:
+        """Shortcut for height of pixel screen (index of last row)."""
+        return self.screen.height - 1
+
+    @property
+    def cx(self) -> int:
+        """Shortcut for center-X of pixel screen."""
+        return self.screen.width // 2
+
+    @property
+    def cy(self) -> int:
+        """Shortcut for center-Y of pixel screen."""
+        return self.screen.height // 2
+
     def clear(self) -> None:
         self._clear_buffer()
         self._clear_color_buffer()
@@ -351,20 +371,15 @@ class TextCanvas:
 if __name__ == "__main__":
     canvas = TextCanvas(15, 5)
 
-    xw = canvas.screen.width - 1
-    yh = canvas.screen.height - 1
-    cx = canvas.screen.width // 2
-    cy = canvas.screen.height // 2
-
     top_left = (0, 0)
-    top_right = (xw, 0)
-    bottom_right = (xw, yh)
-    bottom_left = (0, yh)
-    center = (cx, cy)
-    center_top = (cx, 0)
-    center_right = (xw, cy)
-    center_bottom = (cx, yh)
-    center_left = (0, cy)
+    top_right = (canvas.w, 0)
+    bottom_right = (canvas.w, canvas.h)
+    bottom_left = (0, canvas.h)
+    center = (canvas.cx, canvas.cy)
+    center_top = (canvas.cx, 0)
+    center_right = (canvas.w, canvas.cy)
+    center_bottom = (canvas.cx, canvas.h)
+    center_left = (0, canvas.cy)
 
     canvas.set_color(Color.RED)
     canvas.stroke_line(*center, *top_left)

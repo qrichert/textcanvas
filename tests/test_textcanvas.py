@@ -77,6 +77,14 @@ class TestTextCanvas(unittest.TestCase):
             "Incorrect string representation.",
         )
 
+    def test_shortcuts(self) -> None:
+        canvas = TextCanvas(7, 4)
+
+        self.assertEqual(canvas.w, 13, "Incorrect screen width.")
+        self.assertEqual(canvas.h, 15, "Incorrect screen height.")
+        self.assertEqual(canvas.cx, 7, "Incorrect screen center-X.")
+        self.assertEqual(canvas.cy, 8, "Incorrect screen center-Y.")
+
     def test_turn_all_pixels_on(self) -> None:
         canvas = TextCanvas(2, 2)
 
@@ -299,20 +307,15 @@ class TestTextCanvas(unittest.TestCase):
     def test_stroke_line(self) -> None:
         canvas = TextCanvas(15, 5)
 
-        xw = canvas.screen.width - 1
-        yh = canvas.screen.height - 1
-        cx = canvas.screen.width // 2
-        cy = canvas.screen.height // 2
-
         top_left = (0, 0)
-        top_right = (xw, 0)
-        bottom_right = (xw, yh)
-        bottom_left = (0, yh)
-        center = (cx, cy)
-        center_top = (cx, 0)
-        center_right = (xw, cy)
-        center_bottom = (cx, yh)
-        center_left = (0, cy)
+        top_right = (canvas.w, 0)
+        bottom_right = (canvas.w, canvas.h)
+        bottom_left = (0, canvas.h)
+        center = (canvas.cx, canvas.cy)
+        center_top = (canvas.cx, 0)
+        center_right = (canvas.w, canvas.cy)
+        center_bottom = (canvas.cx, canvas.h)
+        center_left = (0, canvas.cy)
 
         canvas.stroke_line(*center, *top_left)
         canvas.stroke_line(*center, *top_right)
