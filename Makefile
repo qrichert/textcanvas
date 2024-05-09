@@ -111,8 +111,8 @@ extractdocstring: ## Use docstring as README
 	@. .venv/bin/activate
 	@echo "# TextCanvas\n" > README.md
 	@echo "[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/license/mit)" >> README.md
-	@echo "![GitHub Tag](https://img.shields.io/github/v/tag/qrichert/textcanvas?sort=semver&filter=*.*.*&label=Python&logo=python)" >> README.md
-	@echo "[![crates.io](https://img.shields.io/crates/v/textcanvas?logo=rust)](https://crates.io/crates/textcanvas)" >> README.md
+	@echo "![GitHub Tag](https://img.shields.io/github/v/tag/qrichert/textcanvas?sort=semver&filter=*.*.*&label=release)" >> README.md
+	@echo "[![crates.io](https://img.shields.io/crates/d/textcanvas?logo=rust&logoColor=white&color=orange)](https://crates.io/crates/textcanvas)" >> README.md
 	@echo "[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/qrichert/textcanvas/run-tests.yml?label=tests)](https://github.com/qrichert/textcanvas/actions)" >> README.md
 	@python -c \
 		'import textcanvas.textcanvas; \
