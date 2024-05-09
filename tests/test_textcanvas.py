@@ -2,7 +2,7 @@ import doctest
 import unittest
 
 import textcanvas.textcanvas
-from textcanvas.color import Color, custom_color_from_rgb
+from textcanvas.color import Color
 from textcanvas.textcanvas import TextCanvas
 
 
@@ -250,8 +250,8 @@ class TestTextCanvas(unittest.TestCase):
         )
 
     def test_iter_buffer_by_blocks_lrtb(self) -> None:
-        # This tests a private method, but this method is at the core of
-        # the output generation. Testing it helps to ensure stability.
+        # This tests a private method, but this method is at the core
+        # of the output generation. Testing it helps ensure stability.
         canvas = TextCanvas(3, 2)
         stroke_line_accros_canvas(canvas)
 
@@ -356,7 +356,7 @@ class TestTextCanvasColor(unittest.TestCase):
     def test_color_buffer_size_with_color(self) -> None:
         canvas = TextCanvas(7, 4)
 
-        canvas.set_color(Color.BG_BLUE)
+        canvas.set_color(Color().bg_bright_blue())
 
         buffer_width = len(canvas.color_buffer[0])
         buffer_height = len(canvas.color_buffer)
@@ -375,7 +375,7 @@ class TestTextCanvasColor(unittest.TestCase):
             canvas.is_colorized, "Canvas should not be colorized by default."
         )
 
-        canvas.set_color(Color.BG_BLUE)
+        canvas.set_color(Color().bg_bright_blue())
 
         self.assertTrue(
             canvas.is_colorized, "Canvas should be colorized after a color is set."
@@ -384,56 +384,30 @@ class TestTextCanvasColor(unittest.TestCase):
     def test_set_color(self) -> None:
         canvas = TextCanvas(2, 2)
 
-        canvas.set_color(Color.BG_BLUE)
+        canvas.set_color(Color().bg_bright_blue())
         canvas.set_pixel(3, 3, True)
 
         self.assertEqual(
             canvas.color_buffer,
             [
-                [Color.NO_COLOR, Color.BG_BLUE],
-                [Color.NO_COLOR, Color.NO_COLOR],
+                [Color(), Color().bg_bright_blue()],
+                [Color(), Color()],
             ],
             "Incorrect color buffer.",
         )
 
-    def test_set_color_with_color_string(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        color: str = custom_color_from_rgb(200, 150, 72)
-        assert "{}" in color, "Color should contain '{}' for this test."
-
-        canvas.set_color(color)
-
-        canvas.set_pixel(3, 3, True)
-
-        self.assertEqual(
-            canvas.to_string(),
-            "⠀\x1b[0;38;2;200;150;72m⢀\x1b[0m\n⠀⠀\n",
-            "Incorrect output string.",
-        )
-
-    def test_set_color_with_invalid_color_string(self) -> None:
-        canvas = TextCanvas(2, 2)
-
-        color: str = "rgb(200, 150, 72)"
-        assert "{}" not in color, "Color should not contain '{}' for this test."
-
-        with self.assertRaises(ValueError) as ctx:
-            ctx.msg = "No error raised on invalid color."
-            canvas.set_color(color)
-
     def test_set_color_multiple(self) -> None:
         canvas = TextCanvas(2, 2)
 
-        canvas.set_color(Color.BG_BLUE)
+        canvas.set_color(Color().bg_bright_blue())
         canvas.set_pixel(3, 3, True)
         canvas.set_pixel(1, 5, True)
 
         self.assertEqual(
             canvas.color_buffer,
             [
-                [Color.NO_COLOR, Color.BG_BLUE],
-                [Color.BG_BLUE, Color.NO_COLOR],
+                [Color(), Color().bg_bright_blue()],
+                [Color().bg_bright_blue(), Color()],
             ],
             "Incorrect color buffer.",
         )
@@ -441,18 +415,18 @@ class TestTextCanvasColor(unittest.TestCase):
     def test_set_color_override(self) -> None:
         canvas = TextCanvas(2, 2)
 
-        canvas.set_color(Color.BG_BLUE)
+        canvas.set_color(Color().bg_bright_blue())
         canvas.set_pixel(3, 3, True)
         canvas.set_pixel(1, 5, True)
 
-        canvas.set_color(Color.BG_RED)
+        canvas.set_color(Color().bg_bright_red())
         canvas.set_pixel(3, 3, True)
 
         self.assertEqual(
             canvas.color_buffer,
             [
-                [Color.NO_COLOR, Color.BG_RED],
-                [Color.BG_BLUE, Color.NO_COLOR],
+                [Color(), Color().bg_bright_red()],
+                [Color().bg_bright_blue(), Color()],
             ],
             "Incorrect color buffer.",
         )
@@ -460,7 +434,7 @@ class TestTextCanvasColor(unittest.TestCase):
     def test_color_is_reset_if_pixel_turned_off(self) -> None:
         canvas = TextCanvas(2, 2)
 
-        canvas.set_color(Color.BG_BLUE)
+        canvas.set_color(Color().bg_bright_blue())
         canvas.set_pixel(3, 3, True)
         canvas.set_pixel(1, 5, True)
 
@@ -469,15 +443,15 @@ class TestTextCanvasColor(unittest.TestCase):
         self.assertEqual(
             canvas.color_buffer,
             [
-                [Color.NO_COLOR, Color.NO_COLOR],
-                [Color.BG_BLUE, Color.NO_COLOR],
+                [Color(), Color()],
+                [Color().bg_bright_blue(), Color()],
             ],
             "Incorrect color buffer.",
         )
 
     def test_get_as_string_colored(self) -> None:
         canvas = TextCanvas(3, 2)
-        canvas.set_color(Color.GREEN)
+        canvas.set_color(Color().bright_green())
         stroke_line_accros_canvas(canvas)
 
         self.assertEqual(
@@ -491,11 +465,11 @@ class TestTextCanvasColor(unittest.TestCase):
 
         self.assertEqual(canvas.color_buffer, [], "Color buffer should be empty.")
 
-        canvas.set_color(Color.RED)
+        canvas.set_color(Color().bright_red())
 
         self.assertEqual(
             canvas.color_buffer,
-            [[Color.NO_COLOR, Color.NO_COLOR]],
+            [[Color(), Color()]],
             "Color buffer should be full of no-color.",
         )
 
@@ -503,7 +477,7 @@ class TestTextCanvasColor(unittest.TestCase):
 
         self.assertEqual(
             canvas.color_buffer,
-            [[Color.RED, Color.NO_COLOR]],
+            [[Color().bright_red(), Color()]],
             "First pixel should be red.",
         )
 
@@ -511,13 +485,13 @@ class TestTextCanvasColor(unittest.TestCase):
 
         self.assertEqual(
             canvas.color_buffer,
-            [[Color.NO_COLOR, Color.NO_COLOR]],
+            [[Color(), Color()]],
             "Color buffer should be full of no-color.",
         )
 
     def test_clear_edits_color_buffer_in_place(self) -> None:
         canvas = TextCanvas(2, 2)
-        canvas.set_color(Color.RED)
+        canvas.set_color(Color().bright_red())
 
         color_buffer = canvas.color_buffer
         row_0 = canvas.color_buffer[0]
@@ -661,7 +635,7 @@ class TestTextCanvasText(unittest.TestCase):
             "Text should not be colorized.",
         )
 
-        canvas.set_color(Color.RED)
+        canvas.set_color(Color().bright_red())
         canvas.draw_text(1, 0, "o!")
 
         self.assertEqual(
@@ -682,7 +656,7 @@ class TestTextCanvasText(unittest.TestCase):
     def test_get_text_as_string_colored(self) -> None:
         canvas = TextCanvas(5, 3)
 
-        canvas.set_color(Color.GREEN)
+        canvas.set_color(Color().bright_green())
         canvas.draw_text(1, 1, "foo")
 
         self.assertEqual(
@@ -696,7 +670,7 @@ class TestTextCanvasText(unittest.TestCase):
 
         self.assertEqual(canvas.text_buffer, [], "Text buffer should be empty.")
 
-        canvas.set_color(Color.RED)
+        canvas.set_color(Color().bright_red())
         canvas.draw_text(0, 0, "hi")
 
         self.assertEqual(

@@ -42,7 +42,7 @@ Or the whole second row:
 
     0x28FF (⣿) - 0x12 (⠒) = 0x28ed (⣭)
 
-This works in binary as well :
+This works in binary as well:
 
     ┌──────┐  ┌──────┐
     │ •  • │  │ 1  4 │
@@ -85,12 +85,12 @@ on the last row like so:
 """
 
 from dataclasses import dataclass
-from typing import Generator, cast
+from typing import Generator
 
 from .color import Color
 
 type PixelBuffer = list[list[bool]]
-type ColorBuffer = list[list[str]]
+type ColorBuffer = list[list[Color]]
 type TextBuffer = list[list[str]]
 type BrailleChar = int
 type PixelBlock = tuple[
@@ -172,7 +172,7 @@ class TextCanvas:
             This contains regular text characters. Text is drawn on top
             of the pixel buffer on a separate layer. Drawing text does
             not affect pixels. Pixels and text do not share the same
-            color buffer either. Color info is embeded in the text
+            color buffer either. Color info is embedded in the text
             buffer with each character directly. Note also that this
             buffer is empty until the first call to `draw_text()`. The
             first call to `draw_text()` initializes the buffer and sets
@@ -195,14 +195,19 @@ class TextCanvas:
         self.color_buffer: ColorBuffer = []
         self.text_buffer: TextBuffer = []
 
-        self._color: Color = Color.NO_COLOR
+        self._color: Color = Color()
 
-        self._clear_buffer()
+        self._init_buffer()
 
     @staticmethod
     def _validate_size(width: int, height: int) -> None:
         if width <= 0 or height <= 0:
             raise ValueError("TextCanvas' minimal size is 1×1.")
+
+    def _init_buffer(self) -> None:
+        self.buffer = [
+            [OFF for _ in range(self.screen.width)] for _ in range(self.screen.height)
+        ]
 
     def __repr__(self) -> str:
         out_w: int = self.output.width
@@ -247,20 +252,14 @@ class TextCanvas:
         self._clear_text_buffer()
 
     def _clear_buffer(self) -> None:
-        if hasattr(self, "buffer"):
-            for x, y in self.iter_buffer():
-                self.buffer[y][x] = False
-        else:
-            self.buffer = [
-                [OFF for _ in range(self.screen.width)]
-                for _ in range(self.screen.height)
-            ]
+        for x, y in self.iter_buffer():
+            self.buffer[y][x] = False
 
     def _clear_color_buffer(self) -> None:
         if self.color_buffer:
             for y, _ in enumerate(self.color_buffer):
                 for x, _ in enumerate(self.color_buffer[y]):
-                    self.color_buffer[y][x] = Color.NO_COLOR
+                    self.color_buffer[y][x] = Color()
 
     def _clear_text_buffer(self) -> None:
         if self.text_buffer:
@@ -280,7 +279,7 @@ class TextCanvas:
             >>> canvas = TextCanvas(15, 5)
             >>> canvas.is_colorized
             False
-            >>> canvas.set_color(Color.NO_COLOR)  # Buffer is initialized.
+            >>> canvas.set_color(Color())  # Buffer is initialized.
             >>> canvas.is_colorized
             True
         """
@@ -304,43 +303,30 @@ class TextCanvas:
         """
         return bool(self.text_buffer)
 
-    def set_color(self, color: Color | str) -> None:
+    def set_color(self, color: Color) -> None:
         """Set context color.
-
-        Note:
-            A color can be any `format()`-able string (i.e., a string
-            containing `{}`). Its intended design is to be an ANSI
-            color sequence like `\x1b[0;92m{}\x1b[0m`. During rendering,
-            `{}` will be replaced by the appropriate character.
 
         Examples:
             >>> canvas = TextCanvas(3, 1)
-            >>> canvas.set_color(Color.GREEN)
+            >>> canvas.set_color(Color().bright_green())
             >>> canvas.is_colorized
             True
             >>> canvas.draw_text(0, 0, "foo")
             >>> print(canvas, end="")
             \x1b[0;92mf\x1b[0m\x1b[0;92mo\x1b[0m\x1b[0;92mo\x1b[0m
         """
-        if isinstance(color, str):
-            if "{}" not in color:
-                raise ValueError("Color must contain '{}' to be '.format()'-able.")
-            color = cast(Color, color)
         if not self.is_colorized:
             self._init_color_buffer()
         self._color = color
 
     def _init_color_buffer(self) -> None:
         self.color_buffer = [
-            [Color.NO_COLOR for _ in range(self.output.width)]
+            [Color() for _ in range(self.output.width)]
             for _ in range(self.output.height)
         ]
 
     def get_pixel(self, x: int, y: int) -> bool | None:
         """Get the state of a screen pixel.
-
-        Note:
-            Coordinates outside the screen bounds are ignored.
 
         Args:
             x (int): Screen X (high resolution).
@@ -385,7 +371,7 @@ class TextCanvas:
         self.color_buffer[y // 4][x // 2] = self._color
 
     def _decolor_pixel(self, x: int, y: int) -> None:
-        self.color_buffer[y // 4][x // 2] = Color.NO_COLOR
+        self.color_buffer[y // 4][x // 2] = Color()
 
     def draw_text(self, x: int, y: int, text: str) -> None:
         """Draw text onto the canvas.
@@ -473,7 +459,7 @@ class TextCanvas:
 
     def _color_pixel_char(self, x: int, y: int, pixel_char: str) -> str:
         if self.is_colorized:
-            color: str = self.color_buffer[y][x]
+            color: Color = self.color_buffer[y][x]
             return color.format(pixel_char)
         return pixel_char
 
@@ -548,21 +534,21 @@ if __name__ == "__main__":
     center_bottom = (canvas.cx, canvas.h)
     center_left = (0, canvas.cy)
 
-    canvas.set_color(Color.RED)
+    canvas.set_color(Color().bright_red())
     canvas.stroke_line(*center, *top_left)
-    canvas.set_color(Color.YELLOW)
+    canvas.set_color(Color().bright_yellow())
     canvas.stroke_line(*center, *top_right)
-    canvas.set_color(Color.GREEN)
+    canvas.set_color(Color().bright_green())
     canvas.stroke_line(*center, *bottom_right)
-    canvas.set_color(Color.BLUE)
+    canvas.set_color(Color().bright_blue())
     canvas.stroke_line(*center, *bottom_left)
-    canvas.set_color(Color.CYAN)
+    canvas.set_color(Color().bright_cyan())
     canvas.stroke_line(*center, *center_top)
-    canvas.set_color(Color.MAGENTA)
+    canvas.set_color(Color().bright_magenta())
     canvas.stroke_line(*center, *center_right)
-    canvas.set_color(Color.GRAY)
+    canvas.set_color(Color().bright_gray())
     canvas.stroke_line(*center, *center_bottom)
-    canvas.set_color(Color.NO_COLOR)
+    canvas.set_color(Color())
     canvas.stroke_line(*center, *center_left)
 
     print(canvas)

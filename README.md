@@ -49,7 +49,7 @@ Or the whole second row:
 
     0x28FF (⣿) - 0x12 (⠒) = 0x28ed (⣭)
 
-This works in binary as well :
+This works in binary as well:
 
     ┌──────┐  ┌──────┐
     │ •  • │  │ 1  4 │

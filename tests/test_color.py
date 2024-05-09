@@ -2,7 +2,7 @@ import doctest
 import unittest
 
 import textcanvas.color
-from textcanvas.color import Color, custom_color_from_hex, custom_color_from_rgb
+from textcanvas.color import Color
 
 
 def load_tests(
@@ -14,197 +14,163 @@ def load_tests(
 
 
 class TestColor(unittest.TestCase):
-    def test_no_color(self) -> None:
-        self.assertEqual(Color.NO_COLOR.format("hello, world"), "hello, world")
+    # General.
 
-    def test_color_custom(self) -> None:
+    def test_format(self) -> None:
+        string = Color().magenta().format("foo")
+
+        self.assertEqual(string, "\x1b[0;35mfoo\x1b[0m")
+
+    def test_to_string(self) -> None:
+        string = Color().magenta().to_string()
+
+        self.assertEqual(string, "\x1b[0;35m{}\x1b[0m")
+
+    # Special Cases.
+
+    def test_no_color(self) -> None:
         self.assertEqual(
-            Color.CUSTOM.format("hello, world", red=45, green=227, blue=61),
+            Color().format("hello, world"),
+            "hello, world",
+        )
+
+    # Display Attributes
+
+    def test_no_color_bold(self) -> None:
+        self.assertEqual(
+            Color().bold().format("hello, world"),
+            "\x1b[1mhello, world\x1b[0m",
+        )
+
+    def test_no_color_italic(self) -> None:
+        self.assertEqual(
+            Color().italic().format("hello, world"),
+            "\x1b[3mhello, world\x1b[0m",
+        )
+
+    def test_no_color_underline(self) -> None:
+        self.assertEqual(
+            Color().underline().format("hello, world"),
+            "\x1b[4mhello, world\x1b[0m",
+        )
+
+    def test_no_color_bold_italic_underline(self) -> None:
+        self.assertEqual(
+            Color().bold().italic().underline().format("hello, world"),
+            "\x1b[1;3;4mhello, world\x1b[0m",
+        )
+
+    def test_color_bold(self) -> None:
+        self.assertEqual(
+            Color().bold().bg_bright_green().format("hello, world"),
+            "\x1b[1;102mhello, world\x1b[0m",
+        )
+
+    def test_color_bold_after_color(self) -> None:
+        # Order should not matter.
+        self.assertEqual(
+            Color().bg_bright_green().bold().format("hello, world"),
+            "\x1b[1;102mhello, world\x1b[0m",
+        )
+
+    # RGB (24-bit)
+
+    def test_color_rgb(self) -> None:
+        self.assertEqual(
+            Color().rgb(45, 227, 61).format("hello, world"),
             "\x1b[0;38;2;45;227;61mhello, world\x1b[0m",
         )
         self.assertEqual(
-            Color.BOLD_CUSTOM.format("hello, world", red=45, green=227, blue=61),
+            Color().bold().rgb(45, 227, 61).format("hello, world"),
             "\x1b[1;38;2;45;227;61mhello, world\x1b[0m",
         )
 
+    def test_color_bg_rgb(self) -> None:
         self.assertEqual(
-            Color.BG_CUSTOM.format("hello, world", red=45, green=227, blue=61),
+            Color().bg_rgb(45, 227, 61).format("hello, world"),
             "\x1b[0;48;2;45;227;61mhello, world\x1b[0m",
         )
         self.assertEqual(
-            Color.BG_BOLD_CUSTOM.format("hello, world", red=45, green=227, blue=61),
+            Color().bold().bg_rgb(45, 227, 61).format("hello, world"),
             "\x1b[1;48;2;45;227;61mhello, world\x1b[0m",
         )
 
-    def test_color_predefined(self) -> None:
+    def test_color_rgb_with_bg(self) -> None:
         self.assertEqual(
-            Color.RED.format("hello, world"), "\x1b[0;91mhello, world\x1b[0m"
+            Color().rgb(45, 227, 61).bg_rgb(13, 10, 40).format("hello, world"),
+            "\x1b[0;38;2;45;227;61m\x1b[48;2;13;10;40mhello, world\x1b[0m",
         )
         self.assertEqual(
-            Color.YELLOW.format("hello, world"), "\x1b[0;93mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.GREEN.format("hello, world"), "\x1b[0;92mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BLUE.format("hello, world"), "\x1b[0;94mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.CYAN.format("hello, world"), "\x1b[0;96mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.MAGENTA.format("hello, world"), "\x1b[0;95mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.GRAY.format("hello, world"), "\x1b[0;90mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.WHITE.format("hello, world"), "\x1b[0;97mhello, world\x1b[0m"
+            Color().bold().rgb(45, 227, 61).bg_rgb(13, 10, 40).format("hello, world"),
+            "\x1b[1;38;2;45;227;61m\x1b[48;2;13;10;40mhello, world\x1b[0m",
         )
 
-    def test_color_predefined_bold(self) -> None:
+    def test_color_rgb_from_hex(self) -> None:
         self.assertEqual(
-            Color.BOLD_RED.format("hello, world"), "\x1b[1;91mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BOLD_YELLOW.format("hello, world"), "\x1b[1;93mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BOLD_GREEN.format("hello, world"), "\x1b[1;92mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BOLD_BLUE.format("hello, world"), "\x1b[1;94mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BOLD_CYAN.format("hello, world"), "\x1b[1;96mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BOLD_MAGENTA.format("hello, world"), "\x1b[1;95mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BOLD_GRAY.format("hello, world"), "\x1b[1;90mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BOLD_WHITE.format("hello, world"), "\x1b[1;97mhello, world\x1b[0m"
+            Color().rbg_from_hex("#1f2c3b").format("hello, world"),
+            "\x1b[0;38;2;31;44;59mhello, world\x1b[0m",
         )
 
-    def test_color_predefined_background(self) -> None:
+    def test_color_rgb_from_hex_without_hash(self) -> None:
         self.assertEqual(
-            Color.BG_RED.format("hello, world"), "\x1b[0;101mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_YELLOW.format("hello, world"), "\x1b[0;103mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_GREEN.format("hello, world"), "\x1b[0;102mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_BLUE.format("hello, world"), "\x1b[0;104mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_CYAN.format("hello, world"), "\x1b[0;106mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_MAGENTA.format("hello, world"), "\x1b[0;105mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_GRAY.format("hello, world"), "\x1b[0;100mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_WHITE.format("hello, world"), "\x1b[0;107mhello, world\x1b[0m"
+            Color().rbg_from_hex("1f2c3b").format("hello, world"),
+            "\x1b[0;38;2;31;44;59mhello, world\x1b[0m",
         )
 
-    def test_color_predefined_background_bold(self) -> None:
+    def test_color_rgb_from_hex_invalid(self) -> None:
         self.assertEqual(
-            Color.BG_BOLD_RED.format("hello, world"), "\x1b[1;101mhello, world\x1b[0m"
+            Color()
+            .rbg_from_hex("#012345678901234567890123456789")
+            .format("hello, world"),
+            "\x1b[0;38;2;0;0;0mhello, world\x1b[0m",
         )
         self.assertEqual(
-            Color.BG_BOLD_YELLOW.format("hello, world"),
-            "\x1b[1;103mhello, world\x1b[0m",
-        )
-        self.assertEqual(
-            Color.BG_BOLD_GREEN.format("hello, world"), "\x1b[1;102mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_BOLD_BLUE.format("hello, world"), "\x1b[1;104mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_BOLD_CYAN.format("hello, world"), "\x1b[1;106mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_BOLD_MAGENTA.format("hello, world"),
-            "\x1b[1;105mhello, world\x1b[0m",
-        )
-        self.assertEqual(
-            Color.BG_BOLD_GRAY.format("hello, world"), "\x1b[1;100mhello, world\x1b[0m"
-        )
-        self.assertEqual(
-            Color.BG_BOLD_WHITE.format("hello, world"), "\x1b[1;107mhello, world\x1b[0m"
+            Color().rbg_from_hex("#zzzzzz").format("hello, world"),
+            "\x1b[0;38;2;0;0;0mhello, world\x1b[0m",
         )
 
-
-class TestHelperFunctions(unittest.TestCase):
-    def test_custom_color_from_hex(self) -> None:
+    def test_color_rgb_from_hex_only_one_invalid(self) -> None:
         self.assertEqual(
-            custom_color_from_hex("#2de33d"), "\x1b[0;38;2;45;227;61m{}\x1b[0m"
+            Color().rbg_from_hex("#ffggff").format("hello, world"),
+            "\x1b[0;38;2;255;0;255mhello, world\x1b[0m",
         )
 
-    def test_custom_color_from_hex_base_custom(self) -> None:
+    def test_color_bg_rgb_from_hex(self) -> None:
         self.assertEqual(
-            custom_color_from_hex("#2de33d", Color.CUSTOM),
-            "\x1b[0;38;2;45;227;61m{}\x1b[0m",
+            Color().bg_rbg_from_hex("#1f2c3b").format("hello, world"),
+            "\x1b[0;48;2;31;44;59mhello, world\x1b[0m",
         )
 
-    def test_custom_color_from_hex_base_bold_custom(self) -> None:
+    # 4-bit.
+
+    def test_color_4bit(self) -> None:
         self.assertEqual(
-            custom_color_from_hex("#2de33d", Color.BOLD_CUSTOM),
-            "\x1b[1;38;2;45;227;61m{}\x1b[0m",
+            Color().green().format("hello, world"),
+            "\x1b[0;32mhello, world\x1b[0m",
         )
 
-    def test_custom_color_from_hex_base_bg_custom(self) -> None:
+    def test_color_4bit_bright(self) -> None:
         self.assertEqual(
-            custom_color_from_hex("#2de33d", Color.BG_CUSTOM),
-            "\x1b[0;48;2;45;227;61m{}\x1b[0m",
+            Color().bright_green().format("hello, world"),
+            "\x1b[0;92mhello, world\x1b[0m",
         )
 
-    def test_custom_color_from_hex_base_bg_bold_custom(self) -> None:
+    def test_color_4bit_bg(self) -> None:
         self.assertEqual(
-            custom_color_from_hex("#2de33d", Color.BG_BOLD_CUSTOM),
-            "\x1b[1;48;2;45;227;61m{}\x1b[0m",
+            Color().bg_green().format("hello, world"),
+            "\x1b[0;42mhello, world\x1b[0m",
         )
 
-    def test_custom_color_from_hex_without_hash(self) -> None:
+    def test_color_4bit_bg_bright(self) -> None:
         self.assertEqual(
-            custom_color_from_hex("2de33d"), "\x1b[0;38;2;45;227;61m{}\x1b[0m"
+            Color().bg_bright_green().format("hello, world"),
+            "\x1b[0;102mhello, world\x1b[0m",
         )
 
-    def test_custom_color_from_rgb(self) -> None:
+    def test_color_4bit_with_bg(self) -> None:
         self.assertEqual(
-            custom_color_from_rgb(45, 227, 61), "\x1b[0;38;2;45;227;61m{}\x1b[0m"
-        )
-
-    def test_custom_color_from_rgb_base_custom(self) -> None:
-        self.assertEqual(
-            custom_color_from_rgb(45, 227, 61, Color.CUSTOM),
-            "\x1b[0;38;2;45;227;61m{}\x1b[0m",
-        )
-
-    def test_custom_color_from_rgb_base_bold_custom(self) -> None:
-        self.assertEqual(
-            custom_color_from_rgb(45, 227, 61, Color.BOLD_CUSTOM),
-            "\x1b[1;38;2;45;227;61m{}\x1b[0m",
-        )
-
-    def test_custom_color_from_rgb_base_bg_custom(self) -> None:
-        self.assertEqual(
-            custom_color_from_rgb(45, 227, 61, Color.BG_CUSTOM),
-            "\x1b[0;48;2;45;227;61m{}\x1b[0m",
-        )
-
-    def test_custom_color_from_rgb_base_bg_bold_custom(self) -> None:
-        self.assertEqual(
-            custom_color_from_rgb(45, 227, 61, Color.BG_BOLD_CUSTOM),
-            "\x1b[1;48;2;45;227;61m{}\x1b[0m",
+            Color().red().bg_green().format("hello, world"),
+            "\x1b[0;31;42mhello, world\x1b[0m",
         )
 
 

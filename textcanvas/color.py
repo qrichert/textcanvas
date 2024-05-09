@@ -1,142 +1,294 @@
-from enum import StrEnum
-from typing import Literal
+import enum
+from typing import Any, Self
+
+ESC: str = "\x1b["
+RESET: str = "\x1b[0m"
+PLACEHOLDER: str = "{}"
 
 
-class Color(StrEnum):
-    """Color.
+class ColorMode(enum.Enum):
+    NO_COLOR = "NO_COLOR"
+    COLOR_RGB = "COLOR_RGB"
+    COLOR_4BIT = "COLOR_4BIT"
 
-    TODO:
+
+class Color:
+    """Color for the terminal.
 
     Examples:
-        >>> Color.RED.format("hello, world")
+        >>> # Bright red text.
+        >>> Color().bright_red().format("hello, world")
         '\\x1b[0;91mhello, world\\x1b[0m'
-        >>> Color.BG_CUSTOM.format("hello, world", red=45, green=227, blue=61)
+
+        >>> # Bold-underlined red text over green background.
+        >>> Color().bold().underline().red().bg_green().format("hello, world")
+        '\\x1b[1;4;31;42mhello, world\\x1b[0m'
+
+        >>> # RGB background.
+        >>> Color().bg_rgb(45, 227, 61).format("hello, world")
         '\\x1b[0;48;2;45;227;61mhello, world\\x1b[0m'
 
-    - ESC = 0o33 = 0x1b = Escape character, start of escape sequence.
-    - ESC[ = Control sequence.
-    - ESC[0m = Reset sequence.
-    - ESC[0;⟨n⟩m] = ⟨n⟩ is one of 16 color codes (4-bit)
-    - ESC[38;2;⟨r⟩;⟨g⟩;⟨b⟩m = [0;255] Select RGB foreground color
-    - ESC[48;2;⟨r⟩;⟨g⟩;⟨b⟩m = [0;255] Select RGB background color
+        >>> # RGB text from hex value.
+        >>> Color().rbg_from_hex("#1f2c3b").format("hello, world")
+        '\\x1b[0;38;2;31;44;59mhello, world\\x1b[0m'
 
-    24-bit custom color do not work on every terminal.
+    Limitations:
+        <div class="warning">
 
-    https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
-    https://en.wikipedia.org/wiki/ANSI_escape_code#24-bit
+        RGB (24-bit) colors do not work on every terminal.
+
+        </div>
+
+        <div class="warning">
+
+        `italic()` isn't widely supported in terminal implementations,
+        and is sometimes treated as inverse or blink.
+
+        </div>
+
+    Technical Details:
+        - `ESC` = `0o33` = `0x1b` = Escape character, start of escape sequence.
+        - `ESC[` = Control sequence.
+        - `ESC[0m` = Reset sequence.
+        - `ESC[0⟨n⟩m]` = `⟨n⟩` is one of 16 color codes (4-bit)
+        - `ESC[382⟨r⟩⟨g⟩⟨b⟩m` = `[0255]` Select RGB foreground color
+        - `ESC[482⟨r⟩⟨g⟩⟨b⟩m` = `[0255]` Select RGB background color
+
+        See Also:
+            - https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+
+    Todo:
+        8-bit colors.
+        - <https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit>
+        - They have official(?) names: <https://www.ditig.com/publications/256-colors-cheat-sheet>
+        - Looks like they are all present in Python's colored.library.py
     """
 
-    NO_COLOR = "{}"
+    def __init__(self) -> None:
+        self._mode: ColorMode = ColorMode.NO_COLOR
+        self._color_rgb: tuple[int, int, int] | None = None
+        self._bg_color_rgb: tuple[int, int, int] | None = None
+        self._color_4bit: int | None = None
+        self._bg_color_4bit: int | None = None
+        self._is_bold: bool = False
+        self._is_italic: bool = False
+        self._is_underlined: bool = False
 
-    # 24-bit
-    CUSTOM = "\x1b[0;38;2;{red:d};{green:d};{blue:d}m{}\x1b[0m"
-    BOLD_CUSTOM = "\x1b[1;38;2;{red:d};{green:d};{blue:d}m{}\x1b[0m"
+    def __eq__(self, other: Any) -> bool:
+        return self.to_string() == other
 
-    BG_CUSTOM = "\x1b[0;48;2;{red:d};{green:d};{blue:d}m{}\x1b[0m"
-    BG_BOLD_CUSTOM = "\x1b[1;48;2;{red:d};{green:d};{blue:d}m{}\x1b[0m"
+    def to_string(self) -> str:
+        if self._is_empty():
+            return PLACEHOLDER
 
-    # 4-bit colors.
-    # 0; is optional () 1; bold.
-    RED = "\x1b[0;91m{}\x1b[0m"
-    YELLOW = "\x1b[0;93m{}\x1b[0m"
-    GREEN = "\x1b[0;92m{}\x1b[0m"
-    BLUE = "\x1b[0;94m{}\x1b[0m"
-    CYAN = "\x1b[0;96m{}\x1b[0m"
-    MAGENTA = "\x1b[0;95m{}\x1b[0m"
-    GRAY = "\x1b[0;90m{}\x1b[0m"
-    WHITE = "\x1b[0;97m{}\x1b[0m"
+        res: str = ESC
+        res += self._format_display_attributes()
 
-    BOLD_RED = "\x1b[1;91m{}\x1b[0m"
-    BOLD_YELLOW = "\x1b[1;93m{}\x1b[0m"
-    BOLD_GREEN = "\x1b[1;92m{}\x1b[0m"
-    BOLD_BLUE = "\x1b[1;94m{}\x1b[0m"
-    BOLD_CYAN = "\x1b[1;96m{}\x1b[0m"
-    BOLD_MAGENTA = "\x1b[1;95m{}\x1b[0m"
-    BOLD_GRAY = "\x1b[1;90m{}\x1b[0m"
-    BOLD_WHITE = "\x1b[1;97m{}\x1b[0m"
+        if self._has_colors():
+            res += ";"
+        match self._mode:
+            case ColorMode.COLOR_RGB:
+                res += self._format_colors_rgb()
+            case ColorMode.COLOR_4BIT:
+                res += self._format_colors_4bit()
 
-    BG_RED = "\x1b[0;101m{}\x1b[0m"
-    BG_YELLOW = "\x1b[0;103m{}\x1b[0m"
-    BG_GREEN = "\x1b[0;102m{}\x1b[0m"
-    BG_BLUE = "\x1b[0;104m{}\x1b[0m"
-    BG_CYAN = "\x1b[0;106m{}\x1b[0m"
-    BG_MAGENTA = "\x1b[0;105m{}\x1b[0m"
-    BG_GRAY = "\x1b[0;100m{}\x1b[0m"
-    BG_WHITE = "\x1b[0;107m{}\x1b[0m"
+        return res + f"m{PLACEHOLDER}{RESET}"
 
-    BG_BOLD_RED = "\x1b[1;101m{}\x1b[0m"
-    BG_BOLD_YELLOW = "\x1b[1;103m{}\x1b[0m"
-    BG_BOLD_GREEN = "\x1b[1;102m{}\x1b[0m"
-    BG_BOLD_BLUE = "\x1b[1;104m{}\x1b[0m"
-    BG_BOLD_CYAN = "\x1b[1;106m{}\x1b[0m"
-    BG_BOLD_MAGENTA = "\x1b[1;105m{}\x1b[0m"
-    BG_BOLD_GRAY = "\x1b[1;100m{}\x1b[0m"
-    BG_BOLD_WHITE = "\x1b[1;107m{}\x1b[0m"
+    def format(self, string: str) -> str:
+        return self.to_string().replace(PLACEHOLDER, string)
 
+    def _is_empty(self) -> bool:
+        return self._mode == ColorMode.NO_COLOR and not self._has_display_attributes()
 
-type CustomColor = Literal[
-    Color.CUSTOM,
-    Color.BOLD_CUSTOM,
-    Color.BG_CUSTOM,
-    Color.BG_BOLD_CUSTOM,
-]
+    def _has_colors(self) -> bool:
+        return not self._mode == ColorMode.NO_COLOR
 
+    # Display Attributes.
 
-def custom_color_from_rgb(
-    red: int, green: int, blue: int, base: CustomColor = Color.CUSTOM
-) -> str:
-    # Replace '{}' by '{}' to keep it as is.
-    return base.format("{}", red=red, green=green, blue=blue)
+    def bold(self) -> Self:
+        self._is_bold = True
+        return self
 
+    def italic(self) -> Self:
+        self._is_italic = True
+        return self
 
-def custom_color_from_hex(hex_color: str, base: CustomColor = Color.CUSTOM) -> str:
-    hex_color = hex_color.lstrip("#")
-    return custom_color_from_rgb(
-        red=int(hex_color[:2], 16),
-        green=int(hex_color[2:4], 16),
-        blue=int(hex_color[4:], 16),
-        base=base,
-    )
+    def underline(self) -> Self:
+        self._is_underlined = True
+        return self
+
+    def _format_display_attributes(self) -> str:
+        if not self._has_display_attributes():
+            return "0"
+        attributes: list[str] = []
+        if self._is_bold:
+            attributes.append("1")
+        if self._is_italic:
+            attributes.append("3")
+        if self._is_underlined:
+            attributes.append("4")
+        return ";".join(attributes)
+
+    def _has_display_attributes(self) -> bool:
+        return self._is_bold or self._is_italic or self._is_underlined
+
+    # RGB colors (24-bit).
+
+    def _apply_color_rgb(self, red: int, green: int, blue: int) -> Self:
+        self._mode = ColorMode.COLOR_RGB
+        self._color_rgb = (red, green, blue)
+        return self
+
+    def _apply_bg_color_rgb(self, red: int, green: int, blue: int) -> Self:
+        self._mode = ColorMode.COLOR_RGB
+        self._bg_color_rgb = (red, green, blue)
+        return self
+
+    def rgb(self, red: int, green: int, blue: int) -> Self:
+        return self._apply_color_rgb(red, green, blue)
+
+    def bg_rgb(self, red: int, green: int, blue: int) -> Self:
+        return self._apply_bg_color_rgb(red, green, blue)
+
+    def rbg_from_hex(self, hex_color: str) -> Self:
+        r, g, b = self._hex_to_rgb(hex_color)
+        return self.rgb(r, g, b)
+
+    def bg_rbg_from_hex(self, hex_color: str) -> Self:
+        r, g, b = self._hex_to_rgb(hex_color)
+        return self.bg_rgb(r, g, b)
+
+    @staticmethod
+    def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+        if hex_color.startswith("#"):
+            hex_color = hex_color[1:]
+
+        if len(hex_color) != 6:
+            return 0, 0, 0
+
+        red: int = 0
+        green: int = 0
+        blue: int = 0
+
+        try:
+            red = int(hex_color[:2], 16)
+        except ValueError:
+            pass
+        try:
+            green = int(hex_color[2:4], 16)
+        except ValueError:
+            pass
+        try:
+            blue = int(hex_color[4:], 16)
+        except ValueError:
+            pass
+
+        return red, green, blue
+
+    def _format_colors_rgb(self) -> str:
+        colors: str = ""
+        # Foreground.
+        if self._color_rgb is not None:
+            red, green, blue = self._color_rgb
+            colors += f"38;2;{red};{green};{blue}"
+
+            # Foreground AND Background.
+            if self._bg_color_rgb is not None:
+                # Close foreground sequence and start new one.
+                colors += f"m{ESC}"
+
+        # Background.
+        if self._bg_color_rgb is not None:
+            red, green, blue = self._bg_color_rgb
+            colors += f"48;2;{red};{green};{blue}"
+
+        return colors
+
+    #  4-bit colors.
+
+    def _apply_color_4bit(self, color: int) -> Self:
+        self._mode = ColorMode.COLOR_4BIT
+        self._color_4bit = color
+        return self
+
+    def _apply_bg_color_4bit(self, color: int) -> Self:
+        self._mode = ColorMode.COLOR_4BIT
+        self._bg_color_4bit = color
+        return self
+
+    def _format_colors_4bit(self) -> str:
+        colors: str = ""
+        # Foreground.
+        if self._color_4bit is not None:
+            colors += f"{self._color_4bit}"
+
+            # Foreground AND Background.
+            if self._bg_color_4bit is not None:
+                colors += ";"
+
+        # Background.
+        if self._bg_color_4bit is not None:
+            colors += f"{self._bg_color_4bit}"
+
+        return colors
+
+    # fmt: off
+    def red(self) -> Self: return self._apply_color_4bit(31)
+    def yellow(self) -> Self: return self._apply_color_4bit(33)
+    def green(self) -> Self: return self._apply_color_4bit(32)
+    def blue(self) -> Self: return self._apply_color_4bit(34)
+    def cyan(self) -> Self: return self._apply_color_4bit(36)
+    def magenta(self) -> Self: return self._apply_color_4bit(35)
+    def gray(self) -> Self: return self._apply_color_4bit(30)
+    def white(self) -> Self: return self._apply_color_4bit(37)
+
+    def bright_red(self) -> Self: return self._apply_color_4bit(91)
+    def bright_yellow(self) -> Self: return self._apply_color_4bit(93)
+    def bright_green(self) -> Self: return self._apply_color_4bit(92)
+    def bright_blue(self) -> Self: return self._apply_color_4bit(94)
+    def bright_cyan(self) -> Self: return self._apply_color_4bit(96)
+    def bright_magenta(self) -> Self: return self._apply_color_4bit(95)
+    def bright_gray(self) -> Self: return self._apply_color_4bit(90)
+    def bright_white(self) -> Self: return self._apply_color_4bit(97)
+
+    def bg_red(self) -> Self: return self._apply_bg_color_4bit(41)
+    def bg_yellow(self) -> Self: return self._apply_bg_color_4bit(43)
+    def bg_green(self) -> Self: return self._apply_bg_color_4bit(42)
+    def bg_blue(self) -> Self: return self._apply_bg_color_4bit(44)
+    def bg_cyan(self) -> Self: return self._apply_bg_color_4bit(46)
+    def bg_magenta(self) -> Self: return self._apply_bg_color_4bit(45)
+    def bg_gray(self) -> Self: return self._apply_bg_color_4bit(40)
+    def bg_white(self) -> Self: return self._apply_bg_color_4bit(47)
+
+    def bg_bright_red(self) -> Self: return self._apply_bg_color_4bit(101)
+    def bg_bright_yellow(self) -> Self: return self._apply_bg_color_4bit(103)
+    def bg_bright_green(self) -> Self: return self._apply_bg_color_4bit(102)
+    def bg_bright_blue(self) -> Self: return self._apply_bg_color_4bit(104)
+    def bg_bright_cyan(self) -> Self: return self._apply_bg_color_4bit(106)
+    def bg_bright_magenta(self) -> Self: return self._apply_bg_color_4bit(105)
+    def bg_bright_gray(self) -> Self: return self._apply_bg_color_4bit(100)
+    def bg_bright_white(self) -> Self: return self._apply_bg_color_4bit(107)
+    # fmt: on
 
 
 if __name__ == "__main__":
-    print(Color.CUSTOM.format("hello, world", red=45, green=227, blue=61))
-    print(Color.BOLD_CUSTOM.format("hello, world", red=45, green=227, blue=61))
-    print(Color.BG_CUSTOM.format("hello, world", red=45, green=227, blue=61))
-    print(Color.BG_BOLD_CUSTOM.format("hello, world", red=45, green=227, blue=61))
-
-    print(Color.RED.format("hello, world"))
-    print(Color.YELLOW.format("hello, world"))
-    print(Color.GREEN.format("hello, world"))
-    print(Color.BLUE.format("hello, world"))
-    print(Color.CYAN.format("hello, world"))
-    print(Color.MAGENTA.format("hello, world"))
-    print(Color.GRAY.format("hello, world"))
-    print(Color.WHITE.format("hello, world"))
-
-    print(Color.BOLD_RED.format("hello, world"))
-    print(Color.BOLD_YELLOW.format("hello, world"))
-    print(Color.BOLD_GREEN.format("hello, world"))
-    print(Color.BOLD_BLUE.format("hello, world"))
-    print(Color.BOLD_CYAN.format("hello, world"))
-    print(Color.BOLD_MAGENTA.format("hello, world"))
-    print(Color.BOLD_GRAY.format("hello, world"))
-    print(Color.BOLD_WHITE.format("hello, world"))
-
-    print(Color.BG_RED.format("hello, world"))
-    print(Color.BG_YELLOW.format("hello, world"))
-    print(Color.BG_GREEN.format("hello, world"))
-    print(Color.BG_BLUE.format("hello, world"))
-    print(Color.BG_CYAN.format("hello, world"))
-    print(Color.BG_MAGENTA.format("hello, world"))
-    print(Color.BG_GRAY.format("hello, world"))
-    print(Color.BG_WHITE.format("hello, world"))
-
-    print(Color.BG_BOLD_RED.format("hello, world"))
-    print(Color.BG_BOLD_YELLOW.format("hello, world"))
-    print(Color.BG_BOLD_GREEN.format("hello, world"))
-    print(Color.BG_BOLD_BLUE.format("hello, world"))
-    print(Color.BG_BOLD_CYAN.format("hello, world"))
-    print(Color.BG_BOLD_MAGENTA.format("hello, world"))
-    print(Color.BG_BOLD_GRAY.format("hello, world"))
-    print(Color.BG_BOLD_WHITE.format("hello, world"))
+    print(
+        Color().bright_red().format("hello, world"),
+        Color().bold().bright_green().format("hello, world"),
+        Color().underline().bright_blue().format("hello, world"),
+    )
+    print(
+        Color().italic().bright_cyan().format("hello, world"),
+        Color().italic().cyan().format("hello, world"),
+        Color().bold().underline().bright_magenta().format("hello, world"),
+    )
+    print(
+        Color().bright_gray().format("hello, world"),
+        Color().bright_yellow().format("hello, world"),
+        Color().bold().bg_bright_gray().format("hello, world"),
+    )
+    print(
+        Color().bold().underline().red().bg_green().format("hello, world"),
+        Color().bold().rgb(0, 255, 0).bg_rgb(255, 0, 0).format("hello, world"),
+        Color().magenta().bg_bright_white().format("hello, world"),
+    )

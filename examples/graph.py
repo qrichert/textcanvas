@@ -70,10 +70,10 @@ def graph_function(func: Callable) -> None:
 
 draw_x_and_y_axes()
 
-canvas.set_color(Color.BOLD_BLUE)
+canvas.set_color(Color().bold().bright_blue())
 graph_function(math.cos)
 
-canvas.set_color(Color.BOLD_RED)
+canvas.set_color(Color().bold().bright_red())
 graph_function(math.sin)
 
 print(canvas)
