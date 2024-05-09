@@ -109,11 +109,16 @@ lint: ## Run various linting tools
 .PHONY: extractdocstring
 extractdocstring: ## Use docstring as README
 	@. .venv/bin/activate
+	@echo "# TextCanvas\n" > README.md
+	@echo "[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/license/mit)" >> README.md
+	@echo "![GitHub Tag](https://img.shields.io/github/v/tag/qrichert/textcanvas?sort=semver&filter=*.*.*&label=Python&logo=python)" >> README.md
+	@echo "[![crates.io](https://img.shields.io/crates/v/textcanvas?logo=rust)](https://crates.io/crates/textcanvas)" >> README.md
+	@echo "[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/qrichert/textcanvas/run-tests.yml?label=tests)](https://github.com/qrichert/textcanvas/actions)" >> README.md
 	@python -c \
 		'import textcanvas.textcanvas; \
 		docstring = textcanvas.textcanvas.__doc__; \
 		docstring = docstring.replace("# ", "## "); \
-		docstring = docstring.replace("TextCanvas.", "# TextCanvas"); \
+		docstring = docstring.replace("TextCanvas.\n", ""); \
 		lines = docstring.split("## How It Works"); \
 		lines.insert(1, "## Examples\n"); \
 		lines.insert(2, "\n<p align=\"center\">\n"); \
@@ -122,7 +127,7 @@ extractdocstring: ## Use docstring as README
 		lines.insert(5, "</p>\n"); \
 		lines.insert(6, "\n## How It Works"); \
 		docstring = "".join(lines); \
-		f = open("README.md", "w"); \
+		f = open("README.md", "a"); \
 		f.write(docstring); \
 		f.close();'
 	@echo "\n## Installation\n" >> README.md
