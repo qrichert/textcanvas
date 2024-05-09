@@ -32,12 +32,32 @@ clean: ## Remove temporary files and data
 	@find $(SOURCE_DIRS) -name "__pycache__" -prune -exec rm -rf {} \;
 	@find $(SOURCE_DIRS) -name "*.py[co]" -prune -exec rm -rf {} \;
 	@find $(SOURCE_DIRS) -name "*.so" -prune -exec rm -rf {} \;
+	@cargo clean
+
+.PHONY: check
+check: ## Most stringent checks (includes checks still in development)
+	@rustup update
+	@cargo fmt
+	@cargo doc --no-deps --all-features
+	@cargo check
+	@cargo clippy --all-targets --all-features -- -D warnings -W clippy::all -W clippy::cargo -W clippy::complexity -W clippy::correctness -W clippy::nursery -W clippy::pedantic -W clippy::perf -W clippy::style -W clippy::suspicious -A clippy::missing_const_for_fn
+	@make test
 
 .PHONY: t
 t: test
 .PHONY: test
 test: ## Run unit tests
 	@python -m unittest
+
+.PHONY: rt
+rt: rust-test
+.PHONY: rust-test
+rust-test: ## Run unit tests
+	@cargo test
+
+.PHONY: doc
+doc: ## Build documentation
+	@cargo doc
 
 .PHONY: c
 c: coverage
@@ -48,6 +68,21 @@ coverage: ## Unit tests coverage report
 	@python -m coverage html -d var/htmlcov
 	@#python -m coverage report
 	@open var/htmlcov/index.html || xdg-open var/htmlcov/index.html || :
+
+.PHONY: rc
+rc: rust-coverage
+.PHONY: rust-coverage
+rust-coverage: ## Unit tests coverage report
+	@cargo tarpaulin --engine Llvm --timeout 120 --out Html --output-dir target/
+	@open target/tarpaulin-report.html || xdg-open target/tarpaulin-report.html || :
+
+.PHONY: rust-coverage-pct
+rust-coverage-pct: ## Ensure code coverage of 100%
+	@coverage=$$(cargo tarpaulin --engine Llvm --out Stdout 2>&1); \
+		percent_covered=$$(echo "$$coverage" | grep -o '^[0-9]\+\.[0-9]\+% coverage' | cut -d'%' -f1); \
+		echo $$percent_covered; \
+		[ $$(echo "$$percent_covered == 100" | bc -l) -eq 0 ] && exit 1; \
+		exit 0
 
 .PHONY: coverage-pct
 coverage-pct: ## Ensure code coverage == 100%
@@ -91,8 +126,15 @@ extractdocstring: ## Use docstring as README
 		f.write(docstring); \
 		f.close();'
 	@echo "\n## Installation\n" >> README.md
+	@echo "TextCanvas provides the same API for both Python and Rust.\n" >> README.md
+	@echo "To install for Python, run this:\n" >> README.md
 	@echo '```shell' >> README.md
 	@echo "pip install git+https://github.com/qrichert/textcanvas.git" >> README.md
+	@echo '```\n' >> README.md
+	@echo "For Rust, run one of these:\n" >> README.md
+	@echo '```shell' >> README.md
+	@echo "cargo add textcanvas" >> README.md
+	@echo "cargo add --git https://github.com/qrichert/textcanvas.git" >> README.md
 	@echo '```' >> README.md
 
 %:

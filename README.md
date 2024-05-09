@@ -92,6 +92,17 @@ on the last row like so:
 
 ## Installation
 
+TextCanvas provides the same API for both Python and Rust.
+
+To install for Python, run this:
+
 ```shell
 pip install git+https://github.com/qrichert/textcanvas.git
+```
+
+For Rust, run one of these:
+
+```shell
+cargo add textcanvas
+cargo add --git https://github.com/qrichert/textcanvas.git
 ```

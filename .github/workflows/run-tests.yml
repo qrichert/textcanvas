@@ -16,6 +16,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Run tests
         run: make test
   check-code-coverage:
@@ -28,7 +30,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: python -m pip install --upgrade coverage
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust dependencies
+        run: cargo install cargo-tarpaulin
       - name: Test code coverage
         run: make coverage-pct

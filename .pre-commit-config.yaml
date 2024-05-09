@@ -20,16 +20,31 @@ repos:
       - id: blacken-docs
         additional_dependencies:
           - black>=24.3.0
+  - repo: local
+    hooks:
+      - id: fmt
+        name: fmt
+        language: system
+        types: [rust]
+        entry: cargo fmt
+        pass_filenames: false
+      - id: clippy
+        name: clippy
+        language: system
+        types: [rust]
+        entry:
+          cargo clippy --all-targets --all-features -- -D warnings -W
+          clippy::all -W clippy::cargo -W clippy::complexity -W
+          clippy::correctness -W clippy::pedantic -W clippy::perf -W
+          clippy::style -W clippy::suspicious
+        pass_filenames: false
+      - id: doc
+        name: doc
+        language: system
+        types: [rust]
+        entry: cargo doc --no-deps --all-features
+        pass_filenames: false
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0
     hooks:
       - id: prettier
-  - repo: local
-    hooks:
-      - id: tests
-        name: tests
-        entry: make test
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]
