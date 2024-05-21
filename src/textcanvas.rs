@@ -54,12 +54,12 @@ impl Surface {
     }
 
     #[must_use]
-    fn uwidth(&self) -> usize {
+    pub fn uwidth(&self) -> usize {
         to_usize!(self.width)
     }
 
     #[must_use]
-    fn uheight(&self) -> usize {
+    pub fn uheight(&self) -> usize {
         to_usize!(self.height)
     }
 }
@@ -319,10 +319,22 @@ impl TextCanvas {
         self.screen.width() - 1
     }
 
+    /// Shortcut for width of pixel screen (index of last column).
+    #[must_use]
+    pub fn uw(&self) -> usize {
+        to_usize!(self.w())
+    }
+
     /// Shortcut for height of pixel screen (index of last row).
     #[must_use]
     pub fn h(&self) -> i32 {
         self.screen.height() - 1
+    }
+
+    /// Shortcut for height of pixel screen (index of last row).
+    #[must_use]
+    pub fn uh(&self) -> usize {
+        to_usize!(self.h())
     }
 
     /// Shortcut for center-X of pixel screen.
@@ -331,10 +343,22 @@ impl TextCanvas {
         self.screen.width() / 2
     }
 
+    /// Shortcut for center-X of pixel screen.
+    #[must_use]
+    pub fn ucx(&self) -> usize {
+        to_usize!(self.cx())
+    }
+
     /// Shortcut for center-Y of pixel screen.
     #[must_use]
     pub fn cy(&self) -> i32 {
         self.screen.height() / 2
+    }
+
+    /// Shortcut for center-Y of pixel screen.
+    #[must_use]
+    pub fn ucy(&self) -> usize {
+        to_usize!(self.cy())
     }
 
     /// Turn all pixels off and remove color and text.
@@ -710,6 +734,21 @@ mod tests {
         }
     }
 
+    // Surface.
+
+    #[test]
+    fn size() {
+        let surface = Surface {
+            width: 15,
+            height: 9,
+        };
+
+        assert_eq!(surface.width(), 15);
+        assert_eq!(surface.uwidth(), 15);
+        assert_eq!(surface.height(), 9);
+        assert_eq!(surface.uheight(), 9);
+    }
+
     // Canvas.
 
     #[test]
@@ -888,6 +927,16 @@ mod tests {
         assert_eq!(canvas.h(), 15, "Incorrect screen height.");
         assert_eq!(canvas.cx(), 7, "Incorrect screen center-X.");
         assert_eq!(canvas.cy(), 8, "Incorrect screen center-Y.");
+    }
+
+    #[test]
+    fn shortcuts_unsigned() {
+        let canvas = TextCanvas::new(7, 4).unwrap();
+
+        assert_eq!(canvas.uw(), 13, "Incorrect screen width.");
+        assert_eq!(canvas.uh(), 15, "Incorrect screen height.");
+        assert_eq!(canvas.ucx(), 7, "Incorrect screen center-X.");
+        assert_eq!(canvas.ucy(), 8, "Incorrect screen center-Y.");
     }
 
     #[test]
