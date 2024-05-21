@@ -99,3 +99,6 @@
 
 pub mod color;
 pub mod textcanvas;
+
+pub use color::*;
+pub use textcanvas::*;
