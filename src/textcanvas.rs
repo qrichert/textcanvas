@@ -263,7 +263,7 @@ impl TextCanvas {
 
     /// Ensure user `i32s` can safely be cast to internal `usize`.
     fn validate_size(width: i32, height: i32) -> bool {
-        width > 0 && width * 2 <= MAX_RESOLUTION && height > 0 && height * 4 <= MAX_RESOLUTION
+        width > 0 && width <= MAX_RESOLUTION / 2 && height > 0 && height <= MAX_RESOLUTION / 4
     }
 
     fn init_buffer(&mut self) {
@@ -783,6 +783,26 @@ mod tests {
         assert!(
             TextCanvas::new(100_000, 100_000).is_err(),
             "Too large width and height did not raise error."
+        );
+    }
+
+    #[test]
+    fn max_i32_does_not_overflow() {
+        // There was an error in the bounds checking condition:
+        //
+        //     if height * 4 <= MAX_RESOLUTION
+        //
+        // This panics if `size * 4` > `i32::MAX`, with `attempt to
+        // multiply with overflow`. The solution is to divide instead:
+        //
+        //     if height <= MAX_RESOLUTION / 4
+        assert!(
+            TextCanvas::new(i32::MAX, 1).is_err(),
+            "Should raise error, and not panic."
+        );
+        assert!(
+            TextCanvas::new(1, i32::MAX).is_err(),
+            "Should raise error, and not panic."
         );
     }
 
