@@ -1,4 +1,5 @@
 import doctest
+import os
 import unittest
 
 import textcanvas.textcanvas
@@ -73,6 +74,39 @@ class TestTextCanvas(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             ctx.msg = "Negative width and height did not raise error."
             TextCanvas(-1, -1)
+
+    def test_auto_size(self) -> None:
+        os.environ["WIDTH"] = "12"
+        os.environ["HEIGHT"] = "5"
+
+        canvas = TextCanvas.auto()
+
+        self.assertEqual(canvas.output.width, 12, "Incorrect auto width.")
+        self.assertEqual(canvas.output.height, 5, "Incorrect auto height.")
+
+    def test_auto_size_width_and_height_variables_dont_exist(self) -> None:
+        os.environ.pop("WIDTH", None)
+        os.environ.pop("HEIGHT", None)
+
+        with self.assertRaises(LookupError) as ctx:
+            ctx.msg = "`WIDTH` and `HEIGHT` don't exist."
+            TextCanvas.auto()
+
+    def test_auto_size_cannot_parse_width_variable(self) -> None:
+        os.environ["WIDTH"] = "abc"
+        os.environ["HEIGHT"] = "1"
+
+        with self.assertRaises(LookupError) as ctx:
+            ctx.msg = "`WIDTH` is not a number."
+            TextCanvas.auto()
+
+    def test_auto_size_cannot_parse_height_variable(self) -> None:
+        os.environ["WIDTH"] = "1"
+        os.environ["HEIGHT"] = "abc"
+
+        with self.assertRaises(LookupError) as ctx:
+            ctx.msg = "`HEIGHT` is not a number."
+            TextCanvas.auto()
 
     def test_string_representation(self) -> None:
         canvas = TextCanvas(7, 4)

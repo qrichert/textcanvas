@@ -84,8 +84,9 @@ on the last row like so:
 [^1]: https://github.com/asciimoo/drawille
 """
 
+import os
 from dataclasses import dataclass
-from typing import Generator
+from typing import Generator, Self
 
 from .color import Color
 
@@ -208,6 +209,26 @@ class TextCanvas:
         self.buffer = [
             [OFF for _ in range(self.screen.width)] for _ in range(self.screen.height)
         ]
+
+    @classmethod
+    def auto(cls) -> Self:
+        """Create new `TextCanvas` by reading size from environment.
+
+        Raises:
+            LookupError: If either or both `WIDTH` and `HEIGHT`
+                variables cannot be read from the environment.
+        """
+        try:
+            width: int = int(os.environ.get("WIDTH", ""))
+        except ValueError:
+            raise LookupError("Cannot read terminal width from environment.")
+
+        try:
+            height: int = int(os.environ.get("HEIGHT", ""))
+        except ValueError:
+            raise LookupError("Cannot read terminal height from environment.")
+
+        return cls(width, height)
 
     def __repr__(self) -> str:
         out_w: int = self.output.width

@@ -1,5 +1,6 @@
 pub use crate::color::Color;
 use std::cmp;
+use std::env;
 use std::{fmt, fmt::Formatter};
 
 pub type PixelBuffer = Vec<Vec<bool>>;
@@ -269,6 +270,24 @@ impl TextCanvas {
     fn init_buffer(&mut self) {
         let empty_row = vec![OFF; self.screen.uwidth()];
         self.buffer = vec![empty_row; self.screen.uheight()];
+    }
+
+    /// Create new `TextCanvas` by reading size from environment.
+    ///
+    /// # Errors
+    ///
+    /// If either or both `WIDTH` and `HEIGHT` variables cannot be read
+    /// from the environment.
+    pub fn new_auto() -> Result<Self, &'static str> {
+        let Some(width) = env::var("WIDTH").ok().and_then(|w| w.parse().ok()) else {
+            return Err("Cannot read terminal width from environment.");
+        };
+
+        let Some(height) = env::var("HEIGHT").ok().and_then(|h| h.parse().ok()) else {
+            return Err("Cannot read terminal height from environment.");
+        };
+
+        Self::new(width, height)
     }
 
     /// High-level string representation of the canvas.
@@ -680,8 +699,7 @@ impl fmt::Display for TextCanvas {
 
 #[cfg(test)]
 mod tests {
-    use crate::color::Color;
-    use crate::textcanvas::TextCanvas;
+    use super::*;
 
     #[allow(clippy::explicit_counter_loop)]
     fn stroke_line_accros_canvas(canvas: &mut TextCanvas) {
@@ -804,6 +822,45 @@ mod tests {
             TextCanvas::new(1, i32::MAX).is_err(),
             "Should raise error, and not panic."
         );
+    }
+
+    #[test]
+    fn auto_size() {
+        // This is fine, as long as this is the only test that modifies
+        // the environment.
+        env::remove_var("WIDTH");
+        env::remove_var("HEIGHT");
+
+        assert!(
+            TextCanvas::new_auto().is_err(),
+            "`WIDTH` and `HEIGHT` don't exist."
+        );
+
+        env::set_var("WIDTH", "1");
+        env::set_var("HEIGHT", "2147483648");
+
+        assert!(
+            TextCanvas::new_auto().is_err(),
+            "`HEIGHT` is too large for an `i32`."
+        );
+
+        env::set_var("WIDTH", "abc");
+        env::set_var("HEIGHT", "1");
+
+        assert!(TextCanvas::new_auto().is_err(), "`WIDTH` is not a number.");
+
+        env::set_var("WIDTH", "1");
+        env::set_var("HEIGHT", "abc");
+
+        assert!(TextCanvas::new_auto().is_err(), "`HEIGHT` is not a number.");
+
+        env::set_var("WIDTH", "12");
+        env::set_var("HEIGHT", "5");
+
+        let canvas = TextCanvas::new_auto().unwrap();
+
+        assert_eq!(canvas.output.width, 12, "Incorrect auto width.");
+        assert_eq!(canvas.output.height, 5, "Incorrect auto height.");
     }
 
     #[test]
