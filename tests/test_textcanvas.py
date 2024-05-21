@@ -380,6 +380,29 @@ class TestTextCanvas(unittest.TestCase):
             "Lines not drawn correctly.",
         )
 
+    def test_erase_line(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        # Fill canvas.
+        for x in range(canvas.screen.width):
+            for y in range(canvas.screen.height):
+                canvas.set_pixel(x, y, True)
+
+        top_left = (0, 0)
+        bottom_right = (canvas.w, canvas.h)
+
+        canvas.erase_line(*top_left, *bottom_right)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+            "⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+            "⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿\n"
+            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿\n"
+            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻\n",
+            "Line not erased correctly.",
+        )
+
 
 class TestTextCanvasColor(unittest.TestCase):
     def test_color_buffer_size_at_init(self) -> None:

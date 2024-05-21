@@ -501,8 +501,13 @@ class TextCanvas:
                 yield x, y
 
     def stroke_line(self, x1: int, y1: int, x2: int, y2: int) -> None:
-        """Stroke line using Bresenham's line algorithm."""
+        self.bresenham_line(x1, y1, x2, y2, True)
 
+    def erase_line(self, x1: int, y1: int, x2: int, y2: int) -> None:
+        self.bresenham_line(x1, y1, x2, y2, False)
+
+    def bresenham_line(self, x1: int, y1: int, x2: int, y2: int, state: bool) -> None:
+        """Stroke line using Bresenham's line algorithm."""
         dx = abs(x2 - x1)
         sx = 1 if x1 < x2 else -1
         dy = -abs(y2 - y1)
@@ -515,18 +520,18 @@ class TextCanvas:
             from_y = min(y1, y2)
             to_y = max(y1, y2)
             for y in range(from_y, to_y + 1):
-                self.set_pixel(x, y, True)
+                self.set_pixel(x, y, state)
             return
         elif dy == 0:
             y = y1
             from_x = min(x1, x2)
             to_x = max(x1, x2)
             for x in range(from_x, to_x + 1):
-                self.set_pixel(x, y, True)
+                self.set_pixel(x, y, state)
             return
 
         while True:
-            self.set_pixel(x1, y1, True)
+            self.set_pixel(x1, y1, state)
             if x1 == x2 and y1 == y2:
                 break
             e2 = 2 * error

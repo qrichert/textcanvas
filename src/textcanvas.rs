@@ -657,8 +657,16 @@ impl TextCanvas {
         IterPixelBuffer::new(&self.buffer)
     }
 
+    pub fn stroke_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
+        self.bresenheim_line(x1, y1, x2, y2, ON);
+    }
+
+    pub fn erase_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
+        self.bresenheim_line(x1, y1, x2, y2, OFF);
+    }
+
     /// Stroke line using Bresenham's line algorithm.
-    pub fn stroke_line(&mut self, mut x1: i32, mut y1: i32, x2: i32, y2: i32) {
+    fn bresenheim_line(&mut self, mut x1: i32, mut y1: i32, x2: i32, y2: i32, state: bool) {
         let dx = (x2 - x1).abs();
         let sx = if x1 < x2 { 1 } else { -1 };
         let dy = -(y2 - y1).abs();
@@ -671,7 +679,7 @@ impl TextCanvas {
             let from_y = cmp::min(y1, y2);
             let to_y = cmp::max(y1, y2);
             for y in from_y..=to_y {
-                self.set_pixel(x, y, ON);
+                self.set_pixel(x, y, state);
             }
             return;
         } else if dy == 0 {
@@ -679,14 +687,14 @@ impl TextCanvas {
             let from_x = cmp::min(x1, x2);
             let to_x = cmp::max(x1, x2);
             for x in from_x..=to_x {
-                self.set_pixel(x, y, ON);
+                self.set_pixel(x, y, state);
             }
             return;
         }
 
         #[cfg(not(tarpaulin_include))]
         loop {
-            self.set_pixel(x1, y1, ON);
+            self.set_pixel(x1, y1, state);
             if x1 == x2 && y1 == y2 {
                 break;
             }
@@ -1223,6 +1231,35 @@ mod tests {
 ⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄
 ",
             "Lines not drawn correctly.",
+        );
+    }
+
+    #[test]
+    fn erase_line() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        // Fill canvas.
+        for x in 0..canvas.screen.width() {
+            for y in 0..canvas.screen.height() {
+                canvas.set_pixel(x, y, true);
+            }
+        }
+
+        let top_left = (0, 0);
+        let bottom_right = (canvas.w(), canvas.h());
+
+        canvas.erase_line(top_left.0, top_left.1, bottom_right.0, bottom_right.1);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻
+",
+            "Line not erased correctly.",
         );
     }
 
