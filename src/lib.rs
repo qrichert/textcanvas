@@ -97,6 +97,7 @@
 //!
 //! [^1]: <https://github.com/asciimoo/drawille>
 
+pub mod charts;
 pub mod color;
 pub mod textcanvas;
 

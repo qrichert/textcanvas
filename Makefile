@@ -47,14 +47,20 @@ check: ## Most stringent checks (includes checks still in development)
 .PHONY: t
 t: test
 .PHONY: test
-test: ## Run unit tests
+test: ## Run Python unit tests
 	@python -m unittest
 
 .PHONY: rt
 rt: rust-test
 .PHONY: rust-test
-rust-test: ## Run unit tests
+rust-test: ## Run Rust unit tests
 	@cargo test
+
+.PHONY: lrt
+lrt: light-rust-test
+.PHONY: light-rust-test
+light-rust-test: ## Run light Rust unit tests
+	@cargo test --quiet --tests
 
 .PHONY: doc
 doc: ## Build documentation
@@ -133,6 +139,7 @@ extractdocstring: ## Use docstring as README
 		f.close();'
 	@echo "\n## Installation\n" >> README.md
 	@echo "TextCanvas provides the same API for both Python and Rust.\n" >> README.md
+	@echo "The Rust version includes charting helpers which the Python version does\nnot, however.\n" >> README.md
 	@echo "To install for Python, run this:\n" >> README.md
 	@echo '```shell' >> README.md
 	@echo "pip install git+https://github.com/qrichert/textcanvas.git" >> README.md

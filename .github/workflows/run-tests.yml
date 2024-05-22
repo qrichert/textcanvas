@@ -18,8 +18,10 @@ jobs:
           python-version: 3.12
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Run tests
+      - name: Run Python tests
         run: make test
+      - name: Run Rust tests
+        run: make rust-test
   check-code-coverage:
     name: Check code coverage
     runs-on: ubuntu-latest
@@ -36,5 +38,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Install Rust dependencies
         run: cargo install cargo-tarpaulin
-      - name: Test code coverage
+      - name: Test Python code coverage
         run: make coverage-pct
+      - name: Test Rust code coverage
+        run: make rust-coverage-pct
