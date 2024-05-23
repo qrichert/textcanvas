@@ -1,6 +1,6 @@
 [project]
 name = "textcanvas"
-version = "2.1.0"
+version = "3.0.0"
 authors = [
     { name="Quentin Richert", email="noreply@richert.co" },
 ]

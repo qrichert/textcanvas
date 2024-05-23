@@ -27,9 +27,24 @@ const BRAILLE_UNICODE_OFFSET_MAP: BrailleMap = [
     [0x40, 0x80],
 ];
 
+/// Helper to convert user-facing `i32`s to internal `usize`s.
 macro_rules! to_usize {
     ($value:expr) => {
+        // User-facing values should always be bounds-checked before
+        // doing anything.
         usize::try_from($value).expect("the value should be bounds-checked prior to the conversion")
+    };
+}
+
+/// Helper to convert internal `usize`s to user-facing `i32`s.
+macro_rules! to_i32 {
+    ($value:expr) => {
+        // `usize` cannot be less than 0, so if the conversion fails,
+        // the value is too large towards +inf. This doesn't make sense,
+        // because `MAX_RESOLUTION` is capped at `u16`, which is smaller
+        // than `i32`. And `usize` is internal, this macro should never
+        // be called on user-provided values.
+        i32::try_from($value).expect("the value should not exceed max resolution.")
     };
 }
 
@@ -65,26 +80,40 @@ impl Surface {
 }
 
 #[derive(Debug)]
-pub struct IterPixelBuffer {
-    width: usize,
-    height: usize,
-    x: usize,
-    y: usize,
+pub struct IterPixelBuffer<T> {
+    width: T,
+    height: T,
+    x: T,
+    y: T,
 }
 
-impl IterPixelBuffer {
+impl IterPixelBuffer<usize> {
     fn new(buffer: &PixelBuffer) -> Self {
         Self {
             width: buffer[0].len(),
             height: buffer.len(),
-            x: 0,
-            y: 0,
+            x: 0usize,
+            y: 0usize,
         }
     }
 }
 
-impl Iterator for IterPixelBuffer {
-    type Item = (usize, usize);
+impl IterPixelBuffer<i32> {
+    fn new(buffer: &PixelBuffer) -> Self {
+        Self {
+            width: to_i32!(buffer[0].len()),
+            height: to_i32!(buffer.len()),
+            x: 0i32,
+            y: 0i32,
+        }
+    }
+}
+
+impl<T> Iterator for IterPixelBuffer<T>
+where
+    T: From<u8> + Copy + PartialOrd + std::ops::AddAssign,
+{
+    type Item = (T, T);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.y >= self.height {
@@ -93,10 +122,10 @@ impl Iterator for IterPixelBuffer {
 
         let pixel = (self.x, self.y);
 
-        self.x += 1;
+        self.x += T::from(1);
         if self.x >= self.width {
-            self.y += 1;
-            self.x = 0;
+            self.y += T::from(1);
+            self.x = T::from(0);
         }
 
         Some(pixel)
@@ -373,7 +402,7 @@ impl TextCanvas {
     }
 
     fn clear_buffer(&mut self) {
-        for (x, y) in self.iter_buffer() {
+        for (x, y) in self.uiter_buffer() {
             self.buffer[y][x] = OFF;
         }
     }
@@ -652,9 +681,22 @@ impl TextCanvas {
     /// Iterate over all cells of the pixel buffer.
     ///
     /// Yields all X/Y coordinates, left-right, top-bottom.
+    ///
+    /// Values are `i32`, this is meant to be used with the public API.
     #[must_use]
-    pub fn iter_buffer(&self) -> IterPixelBuffer {
-        IterPixelBuffer::new(&self.buffer)
+    pub fn iter_buffer(&self) -> IterPixelBuffer<i32> {
+        IterPixelBuffer::<i32>::new(&self.buffer)
+    }
+
+    /// Iterate over all cells of the pixel buffer.
+    ///
+    /// Yields all X/Y coordinates, left-right, top-bottom.
+    ///
+    /// Values are `usize`, this is meant to index directly into the
+    /// buffer.
+    #[must_use]
+    pub fn uiter_buffer(&self) -> IterPixelBuffer<usize> {
+        IterPixelBuffer::<usize>::new(&self.buffer)
     }
 
     pub fn stroke_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
@@ -1187,6 +1229,23 @@ mod tests {
 
         #[rustfmt::skip]
         assert_eq!(canvas.iter_buffer().collect::<Vec<_>>(), [
+            (0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0),
+            (0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1),
+            (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2),
+            (0, 3), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3),
+            (0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 4),
+            (0, 5), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5),
+            (0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6),
+            (0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7),
+        ], "Incorrect X and Y pairs, or in wrong order.");
+    }
+
+    #[test]
+    fn uiter_buffer() {
+        let canvas = TextCanvas::new(3, 2).unwrap();
+
+        #[rustfmt::skip]
+        assert_eq!(canvas.uiter_buffer().collect::<Vec<_>>(), [
             (0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0),
             (0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1),
             (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2),
