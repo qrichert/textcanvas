@@ -181,10 +181,6 @@ class TextCanvas:
 
     Raises:
         ValueError: If width and height of canvas are < 1×1.
-
-    Todo:
-        - `move_to()`, `line_to()`, `stroke()` and other JS Canvas
-          primitives.
     """
 
     def __init__(self, width: int = 80, height: int = 24) -> None:
@@ -287,6 +283,14 @@ class TextCanvas:
             for y, _ in enumerate(self.text_buffer):
                 for x, _ in enumerate(self.text_buffer[y]):
                     self.text_buffer[y][x] = ""
+
+    def fill(self) -> None:
+        """Turn all pixels on.
+
+        This does not affect the color and text buffers.
+        """
+        for x, y in self.iter_buffer():
+            self.buffer[y][x] = True
 
     @property
     def is_colorized(self) -> bool:
@@ -500,13 +504,27 @@ class TextCanvas:
             for x in range(self.screen.width):
                 yield x, y
 
+    # Implementation of drawing primitives.
+
     def stroke_line(self, x1: int, y1: int, x2: int, y2: int) -> None:
-        self.bresenham_line(x1, y1, x2, y2, True)
+        """Stroke line.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.stroke_line(5, 5, 25, 15)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠐⠤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠉⠒⠤⣀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠒⠤⣀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """
+        self._bresenham_line(x1, y1, x2, y2, True)
 
     def erase_line(self, x1: int, y1: int, x2: int, y2: int) -> None:
-        self.bresenham_line(x1, y1, x2, y2, False)
+        self._bresenham_line(x1, y1, x2, y2, False)
 
-    def bresenham_line(self, x1: int, y1: int, x2: int, y2: int, state: bool) -> None:
+    def _bresenham_line(self, x1: int, y1: int, x2: int, y2: int, state: bool) -> None:
         """Stroke line using Bresenham's line algorithm."""
         dx = abs(x2 - x1)
         sx = 1 if x1 < x2 else -1
@@ -545,6 +563,198 @@ class TextCanvas:
                     break  # pragma: no cover
                 error = error + dx
                 y1 = y1 + sy
+
+    def stroke_rect(self, x: int, y: int, width: int, height: int) -> None:
+        """Stroke rectangle.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.stroke_rect(5, 5, 20, 10)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⢰⠒⠒⠒⠒⠒⠒⠒⠒⠒⡆⠀⠀
+            ⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀
+            ⠀⠀⠸⠤⠤⠤⠤⠤⠤⠤⠤⠤⠇⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """
+        width, height = width - 1, height - 1
+        self.stroke_line(x, y, x + width, y)
+        self.stroke_line(x + width, y, x + width, y + height)
+        self.stroke_line(x + width, y + height, x, y + height)
+        self.stroke_line(x, y + height, x, y)
+
+    def frame(self) -> None:
+        """Draw a border around the canvas.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.frame()
+            >>> print(canvas, end="")
+            ⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+            ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+            ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+            ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+            ⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸
+        """
+        self.stroke_rect(0, 0, self.screen.width, self.screen.height)
+
+    def fill_rect(self, x: int, y: int, width: int, height: int) -> None:
+        """Stroke rectangle.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.fill_rect(5, 5, 20, 10)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⡆⠀⠀
+            ⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀
+            ⠀⠀⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠇⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """
+        for y in range(y, y + height):
+            self.stroke_line(x, y, x + width - 1, y)
+
+    def stroke_triangle(
+        self, x1: int, y1: int, x2: int, y2: int, x3: int, y3: int
+    ) -> None:
+        """Stroke triangle.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.stroke_triangle(5, 5, 20, 10, 4, 17)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⢰⠢⠤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⢸⠀⠀⠀⠈⠉⢒⡢⠄⠀⠀⠀⠀
+            ⠀⠀⡇⠀⣀⠤⠔⠊⠁⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠓⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """
+        self.stroke_line(x1, y1, x2, y2)
+        self.stroke_line(x2, y2, x3, y3)
+        self.stroke_line(x3, y3, x1, y1)
+
+    def fill_triangle(
+        self, x1: int, y1: int, x2: int, y2: int, x3: int, y3: int
+    ) -> None:
+        """Fill triangle.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.fill_triangle(5, 5, 20, 10, 4, 17)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⢰⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⢸⣿⣿⣿⣿⣿⣶⡦⠄⠀⠀⠀⠀
+            ⠀⠀⣿⣿⣿⠿⠟⠋⠁⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """
+        # This makes for neater edges.
+        self.stroke_triangle(x1, y1, x2, y2, x3, y3)
+
+        # Barycentric Algorithm: Compute the bounding box of the
+        # triangle. Then for each point in the box, determine if it
+        # lies inside or outside the triangle.
+
+        # Bounding box.
+        min_x: int = min(x1, x2, x3)
+        max_x: int = max(x1, x2, x3)
+        min_y: int = min(y1, y2, y3)
+        max_y: int = max(y1, y2, y3)
+
+        p1: tuple[float, float] = (x1, y1)
+        p2: tuple[float, float] = (x2, y2)
+        p3: tuple[float, float] = (x3, y3)
+        triangle: tuple = (p1, p2, p3)
+
+        for x in range(min_x, max_x + 1):
+            for y in range(min_y, max_y + 1):
+                point: tuple[float, float] = (x, y)
+                if self._is_point_in_triangle(point, triangle):
+                    self.set_pixel(x, y, True)
+
+    @staticmethod
+    def _is_point_in_triangle(
+        point: tuple[float, float],
+        triangle: tuple[tuple[float, float], tuple[float, float], tuple[float, float]],
+    ) -> bool:
+        # This version correctly handles triangles specified in either
+        # winding direction (clockwise vs. counterclockwise).
+        # https://stackoverflow.com/a/20861130 — Glenn Slayden
+
+        (px, py) = point
+        ((p0x, p0y), (p1x, p1y), (p2x, p2y)) = triangle
+
+        s = (p0x - p2x) * (py - p2y) - (p0y - p2y) * (px - p2x)
+        t = (p1x - p0x) * (py - p0y) - (p1y - p0y) * (px - p0x)
+
+        if (s < 0.0) != (t < 0.0) and s != 0.0 and t != 0.0:
+            return False
+
+        d = (p2x - p1x) * (py - p1y) - (p2y - p1y) * (px - p1x)
+
+        return d == 0.0 or (d < 0.0) == (s + t <= 0.0)
+
+    def stroke_circle(self, x: int, y: int, radius: int) -> None:
+        """Fill triangle.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.stroke_circle(canvas.cx, canvas.cy, 7)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⡠⠊⠀⠀⠀⠈⠢⡀⠀⠀⠀
+            ⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀
+            ⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⡠⠃⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀
+        """
+        self._bresenham_circle(x, y, radius, False)
+
+    def fill_circle(self, x: int, y: int, radius: int) -> None:
+        """Fill triangle.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.fill_circle(canvas.cx, canvas.cy, 7)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣦⡀⠀⠀⠀
+            ⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀
+            ⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀
+        """
+        self._bresenham_circle(x, y, radius, True)
+
+    def _bresenham_circle(self, x: int, y: int, radius: int, fill: bool) -> None:
+        """Draw circle using Jesko's Method of the Bresenham's circle
+        algorithm.
+        """
+        cx, cy = (x, y)
+        t1 = radius / 16
+        x = radius
+        y = 0
+        while x >= y:
+            if fill:
+                # Connect each pair of points with the same `y`.
+                self.stroke_line(cx - x, cy - y, cx + x, cy - y)
+                self.stroke_line(cx + x, cy + y, cx - x, cy + y)
+                self.stroke_line(cx - y, cy - x, cx + y, cy - x)
+                self.stroke_line(cx + y, cy + x, cx - y, cy + x)
+            else:
+                self.set_pixel(cx - x, cy - y, True)
+                self.set_pixel(cx + x, cy - y, True)
+                self.set_pixel(cx + x, cy + y, True)
+                self.set_pixel(cx - x, cy + y, True)
+                self.set_pixel(cx - y, cy - x, True)
+                self.set_pixel(cx + y, cy - x, True)
+                self.set_pixel(cx + y, cy + x, True)
+                self.set_pixel(cx - y, cy + x, True)
+
+            y += 1
+            t1 += y
+            t2 = t1 - x
+            if t2 >= 0:
+                t1 = t2
+                x -= 1
 
 
 if __name__ == "__main__":

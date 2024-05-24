@@ -212,10 +212,6 @@ impl Iterator for IterPixelBufferByBlocksLRTB<'_> {
 /// "
 /// )
 /// ```
-///
-/// # Todo
-/// - `move_to()`, `line_to()`, `stroke()` and other JS Canvas
-///   primitives.
 #[derive(Debug)]
 pub struct TextCanvas {
     /// Properties of the output surface, whose size is given as
@@ -425,6 +421,15 @@ impl TextCanvas {
                     self.text_buffer[y][x] = String::new();
                 }
             }
+        }
+    }
+
+    /// Turn all pixels on.
+    ///
+    /// This does not affect the color and text buffers.
+    pub fn fill(&mut self) {
+        for (x, y) in self.uiter_buffer() {
+            self.buffer[y][x] = ON;
         }
     }
 
@@ -699,17 +704,42 @@ impl TextCanvas {
     pub fn uiter_buffer(&self) -> IterPixelBuffer<usize> {
         IterPixelBuffer::<usize>::new(&self.buffer)
     }
+}
 
+/// Implementation of drawing primitives.
+impl TextCanvas {
+    /// Stroke line.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.stroke_line(5, 5, 25, 15);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠐⠤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠉⠒⠤⣀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠒⠤⣀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// "
+    /// )
+    /// ```
     pub fn stroke_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
-        self.bresenheim_line(x1, y1, x2, y2, ON);
+        self.bresenham_line(x1, y1, x2, y2, ON);
     }
 
     pub fn erase_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
-        self.bresenheim_line(x1, y1, x2, y2, OFF);
+        self.bresenham_line(x1, y1, x2, y2, OFF);
     }
 
     /// Stroke line using Bresenham's line algorithm.
-    fn bresenheim_line(&mut self, mut x1: i32, mut y1: i32, x2: i32, y2: i32, state: bool) {
+    fn bresenham_line(&mut self, mut x1: i32, mut y1: i32, x2: i32, y2: i32, state: bool) {
         let dx = (x2 - x1).abs();
         let sx = if x1 < x2 { 1 } else { -1 };
         let dy = -(y2 - y1).abs();
@@ -755,6 +785,276 @@ impl TextCanvas {
                 }
                 error += dx;
                 y1 += sy;
+            }
+        }
+    }
+
+    /// Stroke rectangle.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.stroke_rect(5, 5, 20, 10);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⢰⠒⠒⠒⠒⠒⠒⠒⠒⠒⡆⠀⠀
+    /// ⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀
+    /// ⠀⠀⠸⠤⠤⠤⠤⠤⠤⠤⠤⠤⠇⠀⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// "
+    /// )
+    /// ```
+    pub fn stroke_rect(&mut self, x: i32, y: i32, width: i32, height: i32) {
+        let (width, height) = (width - 1, height - 1);
+        self.stroke_line(x, y, x + width, y);
+        self.stroke_line(x + width, y, x + width, y + height);
+        self.stroke_line(x + width, y + height, x, y + height);
+        self.stroke_line(x, y + height, x, y);
+    }
+
+    /// Draw a border around the canvas.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.frame();
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+    /// ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+    /// ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+    /// ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+    /// ⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸
+    /// "
+    /// )
+    /// ```
+    pub fn frame(&mut self) {
+        self.stroke_rect(0, 0, self.screen.width(), self.screen.height());
+    }
+
+    /// Fill rectangle.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.fill_rect(5, 5, 20, 10);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⡆⠀⠀
+    /// ⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀
+    /// ⠀⠀⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠇⠀⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// "
+    /// )
+    /// ```
+    pub fn fill_rect(&mut self, x: i32, y: i32, width: i32, height: i32) {
+        for y in y..y + height {
+            self.stroke_line(x, y, x + width - 1, y);
+        }
+    }
+
+    /// Stroke triangle.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.stroke_triangle(5, 5, 20, 10, 4, 17);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⢰⠢⠤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⢸⠀⠀⠀⠈⠉⢒⡢⠄⠀⠀⠀⠀
+    /// ⠀⠀⡇⠀⣀⠤⠔⠊⠁⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠓⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// "
+    /// )
+    /// ```
+    pub fn stroke_triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32) {
+        self.stroke_line(x1, y1, x2, y2);
+        self.stroke_line(x2, y2, x3, y3);
+        self.stroke_line(x3, y3, x1, y1);
+    }
+
+    /// Fill triangle.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.fill_triangle(5, 5, 20, 10, 4, 17);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⢰⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⢸⣿⣿⣿⣿⣿⣶⡦⠄⠀⠀⠀⠀
+    /// ⠀⠀⣿⣿⣿⠿⠟⠋⠁⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    /// "
+    /// )
+    /// ```
+    pub fn fill_triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32) {
+        // This makes for neater edges.
+        self.stroke_triangle(x1, y1, x2, y2, x3, y3);
+
+        // Barycentric Algorithm: Compute the bounding box of the
+        // triangle. Then for each point in the box, determine if it
+        // lies inside or outside the triangle.
+
+        // Bounding box.
+        let min_x = cmp::min(x1, cmp::min(x2, x3));
+        let max_x = cmp::max(x1, cmp::max(x2, x3));
+        let min_y = cmp::min(y1, cmp::min(y2, y3));
+        let max_y = cmp::max(y1, cmp::max(y2, y3));
+
+        let p1 = (f64::from(x1), f64::from(y1));
+        let p2 = (f64::from(x2), f64::from(y2));
+        let p3 = (f64::from(x3), f64::from(y3));
+        let triangle = (p1, p2, p3);
+
+        for x in min_x..=max_x {
+            for y in min_y..=max_y {
+                let point = (f64::from(x), f64::from(y));
+                if Self::is_point_in_triangle(point, triangle) {
+                    self.set_pixel(x, y, true);
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::similar_names)]
+    fn is_point_in_triangle(
+        (px, py): (f64, f64),
+        ((p0x, p0y), (p1x, p1y), (p2x, p2y)): ((f64, f64), (f64, f64), (f64, f64)),
+    ) -> bool {
+        // This version correctly handles triangles specified in either
+        // winding direction (clockwise vs. counterclockwise).
+        // https://stackoverflow.com/a/20861130 — Glenn Slayden
+        let s = (p0x - p2x) * (py - p2y) - (p0y - p2y) * (px - p2x);
+        let t = (p1x - p0x) * (py - p0y) - (p1y - p0y) * (px - p0x);
+
+        if (s < 0.0) != (t < 0.0) && s != 0.0 && t != 0.0 {
+            return false;
+        }
+
+        let d = (p2x - p1x) * (py - p1y) - (p2y - p1y) * (px - p1x);
+
+        d == 0.0 || (d < 0.0) == (s + t <= 0.0)
+    }
+
+    /// Stroke circle.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.stroke_circle(canvas.cx(), canvas.cy(), 7);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⡠⠊⠀⠀⠀⠈⠢⡀⠀⠀⠀
+    /// ⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀
+    /// ⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⡠⠃⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀
+    /// "
+    /// )
+    /// ```
+    pub fn stroke_circle(&mut self, x: i32, y: i32, radius: i32) {
+        self.bresenham_circle(x, y, radius, false);
+    }
+
+    /// Fill circle.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    ///
+    /// canvas.fill_circle(canvas.cx(), canvas.cy(), 7);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣦⡀⠀⠀⠀
+    /// ⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀
+    /// ⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀
+    /// "
+    /// )
+    /// ```
+    pub fn fill_circle(&mut self, x: i32, y: i32, radius: i32) {
+        self.bresenham_circle(x, y, radius, true);
+    }
+
+    /// Draw circle using Jesko's Method of the Bresenham's circle
+    /// algorithm.
+    fn bresenham_circle(&mut self, x: i32, y: i32, radius: i32, fill: bool) {
+        let (cx, cy) = (x, y);
+        let mut t1 = radius / 16;
+        let mut x = radius;
+        let mut y = 0;
+        while x >= y {
+            if fill {
+                // Connect each pair of points with the same `y`.
+                self.stroke_line(cx - x, cy - y, cx + x, cy - y);
+                self.stroke_line(cx + x, cy + y, cx - x, cy + y);
+                self.stroke_line(cx - y, cy - x, cx + y, cy - x);
+                self.stroke_line(cx + y, cy + x, cx - y, cy + x);
+            } else {
+                self.set_pixel(cx - x, cy - y, true);
+                self.set_pixel(cx + x, cy - y, true);
+                self.set_pixel(cx + x, cy + y, true);
+                self.set_pixel(cx - x, cy + y, true);
+                self.set_pixel(cx - y, cy - x, true);
+                self.set_pixel(cx + y, cy - x, true);
+                self.set_pixel(cx + y, cy + x, true);
+                self.set_pixel(cx - y, cy + x, true);
+            }
+
+            y += 1;
+            t1 += y;
+            let t2 = t1 - x;
+            if t2 >= 0 {
+                t1 = t2;
+                x -= 1;
             }
         }
     }
@@ -1137,12 +1437,7 @@ mod tests {
     fn clear() {
         let mut canvas = TextCanvas::new(2, 2).unwrap();
 
-        // Fill canvas.
-        for x in 0..canvas.screen.width() {
-            for y in 0..canvas.screen.height() {
-                canvas.set_pixel(x, y, true);
-            }
-        }
+        canvas.fill();
 
         canvas.clear();
 
@@ -1186,6 +1481,15 @@ mod tests {
             canvas.buffer[3].as_ptr(),
             "Container should be the same as before."
         );
+    }
+
+    #[test]
+    fn fill() {
+        let mut canvas = TextCanvas::new(2, 2).unwrap();
+
+        canvas.fill();
+
+        assert_eq!(canvas.to_string(), "⣿⣿\n⣿⣿\n", "Output not full.");
     }
 
     #[test]
@@ -1256,71 +1560,6 @@ mod tests {
             (0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6),
             (0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7),
         ], "Incorrect X and Y pairs, or in wrong order.");
-    }
-
-    #[test]
-    fn stroke_line() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
-
-        let top_left = (0, 0);
-        let top_right = (canvas.w(), 0);
-        let bottom_right = (canvas.w(), canvas.h());
-        let bottom_left = (0, canvas.h());
-        let center = (canvas.cx(), canvas.cy());
-        let center_top = (canvas.cx(), 0);
-        let center_right = (canvas.w(), canvas.cy());
-        let center_bottom = (canvas.cx(), canvas.h());
-        let center_left = (0, canvas.cy());
-
-        canvas.stroke_line(center.0, center.1, top_left.0, top_left.1);
-        canvas.stroke_line(center.0, center.1, top_right.0, top_right.1);
-        canvas.stroke_line(center.0, center.1, bottom_right.0, bottom_right.1);
-        canvas.stroke_line(center.0, center.1, bottom_left.0, bottom_left.1);
-        canvas.stroke_line(center.0, center.1, center_top.0, center_top.1);
-        canvas.stroke_line(center.0, center.1, center_right.0, center_right.1);
-        canvas.stroke_line(center.0, center.1, center_bottom.0, center_bottom.1);
-        canvas.stroke_line(center.0, center.1, center_left.0, center_left.1);
-
-        assert_eq!(
-            canvas.to_string(),
-            "\
-⠑⠢⣀⠀⠀⠀⠀⢸⠀⠀⠀⠀⢀⠔⠊
-⠀⠀⠀⠑⠢⣀⠀⢸⠀⢀⠤⠊⠁⠀⠀
-⠤⠤⠤⠤⠤⠤⢵⣾⣶⠥⠤⠤⠤⠤⠤
-⠀⠀⠀⣀⠤⠊⠁⢸⠀⠑⠢⣀⠀⠀⠀
-⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄
-",
-            "Lines not drawn correctly.",
-        );
-    }
-
-    #[test]
-    fn erase_line() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
-
-        // Fill canvas.
-        for x in 0..canvas.screen.width() {
-            for y in 0..canvas.screen.height() {
-                canvas.set_pixel(x, y, true);
-            }
-        }
-
-        let top_left = (0, 0);
-        let bottom_right = (canvas.w(), canvas.h());
-
-        canvas.erase_line(top_left.0, top_left.1, bottom_right.0, bottom_right.1);
-
-        assert_eq!(
-            canvas.to_string(),
-            "\
-⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿
-⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿
-⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻
-",
-            "Line not erased correctly.",
-        );
     }
 
     // Color.
@@ -1764,6 +2003,213 @@ mod tests {
             row_1,
             canvas.text_buffer[1].as_ptr(),
             "Container should be the same as before."
+        );
+    }
+
+    // Drawing primitives.
+
+    #[test]
+    fn stroke_line() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        let top_left = (0, 0);
+        let top_right = (canvas.w(), 0);
+        let bottom_right = (canvas.w(), canvas.h());
+        let bottom_left = (0, canvas.h());
+        let center = (canvas.cx(), canvas.cy());
+        let center_top = (canvas.cx(), 0);
+        let center_right = (canvas.w(), canvas.cy());
+        let center_bottom = (canvas.cx(), canvas.h());
+        let center_left = (0, canvas.cy());
+
+        canvas.stroke_line(center.0, center.1, top_left.0, top_left.1);
+        canvas.stroke_line(center.0, center.1, top_right.0, top_right.1);
+        canvas.stroke_line(center.0, center.1, bottom_right.0, bottom_right.1);
+        canvas.stroke_line(center.0, center.1, bottom_left.0, bottom_left.1);
+        canvas.stroke_line(center.0, center.1, center_top.0, center_top.1);
+        canvas.stroke_line(center.0, center.1, center_right.0, center_right.1);
+        canvas.stroke_line(center.0, center.1, center_bottom.0, center_bottom.1);
+        canvas.stroke_line(center.0, center.1, center_left.0, center_left.1);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠑⠢⣀⠀⠀⠀⠀⢸⠀⠀⠀⠀⢀⠔⠊
+⠀⠀⠀⠑⠢⣀⠀⢸⠀⢀⠤⠊⠁⠀⠀
+⠤⠤⠤⠤⠤⠤⢵⣾⣶⠥⠤⠤⠤⠤⠤
+⠀⠀⠀⣀⠤⠊⠁⢸⠀⠑⠢⣀⠀⠀⠀
+⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄
+",
+            "Lines not drawn correctly.",
+        );
+    }
+
+    #[test]
+    fn stroke_line_from_outside_to_outside() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.stroke_line(-10, -10, canvas.w() + 10, canvas.h() + 10);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠉⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠈⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠉⠢⣀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⡀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⣀⠀
+",
+            "Line not drawn correctly.",
+        );
+    }
+
+    #[test]
+    fn erase_line() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.fill();
+
+        let top_left = (0, 0);
+        let bottom_right = (canvas.w(), canvas.h());
+
+        canvas.erase_line(top_left.0, top_left.1, bottom_right.0, bottom_right.1);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻
+",
+            "Line not erased correctly.",
+        );
+    }
+
+    #[test]
+    fn stroke_rect() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.stroke_rect(6, 3, 20, 15);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀
+⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀
+⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀
+⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀
+⠀⠀⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn frame() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.frame();
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸
+",
+        );
+    }
+
+    #[test]
+    fn fill_rect() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.fill_rect(6, 3, 20, 15);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn stroke_triangle() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.stroke_triangle(6, 3, 20, 2, 23, 18);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⣀⣀⣀⡠⠤⠤⠤⡄⠀⠀⠀⠀
+⠀⠀⠀⠈⠢⣀⠀⠀⠀⠀⢱⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠘⡄⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠑⠤⡀⡇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠺⠀⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn fill_triangle() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.fill_triangle(6, 3, 20, 2, 23, 18);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⣀⣀⣀⣠⣤⣤⣤⡄⠀⠀⠀⠀
+⠀⠀⠀⠈⠻⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠙⢿⣿⣿⣿⡄⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⡇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⠀⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn stroke_circle() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.stroke_circle(15, 10, 7);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⡠⠊⠀⠀⠀⠈⠢⡀⠀⠀⠀
+⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀
+⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⡠⠃⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn fill_circle() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.fill_circle(15, 10, 7);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣦⡀⠀⠀⠀
+⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀
+⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀
+",
         );
     }
 }

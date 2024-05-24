@@ -249,10 +249,7 @@ class TestTextCanvas(unittest.TestCase):
     def test_clear(self) -> None:
         canvas = TextCanvas(2, 2)
 
-        # Fill canvas.
-        for x in range(canvas.screen.width):
-            for y in range(canvas.screen.height):
-                canvas.set_pixel(x, y, True)
+        canvas.fill()
 
         canvas.clear()
 
@@ -282,6 +279,13 @@ class TestTextCanvas(unittest.TestCase):
         self.assertIs(
             row_3, canvas.buffer[3], "Container should be the same as before."
         )
+
+    def test_fill(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        canvas.fill()
+
+        self.assertEqual(canvas.to_string(), "⣿⣿\n⣿⣿\n", "Output not full.")
 
     def test_iter_buffer_by_blocks_lrtb(self) -> None:
         # This tests a private method, but this method is at the core
@@ -347,61 +351,6 @@ class TestTextCanvas(unittest.TestCase):
             (0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7),
         ], "Incorrect X and Y pairs, or in wrong order.")
         # fmt: on
-
-    def test_stroke_line(self) -> None:
-        canvas = TextCanvas(15, 5)
-
-        top_left = (0, 0)
-        top_right = (canvas.w, 0)
-        bottom_right = (canvas.w, canvas.h)
-        bottom_left = (0, canvas.h)
-        center = (canvas.cx, canvas.cy)
-        center_top = (canvas.cx, 0)
-        center_right = (canvas.w, canvas.cy)
-        center_bottom = (canvas.cx, canvas.h)
-        center_left = (0, canvas.cy)
-
-        canvas.stroke_line(*center, *top_left)
-        canvas.stroke_line(*center, *top_right)
-        canvas.stroke_line(*center, *bottom_right)
-        canvas.stroke_line(*center, *bottom_left)
-        canvas.stroke_line(*center, *center_top)
-        canvas.stroke_line(*center, *center_right)
-        canvas.stroke_line(*center, *center_bottom)
-        canvas.stroke_line(*center, *center_left)
-
-        self.assertEqual(
-            canvas.to_string(),
-            "⠑⠢⣀⠀⠀⠀⠀⢸⠀⠀⠀⠀⢀⠔⠊\n"
-            "⠀⠀⠀⠑⠢⣀⠀⢸⠀⢀⠤⠊⠁⠀⠀\n"
-            "⠤⠤⠤⠤⠤⠤⢵⣾⣶⠥⠤⠤⠤⠤⠤\n"
-            "⠀⠀⠀⣀⠤⠊⠁⢸⠀⠑⠢⣀⠀⠀⠀\n"
-            "⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄\n",
-            "Lines not drawn correctly.",
-        )
-
-    def test_erase_line(self) -> None:
-        canvas = TextCanvas(15, 5)
-
-        # Fill canvas.
-        for x in range(canvas.screen.width):
-            for y in range(canvas.screen.height):
-                canvas.set_pixel(x, y, True)
-
-        top_left = (0, 0)
-        bottom_right = (canvas.w, canvas.h)
-
-        canvas.erase_line(*top_left, *bottom_right)
-
-        self.assertEqual(
-            canvas.to_string(),
-            "⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
-            "⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
-            "⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿\n"
-            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿\n"
-            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻\n",
-            "Line not erased correctly.",
-        )
 
 
 class TestTextCanvasColor(unittest.TestCase):
@@ -762,6 +711,174 @@ class TestTextCanvasText(unittest.TestCase):
         )
         self.assertIs(
             row_1, canvas.text_buffer[1], "Container should be the same as before."
+        )
+
+
+class TestTextCanvasDrawingPrimitives(unittest.TestCase):
+    def test_stroke_line(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        top_left = (0, 0)
+        top_right = (canvas.w, 0)
+        bottom_right = (canvas.w, canvas.h)
+        bottom_left = (0, canvas.h)
+        center = (canvas.cx, canvas.cy)
+        center_top = (canvas.cx, 0)
+        center_right = (canvas.w, canvas.cy)
+        center_bottom = (canvas.cx, canvas.h)
+        center_left = (0, canvas.cy)
+
+        canvas.stroke_line(*center, *top_left)
+        canvas.stroke_line(*center, *top_right)
+        canvas.stroke_line(*center, *bottom_right)
+        canvas.stroke_line(*center, *bottom_left)
+        canvas.stroke_line(*center, *center_top)
+        canvas.stroke_line(*center, *center_right)
+        canvas.stroke_line(*center, *center_bottom)
+        canvas.stroke_line(*center, *center_left)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠑⠢⣀⠀⠀⠀⠀⢸⠀⠀⠀⠀⢀⠔⠊\n"
+            "⠀⠀⠀⠑⠢⣀⠀⢸⠀⢀⠤⠊⠁⠀⠀\n"
+            "⠤⠤⠤⠤⠤⠤⢵⣾⣶⠥⠤⠤⠤⠤⠤\n"
+            "⠀⠀⠀⣀⠤⠊⠁⢸⠀⠑⠢⣀⠀⠀⠀\n"
+            "⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄\n",
+            "Lines not drawn correctly.",
+        )
+
+    def test_stroke_line_from_outside_to_outside(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.stroke_line(-10, -10, canvas.w + 10, canvas.h + 10)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠉⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠈⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠉⠢⣀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⡀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⣀⠀\n",
+            "Line not drawn correctly.",
+        )
+
+    def test_erase_line(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        # Fill canvas.
+        canvas.fill()
+
+        top_left = (0, 0)
+        bottom_right = (canvas.w, canvas.h)
+
+        canvas.erase_line(*top_left, *bottom_right)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+            "⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+            "⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿\n"
+            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿\n"
+            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻\n",
+            "Line not erased correctly.",
+        )
+
+    def test_stroke_rect(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.stroke_rect(6, 3, 20, 15)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀\n"
+            "⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀\n"
+            "⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀\n"
+            "⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀\n"
+            "⠀⠀⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀⠀\n",
+        )
+
+    def test_frame(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.frame()
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹\n"
+            "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸\n"
+            "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸\n"
+            "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸\n"
+            "⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸\n",
+        )
+
+    def test_fill_rect(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.fill_rect(6, 3, 20, 15)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀\n"
+            "⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀\n"
+            "⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀\n"
+            "⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀\n"
+            "⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀\n",
+        )
+
+    def test_stroke_triangle(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.stroke_triangle(6, 3, 20, 2, 23, 18)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⣀⣀⣀⡠⠤⠤⠤⡄⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠈⠢⣀⠀⠀⠀⠀⢱⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠘⡄⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠑⠤⡀⡇⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠺⠀⠀⠀\n",
+        )
+
+    def test_fill_triangle(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.fill_triangle(6, 3, 20, 2, 23, 18)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⣀⣀⣀⣠⣤⣤⣤⡄⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠈⠻⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠙⢿⣿⣿⣿⡄⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⡇⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⠀⠀⠀\n",
+        )
+
+    def test_stroke_circle(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.stroke_circle(15, 10, 7)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⡠⠊⠀⠀⠀⠈⠢⡀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⡠⠃⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_fill_circle(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.fill_circle(15, 10, 7)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣦⡀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀\n",
         )
 
 

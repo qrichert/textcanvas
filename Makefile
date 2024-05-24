@@ -40,8 +40,9 @@ check: ## Most stringent checks (includes checks still in development)
 	@cargo fmt
 	@cargo doc --no-deps --all-features
 	@cargo check
-	@cargo clippy --all-targets --all-features -- -D warnings -W clippy::all -W clippy::cargo -W clippy::complexity -W clippy::correctness -W clippy::nursery -W clippy::pedantic -W clippy::perf -W clippy::style -W clippy::suspicious -A clippy::missing_const_for_fn
-	@make test
+	@cargo clippy --all-targets --all-features -- -D warnings -W clippy::all -W clippy::cargo -W clippy::complexity -W clippy::correctness -W clippy::nursery -W clippy::pedantic -W clippy::perf -W clippy::style -W clippy::suspicious -A clippy::missing_const_for_fn -A clippy::suboptimal_flops
+	@make rust-test
+	@make rust-coverage-pct
 
 .PHONY: t
 t: test
