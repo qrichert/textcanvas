@@ -1,4 +1,5 @@
-pub use crate::color::Color;
+use crate::Color;
+
 use std::cmp;
 use std::env;
 use std::{fmt, fmt::Formatter};
@@ -184,7 +185,7 @@ impl Iterator for IterPixelBufferByBlocksLRTB<'_> {
 /// # Examples
 ///
 /// ```rust
-/// use textcanvas::textcanvas::TextCanvas;
+/// use textcanvas::TextCanvas;
 ///
 /// let mut canvas = TextCanvas::new(15, 5).unwrap();
 ///
@@ -324,7 +325,7 @@ impl TextCanvas {
     /// # Examples
     ///
     /// ```rust
-    /// use textcanvas::textcanvas::TextCanvas;
+    /// use textcanvas::TextCanvas;
     ///
     /// let mut canvas = TextCanvas::new(15, 5).unwrap();
     ///
@@ -435,7 +436,7 @@ impl TextCanvas {
     /// # Examples
     ///
     /// ```rust
-    /// use textcanvas::textcanvas::{Color, TextCanvas};
+    /// use textcanvas::{Color, TextCanvas};
     ///
     /// let mut canvas = TextCanvas::new(15, 5).unwrap();
     ///
@@ -457,7 +458,7 @@ impl TextCanvas {
     /// # Examples
     ///
     /// ```rust
-    /// use textcanvas::textcanvas::TextCanvas;
+    /// use textcanvas::TextCanvas;
     ///
     /// let mut canvas = TextCanvas::new(15, 5).unwrap();
     ///
@@ -476,7 +477,7 @@ impl TextCanvas {
     /// # Examples
     ///
     /// ```rust
-    /// use textcanvas::textcanvas::{Color, TextCanvas};
+    /// use textcanvas::{Color, TextCanvas};
     ///
     /// let mut canvas = TextCanvas::new(3, 1).unwrap();
     /// let green = Color::new().bright_green().to_owned();

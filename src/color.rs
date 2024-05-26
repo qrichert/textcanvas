@@ -18,7 +18,7 @@ enum ColorMode {
 /// # Examples
 ///
 /// ```rust
-/// use textcanvas::color::Color;
+/// use textcanvas::Color;
 ///
 /// // Bright red text.
 /// assert_eq!(

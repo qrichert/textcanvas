@@ -1,4 +1,4 @@
-use textcanvas::textcanvas::{Color, TextCanvas};
+use textcanvas::{Color, TextCanvas};
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
