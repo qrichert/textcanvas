@@ -248,6 +248,9 @@ pub struct TextCanvas {
     /// `draw_text()`. The first call to `draw_text()` initializes the
     /// buffer and sets `is_textual()` to `True`.
     pub text_buffer: TextBuffer,
+    /// Inverted drawing mode. In inverted mode, functions which usually
+    /// turn pixels _on_, will turn them _off_, and vice-versa.
+    pub is_inverted: bool,
 
     color: Color,
 }
@@ -280,6 +283,7 @@ impl TextCanvas {
             buffer: Vec::new(),
             color_buffer: Vec::new(),
             text_buffer: Vec::new(),
+            is_inverted: false,
             color: Color::new(),
         };
 
@@ -392,6 +396,9 @@ impl TextCanvas {
     /// Note: This method does not drop the color and text buffers, it
     /// only clears them. No memory is freed, and all references remain
     /// valid (buffers are cleared in-place, not replaced).
+    ///
+    /// Note: `clear()` is not affected by inverted mode, it works on a
+    /// lower level.
     pub fn clear(&mut self) {
         self.clear_buffer();
         self.clear_color_buffer();
@@ -427,10 +434,22 @@ impl TextCanvas {
     /// Turn all pixels on.
     ///
     /// This does not affect the color and text buffers.
+    ///
+    /// Note: `fill()` is not affected by inverted mode, it works on a
+    /// lower level.
     pub fn fill(&mut self) {
         for (x, y) in self.uiter_buffer() {
             self.buffer[y][x] = ON;
         }
+    }
+
+    /// Invert drawing mode.
+    ///
+    /// In inverted mode, functions that usually turn pixels _on_, will
+    /// turn them _off_, and vice versa. This can be used to cut out
+    /// shapes for instance.
+    pub fn invert(&mut self) {
+        self.is_inverted = !self.is_inverted;
     }
 
     /// Whether the canvas can contain colors.
@@ -542,11 +561,15 @@ impl TextCanvas {
     /// - `x` - Screen X (high resolution).
     /// - `y` - Screen Y (high resolution).
     /// - `state` - `true` means _on_, `false` means _off_.
-    pub fn set_pixel(&mut self, x: i32, y: i32, state: bool) {
+    pub fn set_pixel(&mut self, x: i32, y: i32, mut state: bool) {
         if x < 0 || x >= self.screen.width() || y < 0 || y >= self.screen.height() {
             return;
         }
         let (x, y) = (to_usize!(x), to_usize!(y));
+
+        if self.is_inverted {
+            state = !state;
+        }
 
         self.buffer[y][x] = state;
 
@@ -731,15 +754,11 @@ impl TextCanvas {
     /// )
     /// ```
     pub fn stroke_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
-        self.bresenham_line(x1, y1, x2, y2, ON);
-    }
-
-    pub fn erase_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
-        self.bresenham_line(x1, y1, x2, y2, OFF);
+        self.bresenham_line(x1, y1, x2, y2);
     }
 
     /// Stroke line using Bresenham's line algorithm.
-    fn bresenham_line(&mut self, mut x1: i32, mut y1: i32, x2: i32, y2: i32, state: bool) {
+    fn bresenham_line(&mut self, mut x1: i32, mut y1: i32, x2: i32, y2: i32) {
         let dx = (x2 - x1).abs();
         let sx = if x1 < x2 { 1 } else { -1 };
         let dy = -(y2 - y1).abs();
@@ -752,7 +771,7 @@ impl TextCanvas {
             let from_y = cmp::min(y1, y2);
             let to_y = cmp::max(y1, y2);
             for y in from_y..=to_y {
-                self.set_pixel(x, y, state);
+                self.set_pixel(x, y, true);
             }
             return;
         } else if dy == 0 {
@@ -760,14 +779,14 @@ impl TextCanvas {
             let from_x = cmp::min(x1, x2);
             let to_x = cmp::max(x1, x2);
             for x in from_x..=to_x {
-                self.set_pixel(x, y, state);
+                self.set_pixel(x, y, true);
             }
             return;
         }
 
         #[cfg(not(tarpaulin_include))]
         loop {
-            self.set_pixel(x1, y1, state);
+            self.set_pixel(x1, y1, true);
             if x1 == x2 && y1 == y2 {
                 break;
             }
@@ -1493,6 +1512,63 @@ mod tests {
     }
 
     #[test]
+    fn invert() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        canvas.fill_rect(6, 3, 20, 15);
+
+        assert!(!canvas.is_inverted);
+
+        canvas.invert();
+        canvas.fill_rect(9, 6, 14, 9);
+
+        assert!(canvas.is_inverted);
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀
+⠀⠀⠀⣿⡟⠛⠛⠛⠛⠛⠛⢻⣿⠀⠀
+⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀
+⠀⠀⠀⣿⣇⣀⣀⣀⣀⣀⣀⣸⣿⠀⠀
+⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn double_invert() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+
+        assert!(!canvas.is_inverted);
+
+        canvas.invert();
+        assert!(canvas.is_inverted);
+
+        canvas.invert();
+        assert!(!canvas.is_inverted);
+    }
+
+    #[test]
+    fn clear_not_affected_by_invert() {
+        let mut canvas = TextCanvas::new(2, 2).unwrap();
+
+        canvas.invert();
+        canvas.clear();
+
+        assert_eq!(canvas.to_string(), "⠀⠀\n⠀⠀\n", "Output not empty.");
+    }
+
+    #[test]
+    fn fill_not_affected_by_invert() {
+        let mut canvas = TextCanvas::new(2, 2).unwrap();
+
+        canvas.invert();
+        canvas.fill();
+
+        assert_eq!(canvas.to_string(), "⣿⣿\n⣿⣿\n", "Output not full.");
+    }
+
+    #[test]
     fn iter_buffer_by_blocks_lrtb() {
         // This tests a private method, but this method is at the core
         // of the output generation. Testing it helps ensure stability.
@@ -2072,7 +2148,8 @@ mod tests {
         let top_left = (0, 0);
         let bottom_right = (canvas.w(), canvas.h());
 
-        canvas.erase_line(top_left.0, top_left.1, bottom_right.0, bottom_right.1);
+        canvas.invert();
+        canvas.stroke_line(top_left.0, top_left.1, bottom_right.0, bottom_right.1);
 
         assert_eq!(
             canvas.to_string(),

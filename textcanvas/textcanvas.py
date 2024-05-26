@@ -178,6 +178,9 @@ class TextCanvas:
             buffer is empty until the first call to `draw_text()`. The
             first call to `draw_text()` initializes the buffer and sets
             `is_textual` to `True`.
+        is_inverted (bool): Inverted drawing mode. In inverted mode,
+            functions which usually turn pixels _on_, will turn them
+            _off_, and vice-versa.
 
     Raises:
         ValueError: If width and height of canvas are < 1×1.
@@ -191,6 +194,7 @@ class TextCanvas:
         self.buffer: PixelBuffer
         self.color_buffer: ColorBuffer = []
         self.text_buffer: TextBuffer = []
+        self.is_inverted: bool = False
 
         self._color: Color = Color()
 
@@ -263,6 +267,10 @@ class TextCanvas:
             This method does not drop the color and text buffers, it
             only clears them. No memory is freed, and all references
             remain valid (buffers are cleared in-place, not replaced).
+
+        Note:
+            `clear()` is not affected by inverted mode, it works on a
+            lower level.
         """
         self._clear_buffer()
         self._clear_color_buffer()
@@ -288,9 +296,22 @@ class TextCanvas:
         """Turn all pixels on.
 
         This does not affect the color and text buffers.
+
+        Note:
+            `fill()` is not affected by inverted mode, it works on a
+            lower level.
         """
         for x, y in self.iter_buffer():
             self.buffer[y][x] = True
+
+    def invert(self) -> None:
+        """Invert drawing mode.
+
+        In inverted mode, functions that usually turn pixels _on_, will
+        turn them _off_, and vice versa. This can be used to cut out
+        shapes for instance.
+        """
+        self.is_inverted = not self.is_inverted
 
     @property
     def is_colorized(self) -> bool:
@@ -383,6 +404,9 @@ class TextCanvas:
         """
         if not 0 <= x < self.screen.width or not 0 <= y < self.screen.height:
             return
+
+        if self.is_inverted:
+            state = not state
 
         self.buffer[y][x] = state
 
@@ -519,12 +543,9 @@ class TextCanvas:
             ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠒⠤⣀⠀⠀
             ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
         """
-        self._bresenham_line(x1, y1, x2, y2, True)
+        self._bresenham_line(x1, y1, x2, y2)
 
-    def erase_line(self, x1: int, y1: int, x2: int, y2: int) -> None:
-        self._bresenham_line(x1, y1, x2, y2, False)
-
-    def _bresenham_line(self, x1: int, y1: int, x2: int, y2: int, state: bool) -> None:
+    def _bresenham_line(self, x1: int, y1: int, x2: int, y2: int) -> None:
         """Stroke line using Bresenham's line algorithm."""
         dx = abs(x2 - x1)
         sx = 1 if x1 < x2 else -1
@@ -538,18 +559,18 @@ class TextCanvas:
             from_y = min(y1, y2)
             to_y = max(y1, y2)
             for y in range(from_y, to_y + 1):
-                self.set_pixel(x, y, state)
+                self.set_pixel(x, y, True)
             return
         elif dy == 0:
             y = y1
             from_x = min(x1, x2)
             to_x = max(x1, x2)
             for x in range(from_x, to_x + 1):
-                self.set_pixel(x, y, state)
+                self.set_pixel(x, y, True)
             return
 
         while True:
-            self.set_pixel(x1, y1, state)
+            self.set_pixel(x1, y1, True)
             if x1 == x2 and y1 == y2:
                 break
             e2 = 2 * error

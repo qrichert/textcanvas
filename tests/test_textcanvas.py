@@ -287,6 +287,53 @@ class TestTextCanvas(unittest.TestCase):
 
         self.assertEqual(canvas.to_string(), "⣿⣿\n⣿⣿\n", "Output not full.")
 
+    def test_invert(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.fill_rect(6, 3, 20, 15)
+
+        self.assertFalse(canvas.is_inverted)
+
+        canvas.invert()
+        canvas.fill_rect(9, 6, 14, 9)
+
+        self.assertTrue(canvas.is_inverted)
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀\n"
+            "⠀⠀⠀⣿⡟⠛⠛⠛⠛⠛⠛⢻⣿⠀⠀\n"
+            "⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀\n"
+            "⠀⠀⠀⣿⣇⣀⣀⣀⣀⣀⣀⣸⣿⠀⠀\n"
+            "⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀\n",
+        )
+
+    def test_double_invert(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        self.assertFalse(canvas.is_inverted)
+
+        canvas.invert()
+        self.assertTrue(canvas.is_inverted)
+
+        canvas.invert()
+        self.assertFalse(canvas.is_inverted)
+
+    def test_clear_not_affected_by_invert(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        canvas.invert()
+        canvas.clear()
+
+        self.assertEqual(canvas.to_string(), "⠀⠀\n⠀⠀\n", "Output not empty.")
+
+    def test_fill_not_affected_by_invert(self) -> None:
+        canvas = TextCanvas(2, 2)
+
+        canvas.invert()
+        canvas.fill()
+
+        self.assertEqual(canvas.to_string(), "⣿⣿\n⣿⣿\n", "Output not full.")
+
     def test_iter_buffer_by_blocks_lrtb(self) -> None:
         # This tests a private method, but this method is at the core
         # of the output generation. Testing it helps ensure stability.
@@ -771,7 +818,8 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
         top_left = (0, 0)
         bottom_right = (canvas.w, canvas.h)
 
-        canvas.erase_line(*top_left, *bottom_right)
+        canvas.invert()
+        canvas.stroke_line(*top_left, *bottom_right)
 
         self.assertEqual(
             canvas.to_string(),
