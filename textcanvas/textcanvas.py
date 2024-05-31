@@ -187,7 +187,7 @@ class TextCanvas:
     """
 
     def __init__(self, width: int = 80, height: int = 24) -> None:
-        self._validate_size(width, height)
+        self._check_canvas_size(width, height)
 
         self.output: Surface = Surface(width, height)
         self.screen: Surface = Surface(width * 2, height * 4)
@@ -201,9 +201,15 @@ class TextCanvas:
         self._init_buffer()
 
     @staticmethod
-    def _validate_size(width: int, height: int) -> None:
+    def _check_canvas_size(width: int, height: int) -> None:
         if width <= 0 or height <= 0:
             raise ValueError("TextCanvas' minimal size is 1×1.")
+
+    def _check_output_bounds(self, x: int, y: int) -> bool:
+        return 0 <= x < self.output.width and 0 <= y < self.output.height
+
+    def _check_screen_bounds(self, x: int, y: int) -> bool:
+        return 0 <= x < self.screen.width and 0 <= y < self.screen.height
 
     def _init_buffer(self) -> None:
         self.buffer = [
@@ -383,7 +389,7 @@ class TextCanvas:
             _off_, and `None` if the coordinates are outside the bounds
             of the buffer.
         """
-        if not 0 <= x < self.screen.width or not 0 <= y < self.screen.height:
+        if not self._check_screen_bounds(x, y):
             return None
         return self.buffer[y][x]
 
@@ -402,7 +408,7 @@ class TextCanvas:
             y (int): Screen Y (high resolution).
             state (bool): `True` means _on_, `False` means _off_.
         """
-        if not 0 <= x < self.screen.width or not 0 <= y < self.screen.height:
+        if not self._check_screen_bounds(x, y):
             return
 
         if self.is_inverted:
@@ -426,6 +432,11 @@ class TextCanvas:
         """Draw text onto the canvas.
 
         Note:
+            Note: Spaces are transparent (you see pixels through). But
+            drawing spaces over text erases the text beneath. If you
+            want to keep the text, use the `merge_text()` method.
+
+        Note:
             Coordinates outside the screen bounds are ignored.
 
         Note:
@@ -433,26 +444,50 @@ class TextCanvas:
 
         Note:
             `set_color()` works for text as well, but text does not
-            share its color buffer with pixels. Rather, color data is
-            stored with the text characters themselves.
-
-        Args:
-            x (int): Output X (true resolution).
-            y (int): Output Y (true resolution).
-            text (str): The text to draw. Spaces are transparent (you
-                see pixels through), and can be used to erase previously
-                drawn characters.
+            share its color buffer with pixels.
         """
         if not self.is_textual:
             self._init_text_buffer()
         for char in text:
-            if not 0 <= x < self.output.width or not 0 <= y < self.output.height:
-                x += 1
-                continue
-            if char == " ":
-                char = ""
-            self.text_buffer[y][x] = self._color.format(char)
+            self._draw_char(char, x, y, False)
             x += 1
+
+    def draw_text_vertical(self, x: int, y: int, text: str) -> None:
+        if not self.is_textual:
+            self._init_text_buffer()
+        for char in text:
+            self._draw_char(char, x, y, False)
+            y += 1
+
+    def merge_text(self, x: int, y: int, text: str) -> None:
+        """Merge text onto the canvas.
+
+        This is the same as `draw_text()`, but spaces do not erase text
+        underneath.
+        """
+        if not self.is_textual:
+            self._init_text_buffer()
+        for char in text:
+            self._draw_char(char, x, y, True)
+            x += 1
+
+    def merge_text_vertical(self, x: int, y: int, text: str) -> None:
+        if not self.is_textual:
+            self._init_text_buffer()
+        for char in text:
+            self._draw_char(char, x, y, True)
+            y += 1
+
+    def _draw_char(self, char: str, x: int, y: int, merge: bool) -> None:
+        if not self._check_output_bounds(x, y):
+            return
+        if char == " ":
+            if merge:
+                return
+            char = ""
+        else:
+            char = self._color.format(char)
+        self.text_buffer[y][x] = char
 
     def _init_text_buffer(self) -> None:
         self.text_buffer = [

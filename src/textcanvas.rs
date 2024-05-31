@@ -270,7 +270,7 @@ impl TextCanvas {
     /// values makes for a nicer API. _We_ handle the complexity for the
     /// user.
     pub fn new(width: i32, height: i32) -> Result<Self, &'static str> {
-        if !Self::validate_size(width, height) {
+        if !Self::check_canvas_size(width, height) {
             return Err("TextCanvas' minimal size is 1×1.");
         }
 
@@ -293,8 +293,16 @@ impl TextCanvas {
     }
 
     /// Ensure user `i32s` can safely be cast to internal `usize`.
-    fn validate_size(width: i32, height: i32) -> bool {
+    fn check_canvas_size(width: i32, height: i32) -> bool {
         width > 0 && width <= MAX_RESOLUTION / 2 && height > 0 && height <= MAX_RESOLUTION / 4
+    }
+
+    fn check_output_bounds(&self, x: i32, y: i32) -> bool {
+        x >= 0 && x < self.output.width() && y >= 0 && y < self.output.height()
+    }
+
+    fn check_screen_bounds(&self, x: i32, y: i32) -> bool {
+        x >= 0 && x < self.screen.width() && y >= 0 && y < self.screen.height()
     }
 
     fn init_buffer(&mut self) {
@@ -542,7 +550,7 @@ impl TextCanvas {
     /// - `y` - Screen Y (high resolution).
     #[must_use]
     pub fn get_pixel(&self, x: i32, y: i32) -> Option<bool> {
-        if x < 0 || x >= self.screen.width() || y < 0 || y >= self.screen.height() {
+        if !self.check_screen_bounds(x, y) {
             return None;
         }
         let (x, y) = (to_usize!(x), to_usize!(y));
@@ -562,7 +570,7 @@ impl TextCanvas {
     /// - `y` - Screen Y (high resolution).
     /// - `state` - `true` means _on_, `false` means _off_.
     pub fn set_pixel(&mut self, x: i32, y: i32, mut state: bool) {
-        if x < 0 || x >= self.screen.width() || y < 0 || y >= self.screen.height() {
+        if !self.check_screen_bounds(x, y) {
             return;
         }
         let (x, y) = (to_usize!(x), to_usize!(y));
@@ -592,43 +600,81 @@ impl TextCanvas {
 
     /// Draw text onto the canvas.
     ///
+    /// Note: Spaces are transparent (you see pixels through). But
+    /// drawing spaces over text erases the text beneath. If you want to
+    /// keep the text, use the [`merge_text()`](TextCanvas::merge_text)
+    /// method.
+    ///
     /// Note: Coordinates outside the screen bounds are ignored.
     ///
     /// Note: Text is rendered on top of pixels, as a separate layer.
     ///
     /// Note: `set_color()` works for text as well, but text does not
-    /// share its color buffer with pixels. Rather, color data is stored
-    /// with the text characters themselves.
-    ///
-    /// # Arguments
-    ///
-    /// - `x` - Output X (true resolution).
-    /// - `y` - Output Y (true resolution).
-    /// - `text` - The text to draw. Spaces are transparent (you see
-    ///   pixels through), and can be used to erase previously drawn
-    ///   characters.
+    /// share its color buffer with pixels.
     pub fn draw_text(&mut self, mut x: i32, y: i32, text: &str) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
 
         for char in text.chars() {
-            if x < 0 || x >= self.output.width() || y < 0 || y >= self.output.height() {
-                x += 1;
-                continue;
-            }
-
-            let char = if char == ' ' {
-                String::new()
-            } else {
-                self.color.format(&String::from(char))
-            };
-
-            let (ux, uy) = (to_usize!(x), to_usize!(y));
-            self.text_buffer[uy][ux] = char;
-
+            self.draw_char(char, x, y, false);
             x += 1;
         }
+    }
+
+    pub fn draw_text_vertical(&mut self, x: i32, mut y: i32, text: &str) {
+        if !self.is_textual() {
+            self.init_text_buffer();
+        }
+
+        for char in text.chars() {
+            self.draw_char(char, x, y, false);
+            y += 1;
+        }
+    }
+
+    /// Merge text onto the canvas.
+    ///
+    /// This is the same as [`draw_text()`](TextCanvas::draw_text), but
+    /// spaces do not erase text underneath.
+    pub fn merge_text(&mut self, mut x: i32, y: i32, text: &str) {
+        if !self.is_textual() {
+            self.init_text_buffer();
+        }
+
+        for char in text.chars() {
+            self.draw_char(char, x, y, true);
+            x += 1;
+        }
+    }
+
+    pub fn merge_text_vertical(&mut self, x: i32, mut y: i32, text: &str) {
+        if !self.is_textual() {
+            self.init_text_buffer();
+        }
+
+        for char in text.chars() {
+            self.draw_char(char, x, y, true);
+            y += 1;
+        }
+    }
+
+    fn draw_char(&mut self, char: char, x: i32, y: i32, merge: bool) {
+        if !self.check_output_bounds(x, y) {
+            return;
+        }
+
+        let char = if char == ' ' {
+            if merge {
+                return;
+            }
+            String::new()
+        } else {
+            self.color.format(&String::from(char))
+        };
+
+        let (ux, uy) = (to_usize!(x), to_usize!(y));
+        self.text_buffer[uy][ux] = char;
     }
 
     fn init_text_buffer(&mut self) {
@@ -1310,6 +1356,36 @@ mod tests {
     }
 
     #[test]
+    fn check_output_bounds() {
+        let canvas = TextCanvas::new(7, 4).unwrap();
+
+        assert!(canvas.check_output_bounds(0, 0));
+        assert!(canvas.check_output_bounds(6, 0));
+        assert!(canvas.check_output_bounds(6, 3));
+        assert!(canvas.check_output_bounds(0, 3));
+
+        assert!(!canvas.check_output_bounds(0, -1));
+        assert!(!canvas.check_output_bounds(7, 0));
+        assert!(!canvas.check_output_bounds(6, 4));
+        assert!(!canvas.check_output_bounds(-1, 3));
+    }
+
+    #[test]
+    fn check_screen_bounds() {
+        let canvas = TextCanvas::new(7, 4).unwrap();
+
+        assert!(canvas.check_screen_bounds(0, 0));
+        assert!(canvas.check_screen_bounds(13, 0));
+        assert!(canvas.check_screen_bounds(13, 15));
+        assert!(canvas.check_screen_bounds(0, 15));
+
+        assert!(!canvas.check_screen_bounds(0, -1));
+        assert!(!canvas.check_screen_bounds(14, 0));
+        assert!(!canvas.check_screen_bounds(13, 16));
+        assert!(!canvas.check_screen_bounds(-1, 15));
+    }
+
+    #[test]
     fn turn_all_pixels_on() {
         let mut canvas = TextCanvas::new(2, 2).unwrap();
 
@@ -1899,6 +1975,23 @@ mod tests {
     }
 
     #[test]
+    fn draw_text_vertical() {
+        let mut canvas = TextCanvas::new(1, 5).unwrap();
+
+        assert!(!canvas.is_textual());
+
+        canvas.draw_text_vertical(0, 1, "bar");
+
+        assert!(canvas.is_textual());
+
+        assert_eq!(
+            canvas.text_buffer,
+            [[""], ["b"], ["a"], ["r"], [""],],
+            "Incorrect text buffer."
+        );
+    }
+
+    #[test]
     fn draw_text_over_text() {
         let mut canvas = TextCanvas::new(5, 1).unwrap();
 
@@ -1913,7 +2006,7 @@ mod tests {
     }
 
     #[test]
-    fn space_is_transparent() {
+    fn draw_text_space_is_transparent() {
         let mut canvas = TextCanvas::new(9, 1).unwrap();
 
         canvas.draw_text(1, 0, "foo bar");
@@ -1924,8 +2017,9 @@ mod tests {
             "Incorrect text buffer.",
         );
     }
+
     #[test]
-    fn space_clears_text() {
+    fn draw_text_space_clears_text() {
         let mut canvas = TextCanvas::new(5, 1).unwrap();
 
         canvas.draw_text(1, 0, "bar");
@@ -1937,6 +2031,7 @@ mod tests {
             "Incorrect text buffer.",
         );
     }
+
     #[test]
     fn draw_text_with_overflow() {
         let mut canvas = TextCanvas::new(5, 2).unwrap();
@@ -1957,6 +2052,7 @@ mod tests {
             "Incorrect text buffer.",
         );
     }
+
     #[test]
     fn draw_text_on_boundaries() {
         let mut canvas = TextCanvas::new(3, 3).unwrap();
@@ -1997,6 +2093,38 @@ mod tests {
             canvas.text_buffer,
             [["h", "\x1b[0;91mo\x1b[0m", "\x1b[0;91m!\x1b[0m"]],
             "'o!' should be red.",
+        );
+    }
+
+    #[test]
+    fn merge_text_space_does_not_clear_text() {
+        let mut canvas = TextCanvas::new(5, 1).unwrap();
+
+        canvas.merge_text(1, 0, "bar");
+        canvas.merge_text(2, 0, " z");
+
+        assert_eq!(
+            canvas.text_buffer,
+            [["", "b", "a", "z", ""]],
+            "Incorrect text buffer.",
+        );
+    }
+
+    #[test]
+    fn merge_text_vertical() {
+        let mut canvas = TextCanvas::new(1, 5).unwrap();
+
+        assert!(!canvas.is_textual());
+
+        canvas.merge_text_vertical(0, 1, "bar");
+        canvas.merge_text_vertical(0, 2, " z");
+
+        assert!(canvas.is_textual());
+
+        assert_eq!(
+            canvas.text_buffer,
+            [[""], ["b"], ["a"], ["z"], [""],],
+            "Incorrect text buffer."
         );
     }
 

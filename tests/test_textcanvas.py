@@ -129,6 +129,32 @@ class TestTextCanvas(unittest.TestCase):
         self.assertEqual(canvas.cx, 7, "Incorrect screen center-X.")
         self.assertEqual(canvas.cy, 8, "Incorrect screen center-Y.")
 
+    def test_check_output_bounds(self) -> None:
+        canvas = TextCanvas(7, 4)
+
+        self.assertTrue(canvas._check_output_bounds(0, 0))
+        self.assertTrue(canvas._check_output_bounds(6, 0))
+        self.assertTrue(canvas._check_output_bounds(6, 3))
+        self.assertTrue(canvas._check_output_bounds(0, 3))
+
+        self.assertFalse(canvas._check_output_bounds(0, -1))
+        self.assertFalse(canvas._check_output_bounds(7, 0))
+        self.assertFalse(canvas._check_output_bounds(6, 4))
+        self.assertFalse(canvas._check_output_bounds(-1, 3))
+
+    def test_check_screen_bounds(self) -> None:
+        canvas = TextCanvas(7, 4)
+
+        self.assertTrue(canvas._check_screen_bounds(0, 0))
+        self.assertTrue(canvas._check_screen_bounds(13, 0))
+        self.assertTrue(canvas._check_screen_bounds(13, 15))
+        self.assertTrue(canvas._check_screen_bounds(0, 15))
+
+        self.assertFalse(canvas._check_screen_bounds(0, -1))
+        self.assertFalse(canvas._check_screen_bounds(14, 0))
+        self.assertFalse(canvas._check_screen_bounds(13, 16))
+        self.assertFalse(canvas._check_screen_bounds(-1, 15))
+
     def test_turn_all_pixels_on(self) -> None:
         canvas = TextCanvas(2, 2)
 
@@ -606,6 +632,27 @@ class TestTextCanvasText(unittest.TestCase):
             canvas.text_buffer, [["", "b", "a", "r", ""]], "Incorrect text buffer."
         )
 
+    def test_draw_text_vertical(self) -> None:
+        canvas = TextCanvas(1, 5)
+
+        self.assertFalse(canvas.is_textual)
+
+        canvas.draw_text_vertical(0, 1, "bar")
+
+        self.assertTrue(canvas.is_textual)
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [
+                [""],
+                ["b"],
+                ["a"],
+                ["r"],
+                [""],
+            ],
+            "Incorrect text buffer.",
+        )
+
     def test_draw_text_over_text(self) -> None:
         canvas = TextCanvas(5, 1)
 
@@ -616,7 +663,7 @@ class TestTextCanvasText(unittest.TestCase):
             canvas.text_buffer, [["", "b", "f", "o", "o"]], "Incorrect text buffer."
         )
 
-    def test_space_is_transparent(self) -> None:
+    def test_draw_text_space_is_transparent(self) -> None:
         canvas = TextCanvas(9, 1)
 
         canvas.draw_text(1, 0, "foo bar")
@@ -627,7 +674,7 @@ class TestTextCanvasText(unittest.TestCase):
             "Incorrect text buffer.",
         )
 
-    def test_space_clears_text(self) -> None:
+    def test_draw_text_space_clears_text(self) -> None:
         canvas = TextCanvas(5, 1)
 
         canvas.draw_text(1, 0, "bar")
@@ -695,6 +742,40 @@ class TestTextCanvasText(unittest.TestCase):
             canvas.text_buffer,
             [["h", "\x1b[0;91mo\x1b[0m", "\x1b[0;91m!\x1b[0m"]],
             "'o!' should be red.",
+        )
+
+    def test_merge_text_space_does_not_clear_text(self) -> None:
+        canvas = TextCanvas(5, 1)
+
+        canvas.merge_text(1, 0, "bar")
+        canvas.merge_text(2, 0, " z")
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [["", "b", "a", "z", ""]],
+            "Incorrect text buffer.",
+        )
+
+    def test_merge_text_vertical(self) -> None:
+        canvas = TextCanvas(1, 5)
+
+        self.assertFalse(canvas.is_textual)
+
+        canvas.merge_text_vertical(0, 1, "bar")
+        canvas.merge_text_vertical(0, 2, " z")
+
+        self.assertTrue(canvas.is_textual)
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [
+                [""],
+                ["b"],
+                ["a"],
+                ["z"],
+                [""],
+            ],
+            "Incorrect text buffer.",
         )
 
     def test_get_text_as_string(self) -> None:
