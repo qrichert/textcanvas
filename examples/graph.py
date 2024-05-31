@@ -29,21 +29,21 @@ def draw_x_and_y_axes() -> None:
     canvas.stroke_line(0, half_screen_y, width, half_screen_y)
     canvas.stroke_line(half_screen_x, 0, half_screen_x, height)
 
-    canvas.draw_text(half_output_x - int(scale_x * math.pi), half_output_y + 1, "-π")
+    canvas.draw_text("-π", half_output_x - int(scale_x * math.pi), half_output_y + 1)
     canvas.draw_text(
-        half_output_x - int(scale_x * math.pi / 2) - 1, half_output_y + 1, "-π/2"
+        "-π/2", half_output_x - int(scale_x * math.pi / 2) - 1, half_output_y + 1
     )
-    canvas.draw_text(half_output_x - 2, half_output_y + 1, "0")
+    canvas.draw_text("0", half_output_x - 2, half_output_y + 1)
     canvas.draw_text(
-        half_output_x + int(scale_x * math.pi / 2) - 1, half_output_y + 1, "π/2"
+        "π/2", half_output_x + int(scale_x * math.pi / 2) - 1, half_output_y + 1
     )
-    canvas.draw_text(half_output_x + int(scale_x * math.pi) - 1, half_output_y + 1, "π")
+    canvas.draw_text("π", half_output_x + int(scale_x * math.pi) - 1, half_output_y + 1)
 
     canvas.draw_text(
-        half_output_x - 2, half_output_y - 1 - int(scale_y * half_output_y), "1"
+        "1", half_output_x - 2, half_output_y - 1 - int(scale_y * half_output_y)
     )
     canvas.draw_text(
-        half_output_x - 3, half_output_y + int(scale_y * half_output_y), "-1"
+        "-1", half_output_x - 3, half_output_y + int(scale_y * half_output_y)
     )
 
 

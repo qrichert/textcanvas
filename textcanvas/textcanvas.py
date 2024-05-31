@@ -135,7 +135,7 @@ class TextCanvas:
         >>> canvas.w, canvas.h, canvas.cx, canvas.cy
         (29, 19, 15, 10)
         >>> canvas.stroke_line(0, 0, canvas.w, canvas.h)
-        >>> canvas.draw_text(1, 2, "hello, world")
+        >>> canvas.draw_text("hello, world", 1, 2)
         >>> print(canvas, end="")
         ⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
         ⠀⠀⠀⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -349,7 +349,7 @@ class TextCanvas:
             >>> canvas = TextCanvas(15, 5)
             >>> canvas.is_textual
             False
-            >>> canvas.draw_text(0, 0, "")  # Buffer is initialized.
+            >>> canvas.draw_text("", 0, 0)  # Buffer is initialized.
             >>> canvas.is_textual
             True
         """
@@ -363,7 +363,7 @@ class TextCanvas:
             >>> canvas.set_color(Color().bright_green())
             >>> canvas.is_colorized
             True
-            >>> canvas.draw_text(0, 0, "foo")
+            >>> canvas.draw_text("foo", 0, 0)
             >>> print(canvas, end="")
             \x1b[0;92mf\x1b[0m\x1b[0;92mo\x1b[0m\x1b[0;92mo\x1b[0m
         """
@@ -428,7 +428,7 @@ class TextCanvas:
     def _decolor_pixel(self, x: int, y: int) -> None:
         self.color_buffer[y // 4][x // 2] = Color()
 
-    def draw_text(self, x: int, y: int, text: str) -> None:
+    def draw_text(self, text: str, x: int, y: int) -> None:
         """Draw text onto the canvas.
 
         Note:
@@ -452,14 +452,14 @@ class TextCanvas:
             self._draw_char(char, x, y, False)
             x += 1
 
-    def draw_text_vertical(self, x: int, y: int, text: str) -> None:
+    def draw_text_vertical(self, text: str, x: int, y: int) -> None:
         if not self.is_textual:
             self._init_text_buffer()
         for char in text:
             self._draw_char(char, x, y, False)
             y += 1
 
-    def merge_text(self, x: int, y: int, text: str) -> None:
+    def merge_text(self, text: str, x: int, y: int) -> None:
         """Merge text onto the canvas.
 
         This is the same as `draw_text()`, but spaces do not erase text
@@ -471,7 +471,7 @@ class TextCanvas:
             self._draw_char(char, x, y, True)
             x += 1
 
-    def merge_text_vertical(self, x: int, y: int, text: str) -> None:
+    def merge_text_vertical(self, text: str, x: int, y: int) -> None:
         if not self.is_textual:
             self._init_text_buffer()
         for char in text:

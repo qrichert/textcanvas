@@ -200,7 +200,7 @@ impl Iterator for IterPixelBufferByBlocksLRTB<'_> {
 /// );
 ///
 /// canvas.stroke_line(0, 0, canvas.w(), canvas.h());
-/// canvas.draw_text(1, 2, "hello, world");
+/// canvas.draw_text("hello, world", 1, 2);
 /// assert_eq!(
 ///     canvas.to_string(),
 ///     "\
@@ -496,7 +496,7 @@ impl TextCanvas {
     ///
     /// assert!(!canvas.is_textual());
     ///
-    /// canvas.draw_text(0, 0, "");  // Buffer is initialized.
+    /// canvas.draw_text("", 0, 0);  // Buffer is initialized.
     /// assert!(canvas.is_textual());
     /// ```
     #[must_use]
@@ -517,7 +517,7 @@ impl TextCanvas {
     /// canvas.set_color(&green);
     /// assert!(canvas.is_colorized());
     ///
-    /// canvas.draw_text(0, 0, "foo");
+    /// canvas.draw_text("foo", 0, 0);
     /// assert_eq!(
     ///     canvas.to_string(),
     ///     "\x1b[0;92mf\x1b[0m\x1b[0;92mo\x1b[0m\x1b[0;92mo\x1b[0m\n"
@@ -611,7 +611,7 @@ impl TextCanvas {
     ///
     /// Note: `set_color()` works for text as well, but text does not
     /// share its color buffer with pixels.
-    pub fn draw_text(&mut self, mut x: i32, y: i32, text: &str) {
+    pub fn draw_text(&mut self, text: &str, mut x: i32, y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
@@ -622,7 +622,7 @@ impl TextCanvas {
         }
     }
 
-    pub fn draw_text_vertical(&mut self, x: i32, mut y: i32, text: &str) {
+    pub fn draw_text_vertical(&mut self, text: &str, x: i32, mut y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
@@ -637,7 +637,7 @@ impl TextCanvas {
     ///
     /// This is the same as [`draw_text()`](TextCanvas::draw_text), but
     /// spaces do not erase text underneath.
-    pub fn merge_text(&mut self, mut x: i32, y: i32, text: &str) {
+    pub fn merge_text(&mut self, text: &str, mut x: i32, y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
@@ -648,7 +648,7 @@ impl TextCanvas {
         }
     }
 
-    pub fn merge_text_vertical(&mut self, x: i32, mut y: i32, text: &str) {
+    pub fn merge_text_vertical(&mut self, text: &str, x: i32, mut y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
@@ -2060,7 +2060,7 @@ mod tests {
     fn text_buffer_size_with_color() {
         let mut canvas = TextCanvas::new(7, 4).unwrap();
 
-        canvas.draw_text(0, 0, "foo");
+        canvas.draw_text("foo", 0, 0);
 
         let buffer_width = canvas.text_buffer[0].len();
         let buffer_height = canvas.text_buffer.len();
@@ -2084,7 +2084,7 @@ mod tests {
             "Canvas should not be textual by default."
         );
 
-        canvas.draw_text(0, 0, "hi");
+        canvas.draw_text("hi", 0, 0);
 
         assert!(
             canvas.is_textual(),
@@ -2096,7 +2096,7 @@ mod tests {
     fn draw_text() {
         let mut canvas = TextCanvas::new(5, 1).unwrap();
 
-        canvas.draw_text(1, 0, "bar");
+        canvas.draw_text("bar", 1, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2111,7 +2111,7 @@ mod tests {
 
         assert!(!canvas.is_textual());
 
-        canvas.draw_text_vertical(0, 1, "bar");
+        canvas.draw_text_vertical("bar", 0, 1);
 
         assert!(canvas.is_textual());
 
@@ -2126,8 +2126,8 @@ mod tests {
     fn draw_text_over_text() {
         let mut canvas = TextCanvas::new(5, 1).unwrap();
 
-        canvas.draw_text(1, 0, "bar");
-        canvas.draw_text(2, 0, "foo");
+        canvas.draw_text("bar", 1, 0);
+        canvas.draw_text("foo", 2, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2140,7 +2140,7 @@ mod tests {
     fn draw_text_space_is_transparent() {
         let mut canvas = TextCanvas::new(9, 1).unwrap();
 
-        canvas.draw_text(1, 0, "foo bar");
+        canvas.draw_text("foo bar", 1, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2153,8 +2153,8 @@ mod tests {
     fn draw_text_space_clears_text() {
         let mut canvas = TextCanvas::new(5, 1).unwrap();
 
-        canvas.draw_text(1, 0, "bar");
-        canvas.draw_text(2, 0, "  ");
+        canvas.draw_text("bar", 1, 0);
+        canvas.draw_text("  ", 2, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2168,14 +2168,14 @@ mod tests {
         let mut canvas = TextCanvas::new(5, 2).unwrap();
 
         // Show partially.
-        canvas.draw_text(-1, 0, "foo");
-        canvas.draw_text(3, 1, "bar");
+        canvas.draw_text("foo", -1, 0);
+        canvas.draw_text("bar", 3, 1);
 
         // Completely out of bounds.
-        canvas.draw_text(-10, -1, "baz1");
-        canvas.draw_text(10, -1, "baz2");
-        canvas.draw_text(-10, 2, "baz3");
-        canvas.draw_text(10, 2, "baz4");
+        canvas.draw_text("baz1", -10, -1);
+        canvas.draw_text("baz2", 10, -1);
+        canvas.draw_text("baz3", -10, 2);
+        canvas.draw_text("baz4", 10, 2);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2188,10 +2188,10 @@ mod tests {
     fn draw_text_on_boundaries() {
         let mut canvas = TextCanvas::new(3, 3).unwrap();
 
-        canvas.draw_text(0, 1, "a");
-        canvas.draw_text(1, 0, "b");
-        canvas.draw_text(2, 1, "c");
-        canvas.draw_text(1, 2, "d");
+        canvas.draw_text("a", 0, 1);
+        canvas.draw_text("b", 1, 0);
+        canvas.draw_text("c", 2, 1);
+        canvas.draw_text("d", 1, 2);
 
         assert_eq!(
             canvas.to_string(),
@@ -2209,7 +2209,7 @@ mod tests {
             "Text buffer should be empty."
         );
 
-        canvas.draw_text(0, 0, "hi!");
+        canvas.draw_text("hi!", 0, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2218,7 +2218,7 @@ mod tests {
         );
 
         canvas.set_color(Color::new().bright_red());
-        canvas.draw_text(1, 0, "o!");
+        canvas.draw_text("o!", 1, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2231,8 +2231,8 @@ mod tests {
     fn merge_text_space_does_not_clear_text() {
         let mut canvas = TextCanvas::new(5, 1).unwrap();
 
-        canvas.merge_text(1, 0, "bar");
-        canvas.merge_text(2, 0, " z");
+        canvas.merge_text("bar", 1, 0);
+        canvas.merge_text(" z", 2, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2247,8 +2247,8 @@ mod tests {
 
         assert!(!canvas.is_textual());
 
-        canvas.merge_text_vertical(0, 1, "bar");
-        canvas.merge_text_vertical(0, 2, " z");
+        canvas.merge_text_vertical("bar", 0, 1);
+        canvas.merge_text_vertical(" z", 0, 2);
 
         assert!(canvas.is_textual());
 
@@ -2263,7 +2263,7 @@ mod tests {
     fn get_text_as_string() {
         let mut canvas = TextCanvas::new(5, 3).unwrap();
 
-        canvas.draw_text(1, 1, "foo");
+        canvas.draw_text("foo", 1, 1);
 
         assert_eq!(
             canvas.to_string(),
@@ -2277,7 +2277,7 @@ mod tests {
         let mut canvas = TextCanvas::new(5, 3).unwrap();
 
         canvas.set_color(Color::new().bright_green());
-        canvas.draw_text(1, 1, "foo");
+        canvas.draw_text("foo", 1, 1);
 
         assert_eq!(
             canvas.to_string(),
@@ -2296,7 +2296,7 @@ mod tests {
         );
 
         canvas.set_color(Color::new().bright_red());
-        canvas.draw_text(0, 0, "hi");
+        canvas.draw_text("hi", 0, 0);
 
         assert_eq!(
             canvas.text_buffer,
@@ -2316,7 +2316,7 @@ mod tests {
     #[test]
     fn clear_edits_text_buffer_in_place() {
         let mut canvas = TextCanvas::new(2, 2).unwrap();
-        canvas.draw_text(0, 0, "hi");
+        canvas.draw_text("hi", 0, 0);
 
         let text_buffer = canvas.text_buffer.as_ptr();
         let row_0 = canvas.text_buffer[0].as_ptr();
@@ -2658,10 +2658,10 @@ mod tests {
     #[test]
     fn draw_canvas_with_text() {
         let mut canvas = TextCanvas::new(7, 3).unwrap();
-        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1);
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.draw_canvas(&overlay, 5, 0);
 
@@ -2681,11 +2681,11 @@ mod tests {
     fn draw_canvas_with_colored_text() {
         let mut canvas = TextCanvas::new(7, 3).unwrap();
         canvas.set_color(Color::new().red());
-        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1);
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
         overlay.set_color(Color::new().green());
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.draw_canvas(&overlay, 5, 0);
 
@@ -2710,7 +2710,7 @@ mod tests {
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
         overlay.set_color(Color::new().green());
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.draw_canvas(&overlay, 5, 0);
 
@@ -2732,14 +2732,14 @@ mod tests {
     #[test]
     fn draw_canvas_with_colored_text_onto_non_colorized_canvas() {
         let mut canvas = TextCanvas::new(7, 3).unwrap();
-        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1);
 
         assert!(!canvas.is_colorized());
         assert!(canvas.is_textual());
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
         overlay.set_color(Color::new().green());
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.draw_canvas(&overlay, 5, 0);
 
@@ -2867,10 +2867,10 @@ mod tests {
     #[test]
     fn merge_canvas_with_text() {
         let mut canvas = TextCanvas::new(7, 3).unwrap();
-        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1);
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.merge_canvas(&overlay, 0, 0);
 
@@ -2890,11 +2890,11 @@ mod tests {
     fn merge_canvas_with_colored_text() {
         let mut canvas = TextCanvas::new(7, 3).unwrap();
         canvas.set_color(Color::new().red());
-        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1);
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
         overlay.set_color(Color::new().green());
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.merge_canvas(&overlay, 5, 0);
 
@@ -2919,7 +2919,7 @@ mod tests {
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
         overlay.set_color(Color::new().green());
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.merge_canvas(&overlay, 5, 0);
 
@@ -2941,14 +2941,14 @@ mod tests {
     #[test]
     fn merge_canvas_with_colored_text_onto_non_colorized_canvas() {
         let mut canvas = TextCanvas::new(7, 3).unwrap();
-        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1);
 
         assert!(!canvas.is_colorized());
         assert!(canvas.is_textual());
 
         let mut overlay = TextCanvas::new(7, 3).unwrap();
         overlay.set_color(Color::new().green());
-        overlay.draw_text(2, 1, "012");
+        overlay.draw_text("012", 2, 1);
 
         canvas.merge_canvas(&overlay, 5, 0);
 
@@ -2971,13 +2971,13 @@ mod tests {
     fn merge_canvas_with_pixels_color_and_text() {
         let mut canvas = TextCanvas::new(7, 5).unwrap();
         canvas.set_color(Color::new().red());
-        canvas.draw_text(0, 2, "abcdefg"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcdefg", 0, 2);
         canvas.set_color(Color::new().blue());
         canvas.stroke_line(0, 13, canvas.w(), 13);
 
         let mut overlay = TextCanvas::new(7, 5).unwrap();
         overlay.set_color(Color::new().green());
-        overlay.draw_text_vertical(canvas.cx() / 2, 1, "012");
+        overlay.draw_text_vertical("012", canvas.cx() / 2, 1);
         overlay.set_color(Color::new().yellow());
         overlay.stroke_line(overlay.cx(), 0, overlay.cx(), overlay.h());
 

@@ -28,9 +28,9 @@ class GameOfLife:
     def _draw_title(self) -> None:
         title: str = "Conway's Game of Life"
         self.canvas.draw_text(
+            title,
             self.canvas.output.width // 2 - len(title) // 2,
             self.canvas.output.height // 2 - 1,
-            title,
         )
 
     def _init_game(self) -> None:

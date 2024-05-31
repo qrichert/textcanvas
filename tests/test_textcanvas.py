@@ -598,7 +598,7 @@ class TestTextCanvasText(unittest.TestCase):
     def test_text_buffer_size_with_color(self) -> None:
         canvas = TextCanvas(7, 4)
 
-        canvas.draw_text(0, 0, "foo")
+        canvas.draw_text("foo", 0, 0)
 
         buffer_width = len(canvas.text_buffer[0])
         buffer_height = len(canvas.text_buffer)
@@ -617,7 +617,7 @@ class TestTextCanvasText(unittest.TestCase):
             canvas.is_colorized, "Canvas should not be textual by default."
         )
 
-        canvas.draw_text(0, 0, "hi")
+        canvas.draw_text("hi", 0, 0)
 
         self.assertTrue(
             canvas.is_textual, "Canvas should be textual after text is drawn."
@@ -626,7 +626,7 @@ class TestTextCanvasText(unittest.TestCase):
     def test_draw_text(self) -> None:
         canvas = TextCanvas(5, 1)
 
-        canvas.draw_text(1, 0, "bar")
+        canvas.draw_text("bar", 1, 0)
 
         self.assertEqual(
             canvas.text_buffer, [["", "b", "a", "r", ""]], "Incorrect text buffer."
@@ -637,7 +637,7 @@ class TestTextCanvasText(unittest.TestCase):
 
         self.assertFalse(canvas.is_textual)
 
-        canvas.draw_text_vertical(0, 1, "bar")
+        canvas.draw_text_vertical("bar", 0, 1)
 
         self.assertTrue(canvas.is_textual)
 
@@ -656,8 +656,8 @@ class TestTextCanvasText(unittest.TestCase):
     def test_draw_text_over_text(self) -> None:
         canvas = TextCanvas(5, 1)
 
-        canvas.draw_text(1, 0, "bar")
-        canvas.draw_text(2, 0, "foo")
+        canvas.draw_text("bar", 1, 0)
+        canvas.draw_text("foo", 2, 0)
 
         self.assertEqual(
             canvas.text_buffer, [["", "b", "f", "o", "o"]], "Incorrect text buffer."
@@ -666,7 +666,7 @@ class TestTextCanvasText(unittest.TestCase):
     def test_draw_text_space_is_transparent(self) -> None:
         canvas = TextCanvas(9, 1)
 
-        canvas.draw_text(1, 0, "foo bar")
+        canvas.draw_text("foo bar", 1, 0)
 
         self.assertEqual(
             canvas.text_buffer,
@@ -677,8 +677,8 @@ class TestTextCanvasText(unittest.TestCase):
     def test_draw_text_space_clears_text(self) -> None:
         canvas = TextCanvas(5, 1)
 
-        canvas.draw_text(1, 0, "bar")
-        canvas.draw_text(2, 0, "  ")
+        canvas.draw_text("bar", 1, 0)
+        canvas.draw_text("  ", 2, 0)
 
         self.assertEqual(
             canvas.text_buffer,
@@ -690,14 +690,14 @@ class TestTextCanvasText(unittest.TestCase):
         canvas = TextCanvas(5, 2)
 
         # Show partially.
-        canvas.draw_text(-1, 0, "foo")
-        canvas.draw_text(3, 1, "bar")
+        canvas.draw_text("foo", -1, 0)
+        canvas.draw_text("bar", 3, 1)
 
         # Completely out of bounds.
-        canvas.draw_text(-10, -1, "baz1")
-        canvas.draw_text(10, -1, "baz2")
-        canvas.draw_text(-10, 2, "baz3")
-        canvas.draw_text(10, 2, "baz4")
+        canvas.draw_text("baz1", -10, -1)
+        canvas.draw_text("baz2", 10, -1)
+        canvas.draw_text("baz3", -10, 2)
+        canvas.draw_text("baz4", 10, 2)
 
         self.assertEqual(
             canvas.text_buffer,
@@ -711,10 +711,10 @@ class TestTextCanvasText(unittest.TestCase):
     def test_draw_text_on_boundaries(self) -> None:
         canvas = TextCanvas(3, 3)
 
-        canvas.draw_text(0, 1, "a")
-        canvas.draw_text(1, 0, "b")
-        canvas.draw_text(2, 1, "c")
-        canvas.draw_text(1, 2, "d")
+        canvas.draw_text("a", 0, 1)
+        canvas.draw_text("b", 1, 0)
+        canvas.draw_text("c", 2, 1)
+        canvas.draw_text("d", 1, 2)
 
         self.assertEqual(
             canvas.to_string(),
@@ -727,7 +727,7 @@ class TestTextCanvasText(unittest.TestCase):
 
         self.assertEqual(canvas.text_buffer, [], "Text buffer should be empty.")
 
-        canvas.draw_text(0, 0, "hi!")
+        canvas.draw_text("hi!", 0, 0)
 
         self.assertEqual(
             canvas.text_buffer,
@@ -736,7 +736,7 @@ class TestTextCanvasText(unittest.TestCase):
         )
 
         canvas.set_color(Color().bright_red())
-        canvas.draw_text(1, 0, "o!")
+        canvas.draw_text("o!", 1, 0)
 
         self.assertEqual(
             canvas.text_buffer,
@@ -747,8 +747,8 @@ class TestTextCanvasText(unittest.TestCase):
     def test_merge_text_space_does_not_clear_text(self) -> None:
         canvas = TextCanvas(5, 1)
 
-        canvas.merge_text(1, 0, "bar")
-        canvas.merge_text(2, 0, " z")
+        canvas.merge_text("bar", 1, 0)
+        canvas.merge_text(" z", 2, 0)
 
         self.assertEqual(
             canvas.text_buffer,
@@ -761,8 +761,8 @@ class TestTextCanvasText(unittest.TestCase):
 
         self.assertFalse(canvas.is_textual)
 
-        canvas.merge_text_vertical(0, 1, "bar")
-        canvas.merge_text_vertical(0, 2, " z")
+        canvas.merge_text_vertical("bar", 0, 1)
+        canvas.merge_text_vertical(" z", 0, 2)
 
         self.assertTrue(canvas.is_textual)
 
@@ -781,7 +781,7 @@ class TestTextCanvasText(unittest.TestCase):
     def test_get_text_as_string(self) -> None:
         canvas = TextCanvas(5, 3)
 
-        canvas.draw_text(1, 1, "foo")
+        canvas.draw_text("foo", 1, 1)
 
         self.assertEqual(
             canvas.to_string(), "⠀⠀⠀⠀⠀\n⠀foo⠀\n⠀⠀⠀⠀⠀\n", "Incorrect output string."
@@ -791,7 +791,7 @@ class TestTextCanvasText(unittest.TestCase):
         canvas = TextCanvas(5, 3)
 
         canvas.set_color(Color().bright_green())
-        canvas.draw_text(1, 1, "foo")
+        canvas.draw_text("foo", 1, 1)
 
         self.assertEqual(
             canvas.to_string(),
@@ -805,7 +805,7 @@ class TestTextCanvasText(unittest.TestCase):
         self.assertEqual(canvas.text_buffer, [], "Text buffer should be empty.")
 
         canvas.set_color(Color().bright_red())
-        canvas.draw_text(0, 0, "hi")
+        canvas.draw_text("hi", 0, 0)
 
         self.assertEqual(
             canvas.text_buffer,
@@ -823,7 +823,7 @@ class TestTextCanvasText(unittest.TestCase):
 
     def test_clear_edits_text_buffer_in_place(self) -> None:
         canvas = TextCanvas(2, 2)
-        canvas.draw_text(0, 0, "hi")
+        canvas.draw_text("hi", 0, 0)
 
         text_buffer = canvas.text_buffer
         row_0 = canvas.text_buffer[0]
@@ -1102,12 +1102,10 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
     def test_draw_canvas_with_text(self) -> None:
         canvas = TextCanvas(7, 3)
-        canvas.draw_text(
-            1, 1, "abcde"
-        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1)
 
         overlay = TextCanvas(7, 3)
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.draw_canvas(overlay, 5, 0)
 
@@ -1118,13 +1116,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
     def test_draw_canvas_with_colored_text(self) -> None:
         canvas = TextCanvas(7, 3)
         canvas.set_color(Color().red())
-        canvas.draw_text(
-            1, 1, "abcde"
-        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1)
 
         overlay = TextCanvas(7, 3)
         overlay.set_color(Color().green())
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.draw_canvas(overlay, 5, 0)
 
@@ -1145,7 +1141,7 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         overlay = TextCanvas(7, 3)
         overlay.set_color(Color().green())
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.draw_canvas(overlay, 5, 0)
 
@@ -1163,16 +1159,14 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
     def test_draw_canvas_with_colored_text_onto_non_colorized_canvas(self) -> None:
         canvas = TextCanvas(7, 3)
-        canvas.draw_text(
-            1, 1, "abcde"
-        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1)
 
         self.assertFalse(canvas.is_colorized)
         self.assertTrue(canvas.is_textual)
 
         overlay = TextCanvas(7, 3)
         overlay.set_color(Color().green())
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.draw_canvas(overlay, 5, 0)
 
@@ -1280,12 +1274,10 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
     def test_merge_canvas_with_text(self) -> None:
         canvas = TextCanvas(7, 3)
-        canvas.draw_text(
-            1, 1, "abcde"
-        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1)
 
         overlay = TextCanvas(7, 3)
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.merge_canvas(overlay, 0, 0)
 
@@ -1296,13 +1288,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
     def test_merge_canvas_with_colored_text(self) -> None:
         canvas = TextCanvas(7, 3)
         canvas.set_color(Color().red())
-        canvas.draw_text(
-            1, 1, "abcde"
-        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1)
 
         overlay = TextCanvas(7, 3)
         overlay.set_color(Color().green())
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.merge_canvas(overlay, 5, 0)
 
@@ -1323,7 +1313,7 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         overlay = TextCanvas(7, 3)
         overlay.set_color(Color().green())
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.merge_canvas(overlay, 5, 0)
 
@@ -1341,16 +1331,14 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
     def test_merge_canvas_with_colored_text_onto_non_colorized_canvas(self) -> None:
         canvas = TextCanvas(7, 3)
-        canvas.draw_text(
-            1, 1, "abcde"
-        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcde", 1, 1)
 
         self.assertFalse(canvas.is_colorized)
         self.assertTrue(canvas.is_textual)
 
         overlay = TextCanvas(7, 3)
         overlay.set_color(Color().green())
-        overlay.draw_text(2, 1, "012")
+        overlay.draw_text("012", 2, 1)
 
         canvas.merge_canvas(overlay, 5, 0)
 
@@ -1369,15 +1357,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
     def test_merge_canvas_with_pixels_color_and_text(self) -> None:
         canvas = TextCanvas(7, 5)
         canvas.set_color(Color().red())
-        canvas.draw_text(
-            0, 2, "abcdefg"
-        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.draw_text("abcdefg", 0, 2)
         canvas.set_color(Color().blue())
         canvas.stroke_line(0, 13, canvas.w, 13)
 
         overlay = TextCanvas(7, 5)
         overlay.set_color(Color().green())
-        overlay.draw_text_vertical(canvas.cx // 2, 1, "012")
+        overlay.draw_text_vertical("012", canvas.cx // 2, 1)
         overlay.set_color(Color().yellow())
         overlay.stroke_line(overlay.cx, 0, overlay.cx, overlay.h)
 
