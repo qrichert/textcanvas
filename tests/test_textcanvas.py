@@ -1010,6 +1010,390 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
             "⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀\n",
         )
 
+    def test_draw_canvas(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.stroke_line(0, 0, canvas.w, canvas.h)
+        canvas.frame()
+
+        overlay = TextCanvas(7, 3)
+        overlay.stroke_line(0, overlay.h, overlay.w, 0)
+        overlay.frame()
+
+        canvas.draw_canvas(overlay, 8, 4)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹\n"
+            "⡇⠀⠀⠑⡏⠉⠉⠉⢉⡩⢻⠀⠀⠀⢸\n"
+            "⡇⠀⠀⠀⡇⠀⢀⠔⠁⠀⢸⠀⠀⠀⢸\n"
+            "⡇⠀⠀⠀⣧⣊⣁⣀⣀⣀⣸⢄⠀⠀⢸\n"
+            "⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼\n",
+        )
+
+    def test_draw_canvas_with_overflow(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.stroke_line(0, 0, canvas.w, canvas.h)
+        canvas.frame()
+
+        overlay = TextCanvas(7, 3)
+        overlay.stroke_line(0, overlay.h, overlay.w, 0)
+        overlay.frame()
+
+        canvas.draw_canvas(overlay, -8, -4)
+        canvas.draw_canvas(overlay, 24, -4)
+        canvas.draw_canvas(overlay, 24, 12)
+        canvas.draw_canvas(overlay, -8, 12)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠁⠀⢸⠉⠉⠉⠉⠉⠉⠉⠉⠉⡇⠀⢀\n"
+            "⣀⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣁\n"
+            "⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸\n"
+            "⢉⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⠉\n"
+            "⠁⠀⢸⣀⣀⣀⣀⣀⣀⣀⣀⣀⡇⠀⢀\n",
+        )
+
+    def test_draw_canvas_with_color(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.set_color(Color().red())
+        canvas.fill_rect(3, 3, 10, 10)
+
+        overlay = TextCanvas(15, 5)
+        overlay.set_color(Color().green())
+        overlay.fill_rect(8, 8, 10, 10)
+
+        canvas.draw_canvas(overlay, 8, 8)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀\n",
+        )
+
+    def test_draw_canvas_with_color_onto_non_colorized_canvas(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.fill_rect(3, 3, 10, 10)
+
+        self.assertFalse(canvas.is_colorized)
+
+        overlay = TextCanvas(15, 5)
+        overlay.set_color(Color().green())
+        overlay.fill_rect(8, 8, 10, 10)
+
+        canvas.draw_canvas(overlay, 8, 8)
+
+        self.assertTrue(canvas.is_colorized)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠈⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀\n",
+        )
+
+    def test_draw_canvas_with_text(self) -> None:
+        canvas = TextCanvas(7, 3)
+        canvas.draw_text(
+            1, 1, "abcde"
+        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+
+        overlay = TextCanvas(7, 3)
+        overlay.draw_text(2, 1, "012")
+
+        canvas.draw_canvas(overlay, 5, 0)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n" "⠀a⠀⠀012\n" "⠀⠀⠀⠀⠀⠀⠀\n")
+
+    def test_draw_canvas_with_colored_text(self) -> None:
+        canvas = TextCanvas(7, 3)
+        canvas.set_color(Color().red())
+        canvas.draw_text(
+            1, 1, "abcde"
+        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+
+        overlay = TextCanvas(7, 3)
+        overlay.set_color(Color().green())
+        overlay.draw_text(2, 1, "012")
+
+        canvas.draw_canvas(overlay, 5, 0)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31ma\x1b[0m⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
+            "⠀⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_draw_canvas_with_colored_text_onto_non_textual_canvas(self) -> None:
+        canvas = TextCanvas(7, 3)
+
+        self.assertFalse(canvas.is_colorized)
+        self.assertFalse(canvas.is_textual)
+
+        overlay = TextCanvas(7, 3)
+        overlay.set_color(Color().green())
+        overlay.draw_text(2, 1, "012")
+
+        canvas.draw_canvas(overlay, 5, 0)
+
+        self.assertTrue(canvas.is_colorized)
+        self.assertTrue(canvas.is_textual)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
+            "⠀⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_draw_canvas_with_colored_text_onto_non_colorized_canvas(self) -> None:
+        canvas = TextCanvas(7, 3)
+        canvas.draw_text(
+            1, 1, "abcde"
+        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+
+        self.assertFalse(canvas.is_colorized)
+        self.assertTrue(canvas.is_textual)
+
+        overlay = TextCanvas(7, 3)
+        overlay.set_color(Color().green())
+        overlay.draw_text(2, 1, "012")
+
+        canvas.draw_canvas(overlay, 5, 0)
+
+        self.assertTrue(canvas.is_colorized)
+        self.assertTrue(canvas.is_textual)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀a⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
+            "⠀⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_merge_canvas(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.stroke_line(0, 0, canvas.w, canvas.h)
+        canvas.frame()
+
+        overlay = TextCanvas(7, 3)
+        overlay.stroke_line(0, overlay.h, overlay.w, 0)
+        overlay.frame()
+
+        canvas.merge_canvas(overlay, 8, 4)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹\n"
+            "⡇⠀⠀⠑⡯⣉⠉⠉⢉⡩⢻⠀⠀⠀⢸\n"
+            "⡇⠀⠀⠀⡇⠀⢑⠶⢅⠀⢸⠀⠀⠀⢸\n"
+            "⡇⠀⠀⠀⣧⣊⣁⣀⣀⣉⣺⢄⠀⠀⢸\n"
+            "⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼\n",
+        )
+
+    def test_merge_canvas_with_overflow(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.stroke_line(0, 0, canvas.w, canvas.h)
+        canvas.frame()
+
+        overlay = TextCanvas(7, 3)
+        overlay.stroke_line(0, overlay.h, overlay.w, 0)
+        overlay.frame()
+
+        canvas.merge_canvas(overlay, -8, -4)
+        canvas.merge_canvas(overlay, 24, -4)
+        canvas.merge_canvas(overlay, 24, 12)
+        canvas.merge_canvas(overlay, -8, 12)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⡟⠫⣹⠉⠉⠉⠉⠉⠉⠉⠉⠉⡏⠉⢹\n"
+            "⣇⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣹\n"
+            "⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸\n"
+            "⣏⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⢹\n"
+            "⣇⣀⣸⣀⣀⣀⣀⣀⣀⣀⣀⣀⣏⣢⣼\n",
+        )
+
+    def test_merge_canvas_with_color(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.set_color(Color().red())
+        canvas.fill_rect(3, 3, 10, 10)
+
+        overlay = TextCanvas(15, 5)
+        overlay.set_color(Color().green())
+        overlay.fill_rect(8, 8, 10, 10)
+
+        canvas.merge_canvas(overlay, 0, 0)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_merge_canvas_with_color_onto_non_colorized_canvas(self) -> None:
+        canvas = TextCanvas(15, 5)
+        canvas.fill_rect(3, 3, 10, 10)
+
+        self.assertFalse(canvas.is_colorized)
+
+        overlay = TextCanvas(15, 5)
+        overlay.set_color(Color().green())
+        overlay.fill_rect(8, 8, 10, 10)
+
+        canvas.merge_canvas(overlay, 0, 0)
+
+        self.assertTrue(canvas.is_colorized)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⢸⣿⣿\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠈⠉⠉\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_merge_canvas_with_text(self) -> None:
+        canvas = TextCanvas(7, 3)
+        canvas.draw_text(
+            1, 1, "abcde"
+        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+
+        overlay = TextCanvas(7, 3)
+        overlay.draw_text(2, 1, "012")
+
+        canvas.merge_canvas(overlay, 0, 0)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n" "⠀a012e⠀\n" "⠀⠀⠀⠀⠀⠀⠀\n")
+
+    def test_merge_canvas_with_colored_text(self) -> None:
+        canvas = TextCanvas(7, 3)
+        canvas.set_color(Color().red())
+        canvas.draw_text(
+            1, 1, "abcde"
+        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+
+        overlay = TextCanvas(7, 3)
+        overlay.set_color(Color().green())
+        overlay.draw_text(2, 1, "012")
+
+        canvas.merge_canvas(overlay, 5, 0)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
+            "⠀⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_merge_canvas_with_colored_text_onto_non_textual_canvas(self) -> None:
+        canvas = TextCanvas(7, 3)
+
+        self.assertFalse(canvas.is_colorized)
+        self.assertFalse(canvas.is_textual)
+
+        overlay = TextCanvas(7, 3)
+        overlay.set_color(Color().green())
+        overlay.draw_text(2, 1, "012")
+
+        canvas.merge_canvas(overlay, 5, 0)
+
+        self.assertTrue(canvas.is_colorized)
+        self.assertTrue(canvas.is_textual)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
+            "⠀⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_merge_canvas_with_colored_text_onto_non_colorized_canvas(self) -> None:
+        canvas = TextCanvas(7, 3)
+        canvas.draw_text(
+            1, 1, "abcde"
+        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+
+        self.assertFalse(canvas.is_colorized)
+        self.assertTrue(canvas.is_textual)
+
+        overlay = TextCanvas(7, 3)
+        overlay.set_color(Color().green())
+        overlay.draw_text(2, 1, "012")
+
+        canvas.merge_canvas(overlay, 5, 0)
+
+        self.assertTrue(canvas.is_colorized)
+        self.assertTrue(canvas.is_textual)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀abc\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
+            "⠀⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_merge_canvas_with_pixels_color_and_text(self) -> None:
+        canvas = TextCanvas(7, 5)
+        canvas.set_color(Color().red())
+        canvas.draw_text(
+            0, 2, "abcdefg"
+        )  # TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.set_color(Color().blue())
+        canvas.stroke_line(0, 13, canvas.w, 13)
+
+        overlay = TextCanvas(7, 5)
+        overlay.set_color(Color().green())
+        overlay.draw_text_vertical(canvas.cx // 2, 1, "012")
+        overlay.set_color(Color().yellow())
+        overlay.stroke_line(overlay.cx, 0, overlay.cx, overlay.h)
+
+        canvas.merge_canvas(overlay, 0, 0)
+
+        # print(f"{canvas}")
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀\n"
+            "⠀⠀⠀\x1b[0;32m0\x1b[0m⠀⠀⠀\n"
+            "\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;31me\x1b[0m\x1b[0;31mf\x1b[0m\x1b[0;31mg\x1b[0m\n"
+            "\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;32m2\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\n"
+            "⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀\n",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

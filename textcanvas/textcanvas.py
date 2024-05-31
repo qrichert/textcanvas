@@ -812,6 +812,99 @@ class TextCanvas:
                 t1 = t2
                 x -= 1
 
+    def draw_canvas(self, canvas: Self, dx: int, dy: int) -> None:
+        """Draw another canvas onto the current canvas.
+
+        The other canvas completely overrides the current canvas where
+        it is drawn (but it does not affect the portions where it is
+        _not_ drawn).
+
+        Note:
+            Inverted mode has no effect here, this is a low level
+            copy-paste.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.stroke_line(0, 0, canvas.w, canvas.h)
+            >>> canvas.stroke_line(0, canvas.h, canvas.w, 0)
+            >>> overlay = TextCanvas(7, 3)
+            >>> overlay.frame()
+            >>> canvas.draw_canvas(overlay, 8, 4)
+            >>> print(canvas, end="")
+            ⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠊
+            ⠀⠀⠀⠑⡏⠉⠉⠉⠉⠉⢹⠊⠀⠀⠀
+            ⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀
+            ⠀⠀⠀⡠⣇⣀⣀⣀⣀⣀⣸⢄⠀⠀⠀
+            ⡠⠔⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄
+        """
+        self.draw_canvas_onto_canvas(canvas, dx, dy, False)
+
+    def merge_canvas(self, canvas: Self, dx: int, dy: int) -> None:
+        """Merge another canvas with the current canvas.
+
+        The other canvas is merged with the current canvas. That is,
+        pixels that are turned on get draw, but those that are off are
+        ignored.
+
+        Note:
+            Inverted mode has no effect here, this is a low level
+            copy-paste.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.stroke_line(0, 0, canvas.w, canvas.h)
+            >>> canvas.stroke_line(0, canvas.h, canvas.w, 0)
+            >>> overlay = TextCanvas(7, 3)
+            >>> overlay.frame()
+            >>> canvas.merge_canvas(overlay, 8, 4)
+            >>> print(canvas, end="")
+            ⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠊
+            ⠀⠀⠀⠑⡯⣉⠉⠉⠉⣉⢽⠊⠀⠀⠀
+            ⠀⠀⠀⠀⡇⠀⡱⠶⢎⠀⢸⠀⠀⠀⠀
+            ⠀⠀⠀⡠⣗⣉⣀⣀⣀⣉⣺⢄⠀⠀⠀
+            ⡠⠔⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄
+        """
+        self.draw_canvas_onto_canvas(canvas, dx, dy, True)
+
+    def draw_canvas_onto_canvas(
+        self, canvas: Self, dx: int, dy: int, merge: bool
+    ) -> None:
+        if not self.is_colorized and canvas.is_colorized:
+            self._init_color_buffer()
+
+        if not self.is_textual and canvas.is_textual:
+            self._init_text_buffer()
+
+        offset_x, offset_y = dx, dy
+
+        for x, y in canvas.iter_buffer():
+            # Source coordinates of pixel.
+            # x, y
+
+            # Destination coordinates of pixel.
+            dx, dy = (offset_x + x), (offset_y + y)
+            if not self._check_screen_bounds(dx, dy):
+                continue
+
+            # Pixels.
+            pixel = canvas.buffer[y][x]
+            # In merge mode, only draw if pixel is on, treating off
+            # pixels as transparent.
+            if not merge or pixel == ON:
+                self.buffer[dy][dx] = pixel
+
+                if canvas.is_colorized:
+                    color = canvas.color_buffer[y // 4][x // 2]
+                    self.color_buffer[dy // 4][dx // 2] = color
+
+            # Text.
+            if canvas.is_textual:
+                # Text buffer has color embedded into the string.
+                text = canvas.text_buffer[y // 4][x // 2]
+
+                if not merge or text:
+                    self.text_buffer[dy // 4][dx // 2] = text
+
 
 if __name__ == "__main__":
     canvas = TextCanvas(15, 5)

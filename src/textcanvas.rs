@@ -1123,6 +1123,137 @@ impl TextCanvas {
             }
         }
     }
+
+    /// Draw another canvas onto the current canvas.
+    ///
+    /// The other canvas completely overrides the current canvas where
+    /// it is drawn (but it does not affect the portions where it is
+    /// _not_ drawn).
+    ///
+    /// Note: Inverted mode has no effect here, this is a low level
+    /// copy-paste.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+    /// canvas.stroke_line(0, canvas.h(), canvas.w(), 0);
+    ///
+    /// let mut overlay = TextCanvas::new(7, 3).unwrap();
+    /// overlay.frame();
+    ///
+    /// canvas.draw_canvas(&overlay, 8, 4);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠊
+    /// ⠀⠀⠀⠑⡏⠉⠉⠉⠉⠉⢹⠊⠀⠀⠀
+    /// ⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀
+    /// ⠀⠀⠀⡠⣇⣀⣀⣀⣀⣀⣸⢄⠀⠀⠀
+    /// ⡠⠔⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄
+    /// "
+    /// );
+    /// ```
+    pub fn draw_canvas(&mut self, canvas: &Self, dx: i32, dy: i32) {
+        self.draw_canvas_onto_canvas(canvas, dx, dy, false);
+    }
+
+    /// Merge another canvas with the current canvas.
+    ///
+    /// The other canvas is merged with the current canvas. That is,
+    /// pixels that are turned on get draw, but those that are off are
+    /// ignored.
+    ///
+    /// Note: Inverted mode has no effect here, this is a low level
+    /// copy-paste.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+    /// canvas.stroke_line(0, canvas.h(), canvas.w(), 0);
+    ///
+    /// let mut overlay = TextCanvas::new(7, 3).unwrap();
+    /// overlay.frame();
+    ///
+    /// canvas.merge_canvas(&overlay, 8, 4);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠊
+    /// ⠀⠀⠀⠑⡯⣉⠉⠉⠉⣉⢽⠊⠀⠀⠀
+    /// ⠀⠀⠀⠀⡇⠀⡱⠶⢎⠀⢸⠀⠀⠀⠀
+    /// ⠀⠀⠀⡠⣗⣉⣀⣀⣀⣉⣺⢄⠀⠀⠀
+    /// ⡠⠔⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄
+    /// "
+    /// );
+    /// ```
+    pub fn merge_canvas(&mut self, canvas: &Self, dx: i32, dy: i32) {
+        self.draw_canvas_onto_canvas(canvas, dx, dy, true);
+    }
+
+    fn draw_canvas_onto_canvas(&mut self, canvas: &Self, dx: i32, dy: i32, merge: bool) {
+        if !self.is_colorized() && canvas.is_colorized() {
+            self.init_color_buffer();
+        }
+
+        if !self.is_textual() && canvas.is_textual() {
+            self.init_text_buffer();
+        }
+
+        // We cannot convert `offset_x` and `offset_y` to `usize` yet,
+        // because negative values are possible here (you can draw the
+        // canvas out of bounds). The conversion must be made at the
+        // pixel level, because we can't draw pixels out of bound.
+        let (offset_x, offset_y) = (dx, dy);
+
+        for (x, y) in canvas.uiter_buffer() {
+            // Source coordinates of pixel.
+            // x, y
+
+            // Destination coordinates of pixel.
+            let (dx, dy) = (offset_x + to_i32!(x), offset_y + to_i32!(y));
+            if !self.check_screen_bounds(dx, dy) {
+                continue;
+            }
+            // Here we are safe. If a pixel is within the screen bounds,
+            // it can safely be converted to buffer coordinates in
+            // `usize`. And, we can also safely convert it to output
+            // coordinates (`x / 2`, `y / 4`) later.
+            let (dx, dy) = (to_usize!(dx), to_usize!(dy));
+
+            // Pixels.
+            let pixel = canvas.buffer[y][x];
+            // In merge mode, only draw if pixel is on, treating off
+            // pixels as transparent.
+            if !merge || pixel == ON {
+                self.buffer[dy][dx] = pixel;
+
+                if canvas.is_colorized() {
+                    let color = canvas.color_buffer[y / 4][x / 2].clone();
+                    self.color_buffer[dy / 4][dx / 2] = color;
+                }
+            }
+
+            // Text.
+            if canvas.is_textual() {
+                // Text buffer has color embedded into the String.
+                let text = canvas.text_buffer[y / 4][x / 2].clone();
+
+                if !merge || !text.is_empty() {
+                    self.text_buffer[dy / 4][dx / 2] = text;
+                }
+            }
+        }
+    }
 }
 
 impl Default for TextCanvas {
@@ -2415,6 +2546,454 @@ mod tests {
 ⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀
 ⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀
 ",
+        );
+    }
+
+    #[test]
+    fn draw_canvas() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+        canvas.frame();
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
+        overlay.frame();
+
+        canvas.draw_canvas(&overlay, 8, 4);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+⡇⠀⠀⠑⡏⠉⠉⠉⢉⡩⢻⠀⠀⠀⢸
+⡇⠀⠀⠀⡇⠀⢀⠔⠁⠀⢸⠀⠀⠀⢸
+⡇⠀⠀⠀⣧⣊⣁⣀⣀⣀⣸⢄⠀⠀⢸
+⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼
+",
+        );
+    }
+
+    #[test]
+    fn draw_canvas_with_overflow() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+        canvas.frame();
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
+        overlay.frame();
+
+        canvas.draw_canvas(&overlay, -8, -4);
+        canvas.draw_canvas(&overlay, 24, -4);
+        canvas.draw_canvas(&overlay, 24, 12);
+        canvas.draw_canvas(&overlay, -8, 12);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠁⠀⢸⠉⠉⠉⠉⠉⠉⠉⠉⠉⡇⠀⢀
+⣀⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣁
+⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸
+⢉⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⠉
+⠁⠀⢸⣀⣀⣀⣀⣀⣀⣀⣀⣀⡇⠀⢀
+",
+        );
+    }
+
+    #[test]
+    fn draw_canvas_with_color() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.set_color(Color::new().red());
+        canvas.fill_rect(3, 3, 10, 10);
+
+        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.fill_rect(8, 8, 10, 10);
+
+        canvas.draw_canvas(&overlay, 8, 8);
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn draw_canvas_with_color_onto_non_colorized_canvas() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.fill_rect(3, 3, 10, 10);
+
+        assert!(!canvas.is_colorized());
+
+        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.fill_rect(8, 8, 10, 10);
+
+        canvas.draw_canvas(&overlay, 8, 8);
+
+        assert!(canvas.is_colorized());
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠈⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn draw_canvas_with_text() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.draw_text(2, 1, "012");
+
+        canvas.draw_canvas(&overlay, 5, 0);
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀a⠀⠀012
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn draw_canvas_with_colored_text() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        canvas.set_color(Color::new().red());
+        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.draw_text(2, 1, "012");
+
+        canvas.draw_canvas(&overlay, 5, 0);
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31ma\x1b[0m⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn draw_canvas_with_colored_text_onto_non_textual_canvas() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+
+        assert!(!canvas.is_colorized());
+        assert!(!canvas.is_textual());
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.draw_text(2, 1, "012");
+
+        canvas.draw_canvas(&overlay, 5, 0);
+
+        assert!(canvas.is_colorized());
+        assert!(canvas.is_textual());
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn draw_canvas_with_colored_text_onto_non_colorized_canvas() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+
+        assert!(!canvas.is_colorized());
+        assert!(canvas.is_textual());
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.draw_text(2, 1, "012");
+
+        canvas.draw_canvas(&overlay, 5, 0);
+
+        assert!(canvas.is_colorized());
+        assert!(canvas.is_textual());
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀a⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn merge_canvas() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+        canvas.frame();
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
+        overlay.frame();
+
+        canvas.merge_canvas(&overlay, 8, 4);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+⡇⠀⠀⠑⡯⣉⠉⠉⢉⡩⢻⠀⠀⠀⢸
+⡇⠀⠀⠀⡇⠀⢑⠶⢅⠀⢸⠀⠀⠀⢸
+⡇⠀⠀⠀⣧⣊⣁⣀⣀⣉⣺⢄⠀⠀⢸
+⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼
+",
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_overflow() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+        canvas.frame();
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
+        overlay.frame();
+
+        canvas.merge_canvas(&overlay, -8, -4);
+        canvas.merge_canvas(&overlay, 24, -4);
+        canvas.merge_canvas(&overlay, 24, 12);
+        canvas.merge_canvas(&overlay, -8, 12);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⡟⠫⣹⠉⠉⠉⠉⠉⠉⠉⠉⠉⡏⠉⢹
+⣇⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣹
+⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸
+⣏⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⢹
+⣇⣀⣸⣀⣀⣀⣀⣀⣀⣀⣀⣀⣏⣢⣼
+",
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_color() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.set_color(Color::new().red());
+        canvas.fill_rect(3, 3, 10, 10);
+
+        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.fill_rect(8, 8, 10, 10);
+
+        canvas.merge_canvas(&overlay, 0, 0);
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_color_onto_non_colorized_canvas() {
+        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        canvas.fill_rect(3, 3, 10, 10);
+
+        assert!(!canvas.is_colorized());
+
+        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.fill_rect(8, 8, 10, 10);
+
+        canvas.merge_canvas(&overlay, 0, 0);
+
+        assert!(canvas.is_colorized());
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀⠈⠉⠉\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_text() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.draw_text(2, 1, "012");
+
+        canvas.merge_canvas(&overlay, 0, 0);
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀a012e⠀
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_colored_text() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        canvas.set_color(Color::new().red());
+        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.draw_text(2, 1, "012");
+
+        canvas.merge_canvas(&overlay, 5, 0);
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_colored_text_onto_non_textual_canvas() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+
+        assert!(!canvas.is_colorized());
+        assert!(!canvas.is_textual());
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.draw_text(2, 1, "012");
+
+        canvas.merge_canvas(&overlay, 5, 0);
+
+        assert!(canvas.is_colorized());
+        assert!(canvas.is_textual());
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_colored_text_onto_non_colorized_canvas() {
+        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        canvas.draw_text(1, 1, "abcde"); // TODO: this is inverted in regards to draw canvas, text is at the end
+
+        assert!(!canvas.is_colorized());
+        assert!(canvas.is_textual());
+
+        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.draw_text(2, 1, "012");
+
+        canvas.merge_canvas(&overlay, 5, 0);
+
+        assert!(canvas.is_colorized());
+        assert!(canvas.is_textual());
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀
+⠀abc\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn merge_canvas_with_pixels_color_and_text() {
+        let mut canvas = TextCanvas::new(7, 5).unwrap();
+        canvas.set_color(Color::new().red());
+        canvas.draw_text(0, 2, "abcdefg"); // TODO: this is inverted in regards to draw canvas, text is at the end
+        canvas.set_color(Color::new().blue());
+        canvas.stroke_line(0, 13, canvas.w(), 13);
+
+        let mut overlay = TextCanvas::new(7, 5).unwrap();
+        overlay.set_color(Color::new().green());
+        overlay.draw_text_vertical(canvas.cx() / 2, 1, "012");
+        overlay.set_color(Color::new().yellow());
+        overlay.stroke_line(overlay.cx(), 0, overlay.cx(), overlay.h());
+
+        canvas.merge_canvas(&overlay, 0, 0);
+
+        print!("{canvas}");
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀
+⠀⠀⠀\x1b[0;32m0\x1b[0m⠀⠀⠀
+\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;31me\x1b[0m\x1b[0;31mf\x1b[0m\x1b[0;31mg\x1b[0m
+\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;32m2\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m
+⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀
+"
         );
     }
 }
