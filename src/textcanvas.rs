@@ -474,7 +474,7 @@ impl TextCanvas {
     ///
     /// assert!(!canvas.is_colorized());
     ///
-    /// canvas.set_color(&Color::new().to_owned());  // Buffer is initialized.
+    /// canvas.set_color(&Color::new().fix());  // Buffer is initialized.
     /// assert!(canvas.is_colorized());
     /// ```
     #[must_use]
@@ -512,7 +512,7 @@ impl TextCanvas {
     /// use textcanvas::{Color, TextCanvas};
     ///
     /// let mut canvas = TextCanvas::new(3, 1).unwrap();
-    /// let green = Color::new().bright_green().to_owned();
+    /// let green = Color::new().bright_green().fix();
     ///
     /// canvas.set_color(&green);
     /// assert!(canvas.is_colorized());
@@ -1903,7 +1903,7 @@ mod tests {
         assert_eq!(
             canvas.color_buffer,
             [
-                [Color::new(), Color::new().bg_bright_blue().to_owned()],
+                [Color::new(), Color::new().bg_bright_blue().fix()],
                 [Color::new(), Color::new()],
             ],
             "Incorrect color buffer.",
@@ -1921,8 +1921,8 @@ mod tests {
         assert_eq!(
             canvas.color_buffer,
             [
-                [Color::new(), Color::new().bg_bright_blue().to_owned()],
-                [Color::new().bg_bright_blue().to_owned(), Color::new()],
+                [Color::new(), Color::new().bg_bright_blue().fix()],
+                [Color::new().bg_bright_blue().fix(), Color::new()],
             ],
             "Incorrect color buffer.",
         );
@@ -1942,8 +1942,8 @@ mod tests {
         assert_eq!(
             canvas.color_buffer,
             [
-                [Color::new(), Color::new().bg_bright_red().to_owned()],
-                [Color::new().bg_bright_blue().to_owned(), Color::new()],
+                [Color::new(), Color::new().bg_bright_red().fix()],
+                [Color::new().bg_bright_blue().fix(), Color::new()],
             ],
             "Incorrect color buffer.",
         );
@@ -1963,7 +1963,7 @@ mod tests {
             canvas.color_buffer,
             [
                 [Color::new(), Color::new()],
-                [Color::new().bg_bright_blue().to_owned(), Color::new()],
+                [Color::new().bg_bright_blue().fix(), Color::new()],
             ],
             "Incorrect color buffer.",
         );
@@ -2003,7 +2003,7 @@ mod tests {
 
         assert_eq!(
             canvas.color_buffer,
-            [[Color::new().bright_red().to_owned(), Color::new()]],
+            [[Color::new().bright_red().fix(), Color::new()]],
             "First pixel should be red.",
         );
 

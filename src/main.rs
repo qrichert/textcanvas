@@ -16,13 +16,13 @@ fn main() {
     let center_bottom = (canvas.cx(), canvas.h());
     let center_left = (0, canvas.cy());
 
-    let red = Color::new().bright_red().to_owned();
-    let yellow = Color::new().bright_yellow().to_owned();
-    let green = Color::new().bright_green().to_owned();
-    let blue = Color::new().bright_blue().to_owned();
-    let cyan = Color::new().bright_cyan().to_owned();
-    let magenta = Color::new().bright_magenta().to_owned();
-    let gray = Color::new().bright_gray().to_owned();
+    let red = Color::new().bright_red().fix();
+    let yellow = Color::new().bright_yellow().fix();
+    let green = Color::new().bright_green().fix();
+    let blue = Color::new().bright_blue().fix();
+    let cyan = Color::new().bright_cyan().fix();
+    let magenta = Color::new().bright_magenta().fix();
+    let gray = Color::new().bright_gray().fix();
     let no_color = Color::new();
 
     canvas.set_color(&red);

@@ -122,6 +122,40 @@ impl Color {
         }
     }
 
+    /// Transform mutable builder into the final color.
+    ///
+    /// This is equivalent to calling `to_owned()`, but is shorter, and
+    /// feels more natural at the end of a building sequence. You stop
+    /// "mixing", and "fix" the color in its current state.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// This won't compile, because `magenta()` returns a mutable
+    /// reference to the `Color`, but nothing owns the `Color`.
+    ///
+    /// ```rust,compile_fail
+    /// # use textcanvas::Color;
+    /// // Temporary value is freed at the end of this statement:
+    /// let mut color = Color::new().magenta();
+    /// // Borrow later used here:
+    /// color.bold();
+    /// ```
+    ///
+    /// The easy solution is to call `fix()`, which really just calls
+    /// `to_owned()`, so that the mutable reference is transformed into
+    /// an owned value.
+    ///
+    /// ```rust
+    /// # use textcanvas::Color;
+    /// let mut color = Color::new().magenta().fix();
+    /// color.bold();
+    /// ```
+    #[must_use]
+    pub fn fix(&self) -> Self {
+        self.to_owned()
+    }
+
     #[must_use]
     pub fn format(&self, string: &str) -> String {
         self.to_string().replace(PLACEHOLDER, string)
@@ -390,14 +424,14 @@ mod tests {
 
     #[test]
     fn string_from_ref() {
-        let str = String::from(&Color::new().magenta().to_owned());
+        let str = String::from(&Color::new().magenta().fix());
 
         assert_eq!(str, "\x1b[0;35m{}\x1b[0m");
     }
 
     #[test]
     fn string_from_owned() {
-        let str = String::from(Color::new().magenta().to_owned());
+        let str = String::from(Color::new().magenta().fix());
 
         assert_eq!(str, "\x1b[0;35m{}\x1b[0m");
     }
@@ -405,6 +439,16 @@ mod tests {
     #[test]
     fn to_owned() {
         let owned_color = Color::new().magenta().to_owned();
+
+        assert_eq!(
+            owned_color.color_4bit, // Do something with the owned color.
+            Color::new().magenta().color_4bit
+        );
+    }
+
+    #[test]
+    fn fix() {
+        let owned_color = Color::new().magenta().fix();
 
         assert_eq!(
             owned_color.color_4bit, // Do something with the owned color.
