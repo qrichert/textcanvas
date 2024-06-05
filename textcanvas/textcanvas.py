@@ -224,6 +224,29 @@ class TextCanvas:
             LookupError: If either or both `WIDTH` and `HEIGHT`
                 variables cannot be read from the environment.
         """
+        (width, height) = TextCanvas.get_auto_size()
+        return cls(width, height)
+
+    @staticmethod
+    def get_default_size() -> tuple[int, int]:
+        """Default canvas size.
+
+        This value is used by `TextCanvas()` if no size is provided to
+        the constructor, but it may be useful to query it separately.
+        """
+        return (80, 24)
+
+    @staticmethod
+    def get_auto_size() -> tuple[int, int]:
+        """Read canvas size from `WIDTH` and `HEIGHT` env variables.
+
+        This value is used by `TextCanvas.auto()`, but it may be useful
+        to query it separately.
+
+        Raises:
+            LookupError: If either or both `WIDTH` and `HEIGHT`
+                variables cannot be read from the environment.
+        """
         try:
             width: int = int(os.environ.get("WIDTH", ""))
         except ValueError:
@@ -234,7 +257,7 @@ class TextCanvas:
         except ValueError:
             raise LookupError("Cannot read terminal height from environment.")
 
-        return cls(width, height)
+        return (width, height)
 
     def __repr__(self) -> str:
         out_w: int = self.output.width

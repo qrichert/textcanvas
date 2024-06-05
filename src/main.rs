@@ -4,7 +4,7 @@ use textcanvas::{Color, TextCanvas};
 fn main() {
     // TextCanvas.
 
-    let mut canvas = TextCanvas::new(15, 5).unwrap();
+    let mut canvas = TextCanvas::new(15, 5);
 
     let top_left = (0, 0);
     let top_right = (canvas.w(), 0);

@@ -187,7 +187,7 @@ impl Iterator for IterPixelBufferByBlocksLRTB<'_> {
 /// ```rust
 /// use textcanvas::TextCanvas;
 ///
-/// let mut canvas = TextCanvas::new(15, 5).unwrap();
+/// let mut canvas = TextCanvas::new(15, 5);
 ///
 /// assert_eq!(
 ///     canvas.repr(),
@@ -258,7 +258,7 @@ pub struct TextCanvas {
 impl TextCanvas {
     /// Create new `TextCanvas`.
     ///
-    /// # Errors
+    /// # Panics
     ///
     /// If width and height of canvas are < 1×1.
     ///
@@ -269,10 +269,12 @@ impl TextCanvas {
     /// values. Even though they are never displayed, allowing negative
     /// values makes for a nicer API. _We_ handle the complexity for the
     /// user.
-    pub fn new(width: i32, height: i32) -> Result<Self, &'static str> {
-        if !Self::check_canvas_size(width, height) {
-            return Err("TextCanvas' minimal size is 1×1.");
-        }
+    #[must_use]
+    pub fn new(width: i32, height: i32) -> Self {
+        assert!(
+            Self::check_canvas_size(width, height),
+            "TextCanvas' minimal size is 1×1."
+        );
 
         let mut canvas = Self {
             output: Surface { width, height },
@@ -289,7 +291,7 @@ impl TextCanvas {
 
         canvas.init_buffer();
 
-        Ok(canvas)
+        canvas
     }
 
     /// Ensure user `i32s` can safely be cast to internal `usize`.
@@ -317,6 +319,29 @@ impl TextCanvas {
     /// If either or both `WIDTH` and `HEIGHT` variables cannot be read
     /// from the environment.
     pub fn new_auto() -> Result<Self, &'static str> {
+        let (width, height) = Self::get_auto_size()?;
+        Ok(Self::new(width, height))
+    }
+
+    /// Default canvas size.
+    ///
+    /// This value is used by [`TextCanvas::default()`], but it may be
+    /// useful to query it separately.
+    #[must_use]
+    pub fn get_default_size() -> (i32, i32) {
+        (80, 24)
+    }
+
+    /// Read canvas size from `WIDTH` and `HEIGHT` env variables.
+    ///
+    /// This value is used by [`TextCanvas::new_auto()`], but it may be
+    /// useful to query it separately.
+    ///
+    /// # Errors
+    ///
+    /// If either or both `WIDTH` and `HEIGHT` variables cannot be read
+    /// from the environment.
+    pub fn get_auto_size() -> Result<(i32, i32), &'static str> {
         let Some(width) = env::var("WIDTH").ok().and_then(|w| w.parse().ok()) else {
             return Err("Cannot read terminal width from environment.");
         };
@@ -325,7 +350,7 @@ impl TextCanvas {
             return Err("Cannot read terminal height from environment.");
         };
 
-        Self::new(width, height)
+        Ok((width, height))
     }
 
     /// High-level string representation of the canvas.
@@ -335,7 +360,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// assert_eq!(
     ///     canvas.repr(),
@@ -470,7 +495,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::{Color, TextCanvas};
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// assert!(!canvas.is_colorized());
     ///
@@ -492,7 +517,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// assert!(!canvas.is_textual());
     ///
@@ -511,7 +536,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::{Color, TextCanvas};
     ///
-    /// let mut canvas = TextCanvas::new(3, 1).unwrap();
+    /// let mut canvas = TextCanvas::new(3, 1);
     /// let green = Color::new().bright_green().fix();
     ///
     /// canvas.set_color(&green);
@@ -784,7 +809,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.stroke_line(5, 5, 25, 15);
     ///
@@ -861,7 +886,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.stroke_rect(5, 5, 20, 10);
     ///
@@ -891,7 +916,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.frame();
     ///
@@ -917,7 +942,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.fill_rect(5, 5, 20, 10);
     ///
@@ -945,7 +970,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.stroke_triangle(5, 5, 20, 10, 4, 17);
     ///
@@ -973,7 +998,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.fill_triangle(5, 5, 20, 10, 4, 17);
     ///
@@ -1044,7 +1069,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.stroke_circle(canvas.cx(), canvas.cy(), 7);
     ///
@@ -1070,7 +1095,7 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     ///
     /// canvas.fill_circle(canvas.cx(), canvas.cy(), 7);
     ///
@@ -1138,11 +1163,11 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     /// canvas.stroke_line(0, 0, canvas.w(), canvas.h());
     /// canvas.stroke_line(0, canvas.h(), canvas.w(), 0);
     ///
-    /// let mut overlay = TextCanvas::new(7, 3).unwrap();
+    /// let mut overlay = TextCanvas::new(7, 3);
     /// overlay.frame();
     ///
     /// canvas.draw_canvas(&overlay, 8, 4);
@@ -1176,11 +1201,11 @@ impl TextCanvas {
     /// ```rust
     /// use textcanvas::TextCanvas;
     ///
-    /// let mut canvas = TextCanvas::new(15, 5).unwrap();
+    /// let mut canvas = TextCanvas::new(15, 5);
     /// canvas.stroke_line(0, 0, canvas.w(), canvas.h());
     /// canvas.stroke_line(0, canvas.h(), canvas.w(), 0);
     ///
-    /// let mut overlay = TextCanvas::new(7, 3).unwrap();
+    /// let mut overlay = TextCanvas::new(7, 3);
     /// overlay.frame();
     ///
     /// canvas.merge_canvas(&overlay, 8, 4);
@@ -1258,7 +1283,8 @@ impl TextCanvas {
 
 impl Default for TextCanvas {
     fn default() -> Self {
-        Self::new(80, 24).unwrap()
+        let (width, heigt) = Self::get_default_size();
+        Self::new(width, heigt)
     }
 }
 
@@ -1300,7 +1326,7 @@ mod tests {
 
     #[test]
     fn test_output_size() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert_eq!(canvas.output.width, 7, "Incorrect output width.");
         assert_eq!(canvas.output.height, 4, "Incorrect output height.");
@@ -1308,7 +1334,7 @@ mod tests {
 
     #[test]
     fn screen_size() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert_eq!(canvas.screen.width, 7 * 2, "Incorrect output width.");
         assert_eq!(canvas.screen.height, 4 * 4, "Incorrect output height.");
@@ -1316,7 +1342,7 @@ mod tests {
 
     #[test]
     fn buffer_size() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
         let buffer_width = canvas.buffer[0].len();
         let buffer_height = canvas.buffer.len();
 
@@ -1337,61 +1363,84 @@ mod tests {
     }
 
     #[test]
-    fn size_zero_raises_error() {
-        assert!(
-            TextCanvas::new(0, 1).is_err(),
-            "Zero width did not raise error."
-        );
+    fn get_default_size() {
+        let (width, height) = TextCanvas::get_default_size();
 
-        assert!(
-            TextCanvas::new(1, 0).is_err(),
-            "Zero height did not raise error."
-        );
-
-        assert!(
-            TextCanvas::new(0, 0).is_err(),
-            "Zero width and height did not raise error."
-        );
+        assert_eq!(width, 80, "Incorrect default width.");
+        assert_eq!(height, 24, "Incorrect default height.");
     }
 
     #[test]
-    fn size_negative_raises_error() {
-        assert!(
-            TextCanvas::new(-1, 1).is_err(),
-            "Negative width did not raise error."
-        );
-
-        assert!(
-            TextCanvas::new(1, -1).is_err(),
-            "Negative height did not raise error."
-        );
-
-        assert!(
-            TextCanvas::new(-1, -1).is_err(),
-            "Negative width and height did not raise error."
-        );
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_zero_panics_for_width() {
+        let _ = TextCanvas::new(0, 1);
     }
 
     #[test]
-    fn size_too_big_raises_error() {
-        assert!(
-            TextCanvas::new(100_000, 1).is_err(),
-            "Too large width did not raise error."
-        );
-
-        assert!(
-            TextCanvas::new(1, 100_000).is_err(),
-            "Too large height did not raise error."
-        );
-
-        assert!(
-            TextCanvas::new(100_000, 100_000).is_err(),
-            "Too large width and height did not raise error."
-        );
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_zero_panics_for_height() {
+        let _ = TextCanvas::new(1, 0);
     }
 
     #[test]
-    fn max_i32_does_not_overflow() {
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_zero_panics_for_width_and_height() {
+        let _ = TextCanvas::new(0, 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_negative_panics_for_width() {
+        let _ = TextCanvas::new(-1, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_negative_panics_for_height() {
+        let _ = TextCanvas::new(1, -1);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_negative_panics_for_width_and_height() {
+        let _ = TextCanvas::new(-1, -1);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_too_big_panics_for_width() {
+        let _ = TextCanvas::new(100_000, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_too_big_panics_for_height() {
+        let _ = TextCanvas::new(1, 100_000);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn size_too_big_panics_for_width_and_height() {
+        let _ = TextCanvas::new(100_000, 100_000);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn max_i32_does_not_overflow_width() {
+        // There was an error in the bounds checking condition:
+        //
+        //     if width * 2 <= MAX_RESOLUTION
+        //
+        // This panics if `size * 2` > `i32::MAX`, with `attempt to
+        // multiply with overflow`. The solution is to divide instead:
+        //
+        //     if width <= MAX_RESOLUTION / 2
+        let _ = TextCanvas::new(i32::MAX, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
+    fn max_i32_does_not_overflow_height() {
         // There was an error in the bounds checking condition:
         //
         //     if height * 4 <= MAX_RESOLUTION
@@ -1400,14 +1449,7 @@ mod tests {
         // multiply with overflow`. The solution is to divide instead:
         //
         //     if height <= MAX_RESOLUTION / 4
-        assert!(
-            TextCanvas::new(i32::MAX, 1).is_err(),
-            "Should raise error, and not panic."
-        );
-        assert!(
-            TextCanvas::new(1, i32::MAX).is_err(),
-            "Should raise error, and not panic."
-        );
+        let _ = TextCanvas::new(1, i32::MAX);
     }
 
     #[test]
@@ -1421,6 +1463,7 @@ mod tests {
             TextCanvas::new_auto().is_err(),
             "`WIDTH` and `HEIGHT` don't exist."
         );
+        assert!(TextCanvas::get_auto_size().is_err());
 
         env::set_var("WIDTH", "1");
         env::set_var("HEIGHT", "2147483648");
@@ -1429,16 +1472,19 @@ mod tests {
             TextCanvas::new_auto().is_err(),
             "`HEIGHT` is too large for an `i32`."
         );
+        assert!(TextCanvas::get_auto_size().is_err());
 
         env::set_var("WIDTH", "abc");
         env::set_var("HEIGHT", "1");
 
         assert!(TextCanvas::new_auto().is_err(), "`WIDTH` is not a number.");
+        assert!(TextCanvas::get_auto_size().is_err());
 
         env::set_var("WIDTH", "1");
         env::set_var("HEIGHT", "abc");
 
         assert!(TextCanvas::new_auto().is_err(), "`HEIGHT` is not a number.");
+        assert!(TextCanvas::get_auto_size().is_err());
 
         env::set_var("WIDTH", "12");
         env::set_var("HEIGHT", "5");
@@ -1447,11 +1493,12 @@ mod tests {
 
         assert_eq!(canvas.output.width, 12, "Incorrect auto width.");
         assert_eq!(canvas.output.height, 5, "Incorrect auto height.");
+        assert_eq!(TextCanvas::get_auto_size(), Ok((12, 5)));
     }
 
     #[test]
     fn string_representation() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert_eq!(
             canvas.to_string(),
@@ -1468,7 +1515,7 @@ mod tests {
 
     #[test]
     fn shortcuts() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert_eq!(canvas.w(), 13, "Incorrect screen width.");
         assert_eq!(canvas.h(), 15, "Incorrect screen height.");
@@ -1478,7 +1525,7 @@ mod tests {
 
     #[test]
     fn shortcuts_unsigned() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert_eq!(canvas.uw(), 13, "Incorrect screen width.");
         assert_eq!(canvas.uh(), 15, "Incorrect screen height.");
@@ -1488,7 +1535,7 @@ mod tests {
 
     #[test]
     fn check_output_bounds() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert!(canvas.check_output_bounds(0, 0));
         assert!(canvas.check_output_bounds(6, 0));
@@ -1503,7 +1550,7 @@ mod tests {
 
     #[test]
     fn check_screen_bounds() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert!(canvas.check_screen_bounds(0, 0));
         assert!(canvas.check_screen_bounds(13, 0));
@@ -1518,7 +1565,7 @@ mod tests {
 
     #[test]
     fn turn_all_pixels_on() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         for x in 0..canvas.screen.width() {
             for y in 0..canvas.screen.height() {
@@ -1531,7 +1578,7 @@ mod tests {
 
     #[test]
     fn get_pixel() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         assert_eq!(
             canvas.get_pixel(3, 2),
@@ -1550,7 +1597,7 @@ mod tests {
 
     #[test]
     fn get_pixel_with_overflow() {
-        let canvas = TextCanvas::new(1, 1).unwrap();
+        let canvas = TextCanvas::new(1, 1);
 
         assert_eq!(canvas.get_pixel(-1, 0), None, "Overflow should be None.");
         assert_eq!(canvas.get_pixel(0, -1), None, "Overflow should be None.");
@@ -1575,7 +1622,7 @@ mod tests {
 
     #[test]
     fn get_pixel_on_boundaries() {
-        let mut canvas = TextCanvas::new(1, 1).unwrap();
+        let mut canvas = TextCanvas::new(1, 1);
 
         canvas.buffer = vec![
             vec![true, false],
@@ -1594,7 +1641,7 @@ mod tests {
 
     #[test]
     fn set_pixel() {
-        let mut canvas = TextCanvas::new(3, 2).unwrap();
+        let mut canvas = TextCanvas::new(3, 2);
         stroke_line_accros_canvas(&mut canvas);
 
         assert_eq!(
@@ -1615,7 +1662,7 @@ mod tests {
 
     #[test]
     fn set_pixel_with_overflow() {
-        let mut canvas = TextCanvas::new(1, 1).unwrap();
+        let mut canvas = TextCanvas::new(1, 1);
 
         canvas.set_pixel(-1, 0, true);
         canvas.set_pixel(0, -1, true);
@@ -1639,7 +1686,7 @@ mod tests {
 
     #[test]
     fn set_pixel_on_boundaries() {
-        let mut canvas = TextCanvas::new(1, 1).unwrap();
+        let mut canvas = TextCanvas::new(1, 1);
 
         canvas.set_pixel(0, 0, true);
         canvas.set_pixel(canvas.screen.width() - 1, canvas.screen.height() - 1, true);
@@ -1653,7 +1700,7 @@ mod tests {
 
     #[test]
     fn get_as_string() {
-        let mut canvas = TextCanvas::new(3, 2).unwrap();
+        let mut canvas = TextCanvas::new(3, 2);
         stroke_line_accros_canvas(&mut canvas);
 
         assert_eq!(canvas.to_string(), "⠑⢄⠀\n⠀⠀⠑\n", "Incorrect output string.");
@@ -1661,7 +1708,7 @@ mod tests {
 
     #[test]
     fn clear() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.fill();
 
@@ -1672,7 +1719,7 @@ mod tests {
 
     #[test]
     fn clear_edits_buffer_in_place() {
-        let mut canvas = TextCanvas::new(1, 1).unwrap();
+        let mut canvas = TextCanvas::new(1, 1);
 
         let buffer = canvas.buffer.as_ptr();
         let row_0 = canvas.buffer[0].as_ptr();
@@ -1711,7 +1758,7 @@ mod tests {
 
     #[test]
     fn fill() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.fill();
 
@@ -1720,7 +1767,7 @@ mod tests {
 
     #[test]
     fn invert() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.fill_rect(6, 3, 20, 15);
 
@@ -1744,7 +1791,7 @@ mod tests {
 
     #[test]
     fn double_invert() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         assert!(!canvas.is_inverted);
 
@@ -1757,7 +1804,7 @@ mod tests {
 
     #[test]
     fn clear_not_affected_by_invert() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.invert();
         canvas.clear();
@@ -1767,7 +1814,7 @@ mod tests {
 
     #[test]
     fn fill_not_affected_by_invert() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.invert();
         canvas.fill();
@@ -1779,7 +1826,7 @@ mod tests {
     fn iter_buffer_by_blocks_lrtb() {
         // This tests a private method, but this method is at the core
         // of the output generation. Testing it helps ensure stability.
-        let mut canvas = TextCanvas::new(3, 2).unwrap();
+        let mut canvas = TextCanvas::new(3, 2);
         stroke_line_accros_canvas(&mut canvas);
 
         assert_eq!(
@@ -1813,7 +1860,7 @@ mod tests {
 
     #[test]
     fn iter_buffer() {
-        let canvas = TextCanvas::new(3, 2).unwrap();
+        let canvas = TextCanvas::new(3, 2);
 
         #[rustfmt::skip]
         assert_eq!(canvas.iter_buffer().collect::<Vec<_>>(), [
@@ -1830,7 +1877,7 @@ mod tests {
 
     #[test]
     fn uiter_buffer() {
-        let canvas = TextCanvas::new(3, 2).unwrap();
+        let canvas = TextCanvas::new(3, 2);
 
         #[rustfmt::skip]
         assert_eq!(canvas.uiter_buffer().collect::<Vec<_>>(), [
@@ -1849,7 +1896,7 @@ mod tests {
 
     #[test]
     fn color_buffer_size_at_init() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert!(
             canvas.color_buffer.is_empty(),
@@ -1859,7 +1906,7 @@ mod tests {
 
     #[test]
     fn color_buffer_size_with_color() {
-        let mut canvas = TextCanvas::new(7, 4).unwrap();
+        let mut canvas = TextCanvas::new(7, 4);
 
         canvas.set_color(Color::new().bg_bright_blue());
 
@@ -1878,7 +1925,7 @@ mod tests {
 
     #[test]
     fn is_colorized() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         assert!(
             !canvas.is_colorized(),
@@ -1895,7 +1942,7 @@ mod tests {
 
     #[test]
     fn set_color() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.set_color(Color::new().bg_bright_blue());
         canvas.set_pixel(3, 3, true);
@@ -1912,7 +1959,7 @@ mod tests {
 
     #[test]
     fn set_color_multiple() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.set_color(Color::new().bg_bright_blue());
         canvas.set_pixel(3, 3, true);
@@ -1930,7 +1977,7 @@ mod tests {
 
     #[test]
     fn set_color_override() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.set_color(Color::new().bg_bright_blue());
         canvas.set_pixel(3, 3, true);
@@ -1951,7 +1998,7 @@ mod tests {
 
     #[test]
     fn color_is_reset_if_pixel_turned_off() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         canvas.set_color(Color::new().bg_bright_blue());
         canvas.set_pixel(3, 3, true);
@@ -1971,7 +2018,7 @@ mod tests {
 
     #[test]
     fn get_as_string_colored() {
-        let mut canvas = TextCanvas::new(3, 2).unwrap();
+        let mut canvas = TextCanvas::new(3, 2);
         canvas.set_color(Color::new().bright_green());
         stroke_line_accros_canvas(&mut canvas);
 
@@ -1984,7 +2031,7 @@ mod tests {
 
     #[test]
     fn clear_clears_color_buffer() {
-        let mut canvas = TextCanvas::new(2, 1).unwrap();
+        let mut canvas = TextCanvas::new(2, 1);
 
         assert!(
             canvas.color_buffer.is_empty(),
@@ -2018,7 +2065,7 @@ mod tests {
 
     #[test]
     fn clear_edits_color_buffer_in_place() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
         canvas.set_color(Color::new().bright_red());
 
         let color_buffer = canvas.color_buffer.as_ptr();
@@ -2048,7 +2095,7 @@ mod tests {
 
     #[test]
     fn text_buffer_size_at_init() {
-        let canvas = TextCanvas::new(7, 4).unwrap();
+        let canvas = TextCanvas::new(7, 4);
 
         assert!(
             canvas.text_buffer.is_empty(),
@@ -2058,7 +2105,7 @@ mod tests {
 
     #[test]
     fn text_buffer_size_with_color() {
-        let mut canvas = TextCanvas::new(7, 4).unwrap();
+        let mut canvas = TextCanvas::new(7, 4);
 
         canvas.draw_text("foo", 0, 0);
 
@@ -2077,7 +2124,7 @@ mod tests {
 
     #[test]
     fn is_textual() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
 
         assert!(
             !canvas.is_colorized(),
@@ -2094,7 +2141,7 @@ mod tests {
 
     #[test]
     fn draw_text() {
-        let mut canvas = TextCanvas::new(5, 1).unwrap();
+        let mut canvas = TextCanvas::new(5, 1);
 
         canvas.draw_text("bar", 1, 0);
 
@@ -2107,7 +2154,7 @@ mod tests {
 
     #[test]
     fn draw_text_vertical() {
-        let mut canvas = TextCanvas::new(1, 5).unwrap();
+        let mut canvas = TextCanvas::new(1, 5);
 
         assert!(!canvas.is_textual());
 
@@ -2124,7 +2171,7 @@ mod tests {
 
     #[test]
     fn draw_text_over_text() {
-        let mut canvas = TextCanvas::new(5, 1).unwrap();
+        let mut canvas = TextCanvas::new(5, 1);
 
         canvas.draw_text("bar", 1, 0);
         canvas.draw_text("foo", 2, 0);
@@ -2138,7 +2185,7 @@ mod tests {
 
     #[test]
     fn draw_text_space_is_transparent() {
-        let mut canvas = TextCanvas::new(9, 1).unwrap();
+        let mut canvas = TextCanvas::new(9, 1);
 
         canvas.draw_text("foo bar", 1, 0);
 
@@ -2151,7 +2198,7 @@ mod tests {
 
     #[test]
     fn draw_text_space_clears_text() {
-        let mut canvas = TextCanvas::new(5, 1).unwrap();
+        let mut canvas = TextCanvas::new(5, 1);
 
         canvas.draw_text("bar", 1, 0);
         canvas.draw_text("  ", 2, 0);
@@ -2165,7 +2212,7 @@ mod tests {
 
     #[test]
     fn draw_text_with_overflow() {
-        let mut canvas = TextCanvas::new(5, 2).unwrap();
+        let mut canvas = TextCanvas::new(5, 2);
 
         // Show partially.
         canvas.draw_text("foo", -1, 0);
@@ -2186,7 +2233,7 @@ mod tests {
 
     #[test]
     fn draw_text_on_boundaries() {
-        let mut canvas = TextCanvas::new(3, 3).unwrap();
+        let mut canvas = TextCanvas::new(3, 3);
 
         canvas.draw_text("a", 0, 1);
         canvas.draw_text("b", 1, 0);
@@ -2202,7 +2249,7 @@ mod tests {
 
     #[test]
     fn draw_text_with_color() {
-        let mut canvas = TextCanvas::new(3, 1).unwrap();
+        let mut canvas = TextCanvas::new(3, 1);
 
         assert!(
             canvas.text_buffer.is_empty(),
@@ -2229,7 +2276,7 @@ mod tests {
 
     #[test]
     fn merge_text_space_does_not_clear_text() {
-        let mut canvas = TextCanvas::new(5, 1).unwrap();
+        let mut canvas = TextCanvas::new(5, 1);
 
         canvas.merge_text("bar", 1, 0);
         canvas.merge_text(" z", 2, 0);
@@ -2243,7 +2290,7 @@ mod tests {
 
     #[test]
     fn merge_text_vertical() {
-        let mut canvas = TextCanvas::new(1, 5).unwrap();
+        let mut canvas = TextCanvas::new(1, 5);
 
         assert!(!canvas.is_textual());
 
@@ -2261,7 +2308,7 @@ mod tests {
 
     #[test]
     fn get_text_as_string() {
-        let mut canvas = TextCanvas::new(5, 3).unwrap();
+        let mut canvas = TextCanvas::new(5, 3);
 
         canvas.draw_text("foo", 1, 1);
 
@@ -2274,7 +2321,7 @@ mod tests {
 
     #[test]
     fn get_text_as_string_colored() {
-        let mut canvas = TextCanvas::new(5, 3).unwrap();
+        let mut canvas = TextCanvas::new(5, 3);
 
         canvas.set_color(Color::new().bright_green());
         canvas.draw_text("foo", 1, 1);
@@ -2288,7 +2335,7 @@ mod tests {
 
     #[test]
     fn clear_clears_text_buffer() {
-        let mut canvas = TextCanvas::new(2, 1).unwrap();
+        let mut canvas = TextCanvas::new(2, 1);
 
         assert!(
             canvas.text_buffer.is_empty(),
@@ -2315,7 +2362,7 @@ mod tests {
 
     #[test]
     fn clear_edits_text_buffer_in_place() {
-        let mut canvas = TextCanvas::new(2, 2).unwrap();
+        let mut canvas = TextCanvas::new(2, 2);
         canvas.draw_text("hi", 0, 0);
 
         let text_buffer = canvas.text_buffer.as_ptr();
@@ -2345,7 +2392,7 @@ mod tests {
 
     #[test]
     fn stroke_line() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         let top_left = (0, 0);
         let top_right = (canvas.w(), 0);
@@ -2381,7 +2428,7 @@ mod tests {
 
     #[test]
     fn stroke_line_from_outside_to_outside() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.stroke_line(-10, -10, canvas.w() + 10, canvas.h() + 10);
 
@@ -2400,7 +2447,7 @@ mod tests {
 
     #[test]
     fn erase_line() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.fill();
 
@@ -2425,7 +2472,7 @@ mod tests {
 
     #[test]
     fn stroke_rect() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.stroke_rect(6, 3, 20, 15);
 
@@ -2443,7 +2490,7 @@ mod tests {
 
     #[test]
     fn frame() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.frame();
 
@@ -2461,7 +2508,7 @@ mod tests {
 
     #[test]
     fn fill_rect() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.fill_rect(6, 3, 20, 15);
 
@@ -2479,7 +2526,7 @@ mod tests {
 
     #[test]
     fn stroke_triangle() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.stroke_triangle(6, 3, 20, 2, 23, 18);
 
@@ -2497,7 +2544,7 @@ mod tests {
 
     #[test]
     fn fill_triangle() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.fill_triangle(6, 3, 20, 2, 23, 18);
 
@@ -2515,7 +2562,7 @@ mod tests {
 
     #[test]
     fn stroke_circle() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.stroke_circle(15, 10, 7);
 
@@ -2533,7 +2580,7 @@ mod tests {
 
     #[test]
     fn fill_circle() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
 
         canvas.fill_circle(15, 10, 7);
 
@@ -2551,11 +2598,11 @@ mod tests {
 
     #[test]
     fn draw_canvas() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.stroke_line(0, 0, canvas.w(), canvas.h());
         canvas.frame();
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
         overlay.frame();
 
@@ -2575,11 +2622,11 @@ mod tests {
 
     #[test]
     fn draw_canvas_with_overflow() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.stroke_line(0, 0, canvas.w(), canvas.h());
         canvas.frame();
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
         overlay.frame();
 
@@ -2602,11 +2649,11 @@ mod tests {
 
     #[test]
     fn draw_canvas_with_color() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.set_color(Color::new().red());
         canvas.fill_rect(3, 3, 10, 10);
 
-        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        let mut overlay = TextCanvas::new(15, 5);
         overlay.set_color(Color::new().green());
         overlay.fill_rect(8, 8, 10, 10);
 
@@ -2628,12 +2675,12 @@ mod tests {
 
     #[test]
     fn draw_canvas_with_color_onto_non_colorized_canvas() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.fill_rect(3, 3, 10, 10);
 
         assert!(!canvas.is_colorized());
 
-        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        let mut overlay = TextCanvas::new(15, 5);
         overlay.set_color(Color::new().green());
         overlay.fill_rect(8, 8, 10, 10);
 
@@ -2657,10 +2704,10 @@ mod tests {
 
     #[test]
     fn draw_canvas_with_text() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
         canvas.draw_text("abcde", 1, 1);
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.draw_text("012", 2, 1);
 
         canvas.draw_canvas(&overlay, 5, 0);
@@ -2679,11 +2726,11 @@ mod tests {
 
     #[test]
     fn draw_canvas_with_colored_text() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
         canvas.set_color(Color::new().red());
         canvas.draw_text("abcde", 1, 1);
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.set_color(Color::new().green());
         overlay.draw_text("012", 2, 1);
 
@@ -2703,12 +2750,12 @@ mod tests {
 
     #[test]
     fn draw_canvas_with_colored_text_onto_non_textual_canvas() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
 
         assert!(!canvas.is_colorized());
         assert!(!canvas.is_textual());
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.set_color(Color::new().green());
         overlay.draw_text("012", 2, 1);
 
@@ -2731,13 +2778,13 @@ mod tests {
 
     #[test]
     fn draw_canvas_with_colored_text_onto_non_colorized_canvas() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
         canvas.draw_text("abcde", 1, 1);
 
         assert!(!canvas.is_colorized());
         assert!(canvas.is_textual());
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.set_color(Color::new().green());
         overlay.draw_text("012", 2, 1);
 
@@ -2760,11 +2807,11 @@ mod tests {
 
     #[test]
     fn merge_canvas() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.stroke_line(0, 0, canvas.w(), canvas.h());
         canvas.frame();
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
         overlay.frame();
 
@@ -2784,11 +2831,11 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_overflow() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.stroke_line(0, 0, canvas.w(), canvas.h());
         canvas.frame();
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.stroke_line(0, overlay.h(), overlay.w(), 0);
         overlay.frame();
 
@@ -2811,11 +2858,11 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_color() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.set_color(Color::new().red());
         canvas.fill_rect(3, 3, 10, 10);
 
-        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        let mut overlay = TextCanvas::new(15, 5);
         overlay.set_color(Color::new().green());
         overlay.fill_rect(8, 8, 10, 10);
 
@@ -2837,12 +2884,12 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_color_onto_non_colorized_canvas() {
-        let mut canvas = TextCanvas::new(15, 5).unwrap();
+        let mut canvas = TextCanvas::new(15, 5);
         canvas.fill_rect(3, 3, 10, 10);
 
         assert!(!canvas.is_colorized());
 
-        let mut overlay = TextCanvas::new(15, 5).unwrap();
+        let mut overlay = TextCanvas::new(15, 5);
         overlay.set_color(Color::new().green());
         overlay.fill_rect(8, 8, 10, 10);
 
@@ -2866,10 +2913,10 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_text() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
         canvas.draw_text("abcde", 1, 1);
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.draw_text("012", 2, 1);
 
         canvas.merge_canvas(&overlay, 0, 0);
@@ -2888,11 +2935,11 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_colored_text() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
         canvas.set_color(Color::new().red());
         canvas.draw_text("abcde", 1, 1);
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.set_color(Color::new().green());
         overlay.draw_text("012", 2, 1);
 
@@ -2912,12 +2959,12 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_colored_text_onto_non_textual_canvas() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
 
         assert!(!canvas.is_colorized());
         assert!(!canvas.is_textual());
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.set_color(Color::new().green());
         overlay.draw_text("012", 2, 1);
 
@@ -2940,13 +2987,13 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_colored_text_onto_non_colorized_canvas() {
-        let mut canvas = TextCanvas::new(7, 3).unwrap();
+        let mut canvas = TextCanvas::new(7, 3);
         canvas.draw_text("abcde", 1, 1);
 
         assert!(!canvas.is_colorized());
         assert!(canvas.is_textual());
 
-        let mut overlay = TextCanvas::new(7, 3).unwrap();
+        let mut overlay = TextCanvas::new(7, 3);
         overlay.set_color(Color::new().green());
         overlay.draw_text("012", 2, 1);
 
@@ -2969,13 +3016,13 @@ mod tests {
 
     #[test]
     fn merge_canvas_with_pixels_color_and_text() {
-        let mut canvas = TextCanvas::new(7, 5).unwrap();
+        let mut canvas = TextCanvas::new(7, 5);
         canvas.set_color(Color::new().red());
         canvas.draw_text("abcdefg", 0, 2);
         canvas.set_color(Color::new().blue());
         canvas.stroke_line(0, 13, canvas.w(), 13);
 
-        let mut overlay = TextCanvas::new(7, 5).unwrap();
+        let mut overlay = TextCanvas::new(7, 5);
         overlay.set_color(Color::new().green());
         overlay.draw_text_vertical("012", canvas.cx() / 2, 1);
         overlay.set_color(Color::new().yellow());

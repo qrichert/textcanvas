@@ -49,6 +49,19 @@ class TestTextCanvas(unittest.TestCase):
         self.assertEqual(canvas.output.width, 80, "Incorrect default width.")
         self.assertEqual(canvas.output.height, 24, "Incorrect default height.")
 
+    def test_get_default_size(self) -> None:
+        (width, height) = TextCanvas.get_default_size()
+
+        self.assertEqual(width, 80, "Incorrect default width.")
+        self.assertEqual(height, 24, "Incorrect default width.")
+
+    def test_constructor_default_size_eq_get_default_size(self) -> None:
+        canvas = TextCanvas()
+        (width, height) = TextCanvas.get_default_size()
+
+        self.assertEqual(canvas.output.width, width, "Incorrect default width.")
+        self.assertEqual(canvas.output.height, height, "Incorrect default height.")
+
     def test_size_zero_raises_error(self) -> None:
         with self.assertRaises(ValueError) as ctx:
             ctx.msg = "Zero width did not raise error."
@@ -84,6 +97,8 @@ class TestTextCanvas(unittest.TestCase):
         self.assertEqual(canvas.output.width, 12, "Incorrect auto width.")
         self.assertEqual(canvas.output.height, 5, "Incorrect auto height.")
 
+        self.assertEqual(TextCanvas.get_auto_size(), (12, 5))
+
     def test_auto_size_width_and_height_variables_dont_exist(self) -> None:
         os.environ.pop("WIDTH", None)
         os.environ.pop("HEIGHT", None)
@@ -91,6 +106,9 @@ class TestTextCanvas(unittest.TestCase):
         with self.assertRaises(LookupError) as ctx:
             ctx.msg = "`WIDTH` and `HEIGHT` don't exist."
             TextCanvas.auto()
+
+        with self.assertRaises(LookupError):
+            TextCanvas.get_auto_size()
 
     def test_auto_size_cannot_parse_width_variable(self) -> None:
         os.environ["WIDTH"] = "abc"
@@ -100,6 +118,9 @@ class TestTextCanvas(unittest.TestCase):
             ctx.msg = "`WIDTH` is not a number."
             TextCanvas.auto()
 
+        with self.assertRaises(LookupError):
+            TextCanvas.get_auto_size()
+
     def test_auto_size_cannot_parse_height_variable(self) -> None:
         os.environ["WIDTH"] = "1"
         os.environ["HEIGHT"] = "abc"
@@ -107,6 +128,9 @@ class TestTextCanvas(unittest.TestCase):
         with self.assertRaises(LookupError) as ctx:
             ctx.msg = "`HEIGHT` is not a number."
             TextCanvas.auto()
+
+        with self.assertRaises(LookupError):
+            TextCanvas.get_auto_size()
 
     def test_string_representation(self) -> None:
         canvas = TextCanvas(7, 4)
