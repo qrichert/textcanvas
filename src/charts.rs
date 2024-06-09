@@ -216,7 +216,7 @@ impl Plot {
         let min_x = x.iter().min_by(Self::cmp_f64).expect("cannot be empty");
         let max_x = x.iter().max_by(Self::cmp_f64).expect("cannot be empty");
         let range_x = max_x - min_x;
-        let scale_x = f64::from(canvas.w()) / range_x;
+        let scale_x = canvas.fw() / range_x;
 
         // If `range = 0`. Division of a positive number by zero
         // results in +Inf.
@@ -261,7 +261,7 @@ impl Plot {
         let min_y = y.iter().min_by(Self::cmp_f64).expect("cannot be empty");
         let max_y = y.iter().max_by(Self::cmp_f64).expect("cannot be empty");
         let range_y = max_y - min_y;
-        let scale_y = f64::from(canvas.h()) / range_y;
+        let scale_y = canvas.fh() / range_y;
 
         // If `range = 0`. Division of a positive number by zero
         // results in +Inf.
@@ -317,7 +317,7 @@ impl Plot {
         // the values of `f()`. It is more efficient to compute these
         // values once, and use the regular `stroke_(x|y)_axis()`
         // methods instead.
-        let nb_values = f64::from(canvas.screen.width());
+        let nb_values = canvas.screen.fwidth();
         let (x, y) = Self::compute_function(from_x, to_x, nb_values, f);
         Self::stroke_x_axis(canvas, &y);
         Self::stroke_y_axis(canvas, &x);
@@ -387,7 +387,7 @@ impl Plot {
         to_x: f64,
         f: &impl Fn(f64) -> f64,
     ) {
-        let nb_values = f64::from(canvas.screen.width());
+        let nb_values = canvas.screen.fwidth();
         let (x, _) = Self::compute_function(from_x, to_x, nb_values, f);
         Self::stroke_line_at_x(canvas, value, &x);
     }
@@ -430,7 +430,7 @@ impl Plot {
         to_x: f64,
         f: &impl Fn(f64) -> f64,
     ) {
-        let nb_values = f64::from(canvas.screen.width());
+        let nb_values = canvas.screen.fwidth();
         let (_, y) = Self::compute_function(from_x, to_x, nb_values, f);
         Self::stroke_line_at_y(canvas, value, &y);
     }
@@ -459,7 +459,7 @@ impl Plot {
         to_x: f64,
         f: &impl Fn(f64) -> f64,
     ) -> Option<i32> {
-        let nb_values = f64::from(canvas.screen.width());
+        let nb_values = canvas.screen.fwidth();
         let (x, _) = Self::compute_function(from_x, to_x, nb_values, f);
         Self::compute_screen_x(canvas, value, &x)
     }
@@ -488,7 +488,7 @@ impl Plot {
         to_x: f64,
         f: &impl Fn(f64) -> f64,
     ) -> Option<i32> {
-        let nb_values = f64::from(canvas.screen.width());
+        let nb_values = canvas.screen.fwidth();
         let (_, y) = Self::compute_function(from_x, to_x, nb_values, f);
         Self::compute_screen_y(canvas, value, &y)
     }
@@ -588,12 +588,12 @@ impl Plot {
         let min_x = x.iter().min_by(Self::cmp_f64).expect("cannot be empty");
         let max_x = x.iter().max_by(Self::cmp_f64).expect("cannot be empty");
         let range_x = max_x - min_x;
-        let scale_x = f64::from(canvas.w()) / range_x;
+        let scale_x = canvas.fw() / range_x;
 
         let min_y = y.iter().min_by(Self::cmp_f64).expect("cannot be empty");
         let max_y = y.iter().max_by(Self::cmp_f64).expect("cannot be empty");
         let range_y = max_y - min_y;
-        let scale_y = f64::from(canvas.h()) / range_y;
+        let scale_y = canvas.fh() / range_y;
 
         // If `range = 0`. Division of a positive number by zero
         // results in +Inf.
@@ -620,7 +620,7 @@ impl Plot {
 
             let mut y = *y;
             y = (y - min_y) * scale_y;
-            y = f64::from(canvas.h()) - y; // Y-axis is inverted.
+            y = canvas.fh() - y; // Y-axis is inverted.
             let y = y.trunc() as i32;
 
             match plot_type {
@@ -732,7 +732,7 @@ impl Plot {
     /// );
     /// ```
     pub fn function(canvas: &mut TextCanvas, from_x: f64, to_x: f64, f: &impl Fn(f64) -> f64) {
-        let nb_values = f64::from(canvas.screen.width());
+        let nb_values = canvas.screen.fwidth();
         let (x, y) = Self::compute_function(from_x, to_x, nb_values, f);
         Self::line(canvas, &x, &y);
     }
@@ -772,7 +772,7 @@ impl Plot {
     /// Plot::function(&mut canvas, -3.0, 7.0, &f);
     ///
     /// // This is better, the values are computed only once.
-    /// let (x, y) = Plot::compute_function(-3.0, 7.0, f64::from(canvas2.screen.width()), &f);
+    /// let (x, y) = Plot::compute_function(-3.0, 7.0, canvas2.screen.fwidth(), &f);
     /// Plot::stroke_xy_axes(&mut canvas2, &x, &y);
     /// Plot::line(&mut canvas2, &x, &y);
     ///

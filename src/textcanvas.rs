@@ -78,6 +78,16 @@ impl Surface {
     pub fn uheight(&self) -> usize {
         to_usize!(self.height)
     }
+
+    #[must_use]
+    pub fn fwidth(&self) -> f64 {
+        f64::from(self.width)
+    }
+
+    #[must_use]
+    pub fn fheight(&self) -> f64 {
+        f64::from(self.height)
+    }
 }
 
 #[derive(Debug)]
@@ -388,6 +398,12 @@ impl TextCanvas {
         to_usize!(self.w())
     }
 
+    /// Shortcut for width of pixel screen (index of last column).
+    #[must_use]
+    pub fn fw(&self) -> f64 {
+        f64::from(self.w())
+    }
+
     /// Shortcut for height of pixel screen (index of last row).
     #[must_use]
     pub fn h(&self) -> i32 {
@@ -398,6 +414,12 @@ impl TextCanvas {
     #[must_use]
     pub fn uh(&self) -> usize {
         to_usize!(self.h())
+    }
+
+    /// Shortcut for height of pixel screen (index of last row).
+    #[must_use]
+    pub fn fh(&self) -> f64 {
+        f64::from(self.h())
     }
 
     /// Shortcut for center-X of pixel screen.
@@ -412,6 +434,12 @@ impl TextCanvas {
         to_usize!(self.cx())
     }
 
+    /// Shortcut for center-X of pixel screen.
+    #[must_use]
+    pub fn fcx(&self) -> f64 {
+        f64::from(self.cx())
+    }
+
     /// Shortcut for center-Y of pixel screen.
     #[must_use]
     pub fn cy(&self) -> i32 {
@@ -422,6 +450,12 @@ impl TextCanvas {
     #[must_use]
     pub fn ucy(&self) -> usize {
         to_usize!(self.cy())
+    }
+
+    /// Shortcut for center-Y of pixel screen.
+    #[must_use]
+    pub fn fcy(&self) -> f64 {
+        f64::from(self.cy())
     }
 
     /// Turn all pixels off and remove color and text.
@@ -1317,15 +1351,36 @@ mod tests {
         };
 
         assert_eq!(surface.width(), 15);
-        assert_eq!(surface.uwidth(), 15);
         assert_eq!(surface.height(), 9);
+    }
+
+    #[test]
+    fn size_unsigned() {
+        let surface = Surface {
+            width: 15,
+            height: 9,
+        };
+
+        assert_eq!(surface.uwidth(), 15);
         assert_eq!(surface.uheight(), 9);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn size_float() {
+        let surface = Surface {
+            width: 15,
+            height: 9,
+        };
+
+        assert_eq!(surface.fwidth(), 15.0);
+        assert_eq!(surface.fheight(), 9.0);
     }
 
     // Canvas.
 
     #[test]
-    fn test_output_size() {
+    fn output_size() {
         let canvas = TextCanvas::new(7, 4);
 
         assert_eq!(canvas.output.width, 7, "Incorrect output width.");
@@ -1531,6 +1586,17 @@ mod tests {
         assert_eq!(canvas.uh(), 15, "Incorrect screen height.");
         assert_eq!(canvas.ucx(), 7, "Incorrect screen center-X.");
         assert_eq!(canvas.ucy(), 8, "Incorrect screen center-Y.");
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn shortcuts_float() {
+        let canvas = TextCanvas::new(7, 4);
+
+        assert_eq!(canvas.fw(), 13.0, "Incorrect screen width.");
+        assert_eq!(canvas.fh(), 15.0, "Incorrect screen height.");
+        assert_eq!(canvas.fcx(), 7.0, "Incorrect screen center-X.");
+        assert_eq!(canvas.fcy(), 8.0, "Incorrect screen center-Y.");
     }
 
     #[test]

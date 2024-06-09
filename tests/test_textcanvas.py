@@ -4,7 +4,7 @@ import unittest
 
 import textcanvas.textcanvas
 from textcanvas.color import Color
-from textcanvas.textcanvas import TextCanvas
+from textcanvas.textcanvas import Surface, TextCanvas
 
 
 def load_tests(
@@ -20,6 +20,14 @@ def stroke_line_accros_canvas(canvas: TextCanvas) -> None:
     for x in range(canvas.screen.width):
         canvas.set_pixel(x, y, True)
         y += 1
+
+
+class TestSurface(unittest.TestCase):
+    def test_size(self):
+        surface = Surface(width=15, height=9)
+
+        self.assertEqual(surface.width, 15)
+        self.assertEqual(surface.height, 9)
 
 
 class TestTextCanvas(unittest.TestCase):
