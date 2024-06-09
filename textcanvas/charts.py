@@ -595,18 +595,32 @@ class Plot:
         Plot.line(canvas, x, y)
 
     @staticmethod
-    def compute_function(
+    def compute_function[T](
         from_x: float,
         to_x: float,
         nb_values: float,
-        f: Callable[[float], float],
-    ) -> tuple[list[float], list[float]]:
+        f: Callable[[float], T],
+    ) -> tuple[list[float], list[T]]:
         """Compute the values of a function.
 
         This is mainly used internally to compute values for functions.
 
         However, it may also be useful in case one wants to pre-compute
         values.
+
+        Note:
+            The return value of the function is generic. You can use
+            `compute_function()` to compute anything, but if the values
+            of Y are not `float`s, you will need to adapt them before
+            use.
+
+            This is useful for optimisation. Say you have an expensive
+            function that returns a `dataclass` with multiple fields. If
+            only `float`s were allowed, you would have to re-compute the
+            exact same function for each field of the struct. But thanks
+            to the generic return type, you can compute the function
+            _once_, and extract the fields into separate lists by
+            mapping the values.
 
         Examples:
             >>> import math
@@ -635,7 +649,7 @@ class Plot:
         step: float = range / (nb_values - 1)
 
         px: list[float] = []
-        py: list[float] = []
+        py: list[T] = []
 
         # Always add first value.
         px.append(from_x)

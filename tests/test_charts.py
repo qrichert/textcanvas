@@ -1,5 +1,6 @@
 import doctest
 import unittest
+from dataclasses import dataclass
 
 import textcanvas.charts
 from textcanvas.charts import Plot
@@ -875,6 +876,37 @@ class TestPlot(unittest.TestCase):
             "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
             "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n",
         )
+
+    def test_compute_function_works_with_structs(self) -> None:
+        @dataclass
+        class Mock:
+            foo: float
+            bar: float
+
+        def f(x: float) -> Mock:
+            return Mock(foo=x, bar=-x)
+
+        # Compute all values once. Y will contain structs.
+        (x, y) = Plot.compute_function(-5.0, 5.0, 5.0, f)
+
+        self.assertEqual(x, [-5.0, -2.5, 0.0, 2.5, 5.0])
+        self.assertEqual(
+            y,
+            [
+                Mock(-5.0, 5.0),
+                Mock(-2.5, 2.5),
+                Mock(0.0, -0.0),
+                Mock(2.5, -2.5),
+                Mock(5.0, -5.0),
+            ],
+        )
+
+        # Extract struct fields.
+        y_foo: list[float] = [mock.foo for mock in y]
+        y_bar: list[float] = [mock.bar for mock in y]
+
+        self.assertEqual(y_foo, [-5.0, -2.5, 0.0, 2.5, 5.0])
+        self.assertEqual(y_bar, [5.0, 2.5, -0.0, -2.5, -5.0])
 
 
 if __name__ == "__main__":

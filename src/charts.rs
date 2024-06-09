@@ -744,6 +744,20 @@ impl Plot {
     /// However, it may also be useful in case one wants to pre-compute
     /// values.
     ///
+    /// # Note
+    ///
+    /// The return value of the function is generic. You can use
+    /// [`compute_function()`](Plot::compute_function) to compute
+    /// anything, but if the values of Y are not `f64`s, you will need
+    /// to adapt them before use.
+    ///
+    /// This is useful for optimisation. Say you have an expensive
+    /// function that returns a `struct` with multiple fields. If only
+    /// `f64`s were allowed, you would have to re-compute the exact same
+    /// function for each field of the struct. But thanks to the generic
+    /// return type, you can compute the function _once_, and extract
+    /// the fields into separate vectors by `map()`ping the values.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -768,12 +782,12 @@ impl Plot {
     /// Note that the "inefficient" solution is unlikely to cause a
     /// noticeable performance hit. The simpler approach is most often
     /// the better approach.
-    pub fn compute_function(
+    pub fn compute_function<T>(
         from_x: f64,
         to_x: f64,
         nb_values: f64,
-        f: &impl Fn(f64) -> f64,
-    ) -> (Vec<f64>, Vec<f64>) {
+        f: &impl Fn(f64) -> T,
+    ) -> (Vec<f64>, Vec<T>) {
         let range = to_x - from_x;
         // If we want 5 values in a range including bounds, we need to
         // divide the range into 4 equal pieces:
@@ -783,7 +797,7 @@ impl Plot {
         let step = range / (nb_values - 1.0);
 
         let mut px: Vec<f64> = Vec::new();
-        let mut py: Vec<f64> = Vec::new();
+        let mut py: Vec<T> = Vec::new();
 
         // Always add first value.
         px.push(from_x);
@@ -1851,5 +1865,53 @@ mod tests {
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 "
         );
+    }
+
+    #[test]
+    fn compute_function_works_with_structs() {
+        #[derive(Debug, PartialEq)]
+        struct Mock {
+            foo: f64,
+            bar: f64,
+        }
+
+        let f = |x: f64| Mock { foo: x, bar: -x };
+
+        // Compute all values once. Y will contain structs.
+        let (x, y) = Plot::compute_function(-5.0, 5.0, 5.0, &f);
+
+        assert_eq!(x, vec![-5.0, -2.5, 0.0, 2.5, 5.0]);
+        assert_eq!(
+            y,
+            vec![
+                Mock {
+                    foo: -5.0,
+                    bar: 5.0
+                },
+                Mock {
+                    foo: -2.5,
+                    bar: 2.5
+                },
+                Mock {
+                    foo: 0.0,
+                    bar: -0.0
+                },
+                Mock {
+                    foo: 2.5,
+                    bar: -2.5
+                },
+                Mock {
+                    foo: 5.0,
+                    bar: -5.0
+                }
+            ]
+        );
+
+        // Extract struct fields.
+        let y_foo: Vec<f64> = y.iter().map(|mock| mock.foo).collect();
+        let y_bar: Vec<f64> = y.iter().map(|mock| mock.bar).collect();
+
+        assert_eq!(y_foo, vec![-5.0, -2.5, 0.0, 2.5, 5.0]);
+        assert_eq!(y_bar, vec![5.0, 2.5, -0.0, -2.5, -5.0]);
     }
 }
