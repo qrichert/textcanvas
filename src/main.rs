@@ -85,8 +85,8 @@ fn main() {
             .bg_rgb(255, 0, 0)
             .format("hello, world"),
         Color::new()
-            .magenta()
-            .bg_bright_white()
+            .x_magenta_3b()
+            .bg_x_cadet_blue_b()
             .format("hello, world")
     );
 }

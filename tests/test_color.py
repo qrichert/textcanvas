@@ -173,6 +173,26 @@ class TestColor(unittest.TestCase):
             "\x1b[0;31;42mhello, world\x1b[0m",
         )
 
+    # 8-bit.
+
+    def test_color_8bit(self) -> None:
+        self.assertEqual(
+            Color().x_cadet_blue_a().format("hello, world"),
+            "\x1b[0;38;5;72mhello, world\x1b[0m",
+        )
+
+    def test_color_8bit_bg(self) -> None:
+        self.assertEqual(
+            Color().bg_x_salmon_1().format("hello, world"),
+            "\x1b[0;48;5;209mhello, world\x1b[0m",
+        )
+
+    def test_color_8bit_with_bg(self) -> None:
+        self.assertEqual(
+            Color().x_dark_sea_green().bg_x_spring_green_2a().format("hello, world"),
+            "\x1b[0;38;5;108m\x1b[48;5;42mhello, world\x1b[0m",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
