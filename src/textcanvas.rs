@@ -220,7 +220,7 @@ impl Iterator for IterPixelBufferByBlocksLRTB<'_> {
 /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄⠀⠀⠀
 /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⢄
 /// "
-/// )
+/// );
 /// ```
 #[derive(Debug)]
 pub struct TextCanvas {
@@ -856,7 +856,7 @@ impl TextCanvas {
     /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠒⠤⣀⠀⠀
     /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
     /// "
-    /// )
+    /// );
     /// ```
     pub fn stroke_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
         self.bresenham_line(x1, y1, x2, y2);
@@ -933,7 +933,7 @@ impl TextCanvas {
     /// ⠀⠀⠸⠤⠤⠤⠤⠤⠤⠤⠤⠤⠇⠀⠀
     /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
     /// "
-    /// )
+    /// );
     /// ```
     pub fn stroke_rect(&mut self, x: i32, y: i32, width: i32, height: i32) {
         let (width, height) = (width - 1, height - 1);
@@ -963,7 +963,7 @@ impl TextCanvas {
     /// ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
     /// ⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸
     /// "
-    /// )
+    /// );
     /// ```
     pub fn frame(&mut self) {
         self.stroke_rect(0, 0, self.screen.width(), self.screen.height());
@@ -989,7 +989,7 @@ impl TextCanvas {
     /// ⠀⠀⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠇⠀⠀
     /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
     /// "
-    /// )
+    /// );
     /// ```
     pub fn fill_rect(&mut self, x: i32, y: i32, width: i32, height: i32) {
         for y in y..y + height {
@@ -1017,7 +1017,7 @@ impl TextCanvas {
     /// ⠀⠀⡇⠀⣀⠤⠔⠊⠁⠀⠀⠀⠀⠀⠀
     /// ⠀⠀⠓⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
     /// "
-    /// )
+    /// );
     /// ```
     pub fn stroke_triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32) {
         self.stroke_line(x1, y1, x2, y2);
@@ -1045,7 +1045,7 @@ impl TextCanvas {
     /// ⠀⠀⣿⣿⣿⠿⠟⠋⠁⠀⠀⠀⠀⠀⠀
     /// ⠀⠀⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
     /// "
-    /// )
+    /// );
     /// ```
     pub fn fill_triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32) {
         // This makes for neater edges.
@@ -1116,7 +1116,7 @@ impl TextCanvas {
     /// ⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⡠⠃⠀⠀⠀
     /// ⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀
     /// "
-    /// )
+    /// );
     /// ```
     pub fn stroke_circle(&mut self, x: i32, y: i32, radius: i32) {
         self.bresenham_circle(x, y, radius, false);
@@ -1142,7 +1142,7 @@ impl TextCanvas {
     /// ⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀
     /// ⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀
     /// "
-    /// )
+    /// );
     /// ```
     pub fn fill_circle(&mut self, x: i32, y: i32, radius: i32) {
         self.bresenham_circle(x, y, radius, true);
@@ -1181,6 +1181,117 @@ impl TextCanvas {
                 x -= 1;
             }
         }
+    }
+
+    /// Stroke n-gon.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    /// use std::f64::consts::PI;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5);
+    ///
+    /// canvas.stroke_ngon(canvas.cx(), canvas.cy(), 7, 5, PI / 2.0);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⢀⡠⠊⠁⠉⠢⣀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⢠⠃⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⢇⠀⠀⠀⢀⠎⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠀⠀⠀⠀⠀
+    /// "
+    /// );
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if `sides` < 3.
+    pub fn stroke_ngon(&mut self, x: i32, y: i32, radius: i32, sides: i32, angle: f64) {
+        self.ngon(x, y, radius, sides, angle, false);
+    }
+
+    /// Fill n-gon.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::TextCanvas;
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5);
+    ///
+    /// canvas.fill_ngon(canvas.cx(), canvas.cy(), 7, 4, 0.0);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⢀⣴⣿⣷⣄⠀⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⢴⣿⣿⣿⣿⣿⣷⠄⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠙⢿⣿⣿⠟⠁⠀⠀⠀⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠙⠁⠀⠀⠀⠀⠀⠀
+    /// "
+    /// );
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if `sides` < 3.
+    pub fn fill_ngon(&mut self, x: i32, y: i32, radius: i32, sides: i32, angle: f64) {
+        self.ngon(x, y, radius, sides, angle, true);
+    }
+
+    fn ngon(&mut self, x: i32, y: i32, radius: i32, sides: i32, angle: f64, fill: bool) {
+        assert!(
+            sides >= 3,
+            "Minimum 3 sides needed to draw an n-gon, but only {sides} requested."
+        );
+
+        let mut join_vertices = |from: &(i32, i32), to: &(i32, i32)| {
+            if fill {
+                self.fill_triangle(self.cx(), self.cy(), from.0, from.1, to.0, to.1);
+            } else {
+                self.stroke_line(from.0, from.1, to.0, to.1);
+            }
+        };
+
+        let vertices = Self::compute_ngon_vertices(x, y, radius, sides, angle);
+        let mut vertices = vertices.iter();
+
+        let first = vertices.next().expect("there are at least 3 vertex");
+        let mut previous = first;
+        for vertex in vertices {
+            join_vertices(previous, vertex);
+            previous = vertex;
+        }
+        join_vertices(previous, first);
+    }
+
+    #[allow(clippy::cast_possible_truncation)]
+    fn compute_ngon_vertices(
+        x: i32,
+        y: i32,
+        radius: i32,
+        sides: i32,
+        angle: f64,
+    ) -> Vec<(i32, i32)> {
+        let cx = f64::from(x);
+        let cy = f64::from(y);
+        let radius = f64::from(radius);
+        let slice = (2.0 * std::f64::consts::PI) / f64::from(sides);
+
+        let mut vertices: Vec<(i32, i32)> = vec![];
+        for vertex in 0..sides {
+            let theta = f64::from(vertex) * slice + angle;
+            let x = cx + (theta.cos() * radius);
+            let y = cy - (theta.sin() * radius); // Screen Y coordinates are inverted.
+            let point = (x.round() as i32, y.round() as i32);
+            vertices.push(point);
+        }
+        vertices
     }
 
     /// Draw another canvas onto the current canvas.
@@ -2660,6 +2771,92 @@ mod tests {
 ⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀
 ",
         );
+    }
+
+    #[test]
+    fn stroke_ngon() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        canvas.stroke_ngon(canvas.cx(), canvas.cy(), 7, 6, 0.0);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⡰⠉⠉⠉⠙⡄⠀⠀⠀⠀
+⠀⠀⠀⠀⢜⠀⠀⠀⠀⠀⢘⠄⠀⠀⠀
+⠀⠀⠀⠀⠈⢆⠀⠀⠀⢠⠊⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn stroke_ngon_at_angle() {
+        use std::f64::consts::PI;
+
+        let mut canvas = TextCanvas::new(15, 5);
+
+        canvas.stroke_ngon(canvas.cx(), canvas.cy(), 7, 6, PI / 2.0);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢠⠔⠊⠁⠉⠢⢄⠀⠀⠀⠀
+⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀
+⠀⠀⠀⠀⠘⠤⡀⠀⠀⣀⠼⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⠑⠉⠀⠀⠀⠀⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn stroke_ngon_radius_matches_circle() {
+        use std::f64::consts::PI;
+
+        let mut canvas = TextCanvas::new(15, 5);
+
+        canvas.stroke_ngon(canvas.cx(), canvas.cy(), 7, 3, PI / 2.0);
+
+        canvas.stroke_circle(15, 10, 7);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⡠⠊⢠⠃⢣⠈⠢⡀⠀⠀⠀
+⠀⠀⠀⠀⡇⡰⠁⠀⠀⢣⠀⡇⠀⠀⠀
+⠀⠀⠀⠀⠳⡓⠒⠢⠤⠤⡧⠃⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀
+",
+        );
+    }
+
+    #[test]
+    fn fill_ngon() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        canvas.fill_ngon(canvas.cx(), canvas.cy(), 7, 6, 0.0);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⡄⠀⠀⠀⠀
+⠀⠀⠀⠀⢼⣿⣿⣿⣿⣿⣿⠄⠀⠀⠀
+⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⠋⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀
+",
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Minimum 3 sides needed to draw an n-gon, but only 2 requested.")]
+    fn fill_ngon_not_enough_sides() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        canvas.fill_ngon(canvas.cx(), canvas.cy(), 7, 2, 0.0);
     }
 
     #[test]

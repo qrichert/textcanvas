@@ -84,6 +84,7 @@ on the last row like so:
 [^1]: https://github.com/asciimoo/drawille
 """
 
+import math
 import os
 from dataclasses import dataclass
 from typing import Generator, Self
@@ -834,6 +835,84 @@ class TextCanvas:
             if t2 >= 0:
                 t1 = t2
                 x -= 1
+
+    def stroke_ngon(
+        self, x: int, y: int, radius: int, sides: int, angle: float
+    ) -> None:
+        """Stroke n-gon.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.stroke_ngon(canvas.cx, canvas.cy, 7, 5, math.pi / 2.0)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⢀⡠⠊⠁⠉⠢⣀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⢠⠃⠀⠀⠀
+            ⠀⠀⠀⠀⠀⢇⠀⠀⠀⢀⠎⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠀⠀⠀⠀⠀
+
+        Raises:
+            ValueError: If `sides` < 3.
+        """
+        self._ngon(x, y, radius, sides, angle, False)
+
+    def fill_ngon(self, x: int, y: int, radius: int, sides: int, angle: float) -> None:
+        """Fill n-gon.
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> canvas.fill_ngon(canvas.cx, canvas.cy, 7, 4, 0.0)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⢀⣴⣿⣷⣄⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⢴⣿⣿⣿⣿⣿⣷⠄⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠙⢿⣿⣿⠟⠁⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠙⠁⠀⠀⠀⠀⠀⠀
+
+        Raises:
+            ValueError: If `sides` < 3.
+        """
+        self._ngon(x, y, radius, sides, angle, True)
+
+    def _ngon(
+        self, x: int, y: int, radius: int, sides: int, angle: float, fill: bool
+    ) -> None:
+        if sides < 3:
+            raise ValueError(
+                f"Minimum 3 sides needed to draw an n-gon, but only {sides} requested."
+            )
+
+        def join_vertices(from_: tuple[int, int], to: tuple[int, int]) -> None:
+            if fill:
+                self.fill_triangle(self.cx, self.cy, from_[0], from_[1], to[0], to[1])
+            else:
+                self.stroke_line(from_[0], from_[1], to[0], to[1])
+
+        vertices: list[tuple[int, int]] = self._compute_ngon_vertices(
+            x, y, radius, sides, angle
+        )
+
+        first: tuple[int, int] = vertices[0]
+        previous = first
+        for vertex in vertices[1:]:
+            join_vertices(previous, vertex)
+            previous = vertex
+        join_vertices(previous, first)
+
+    @staticmethod
+    def _compute_ngon_vertices(
+        cx: int, cy: int, radius: int, sides: int, angle: float
+    ) -> list[tuple[int, int]]:
+        slice_: float = (2.0 * math.pi) / sides
+
+        vertices: list[tuple[int, int]] = []
+        for vertex in range(sides):
+            theta: float = vertex * slice_ + angle
+            x = cx + (math.cos(theta) * radius)
+            y = cy - (math.sin(theta) * radius)  # Screen Y coordinates are inverted.
+            point = (int(round(x)), int(round(y)))
+            vertices.append(point)
+        return vertices
 
     def draw_canvas(self, canvas: Self, dx: int, dy: int) -> None:
         """Draw another canvas onto the current canvas.

@@ -1,4 +1,5 @@
 import doctest
+import math
 import os
 import unittest
 
@@ -1041,6 +1042,71 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
             "⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀\n"
             "⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀\n",
         )
+
+    def test_stroke_ngon(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.stroke_ngon(canvas.cx, canvas.cy, 7, 6, 0.0)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⡰⠉⠉⠉⠱⡀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⢜⠀⠀⠀⠀⠀⢘⠄⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠈⢆⠀⠀⠀⢠⠊⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_stroke_ngon_at_angle(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.stroke_ngon(canvas.cx, canvas.cy, 7, 6, math.pi / 2.0)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⢠⠔⠊⠁⠉⠢⢄⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠘⠤⡀⠀⠀⣀⠼⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠈⠑⠉⠀⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_stroke_ngon_radius_matches_circle(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.stroke_ngon(canvas.cx, canvas.cy, 7, 3, math.pi / 2.0)
+
+        canvas.stroke_circle(15, 10, 7)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⡠⠊⢠⠃⢣⠈⠢⡀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⡇⡰⠁⠀⠀⢣⠀⡇⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠳⡓⠒⠢⠤⠤⡧⠃⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_fill_ngon(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        canvas.fill_ngon(canvas.cx, canvas.cy, 7, 6, 0.0)
+
+        self.assertEqual(
+            canvas.to_string(),
+            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⣰⣿⣿⣿⣷⡀⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⢼⣿⣿⣿⣿⣿⣿⠄⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⠋⠀⠀⠀⠀\n"
+            "⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀\n",
+        )
+
+    def test_fill_ngon_not_enough_sides(self) -> None:
+        canvas = TextCanvas(15, 5)
+
+        with self.assertRaises(ValueError) as ctx:
+            ctx.msg = "Number of sides less than 3 did not raise error."
+            canvas.fill_ngon(canvas.cx, canvas.cy, 7, 2, 0.0)
 
     def test_draw_canvas(self) -> None:
         canvas = TextCanvas(15, 5)
