@@ -665,4 +665,212 @@ class Plot:
         px.append(to_x)
         py.append(f(to_x))
 
-        return (px, py)
+        return px, py
+
+
+class Chart:
+    """Helper functions to render charts on a `TextCanvas`.
+
+    Basically, this renders a `Plot` and makes it pretty.
+
+    The idea comes from <https://github.com/sunetos/TextPlots.jl>.
+    """
+
+    MARGIN_TOP: int = 1
+    MARGIN_RIGHT: int = 2
+    MARGIN_BOTTOM: int = 2
+    MARGIN_LEFT: int = 10
+
+    HORIZONTAL_MARGIN: int = MARGIN_LEFT + MARGIN_RIGHT
+    VERTICAL_MARGIN: int = MARGIN_TOP + MARGIN_BOTTOM
+
+    @staticmethod
+    def line(canvas: TextCanvas, x: list[float], y: list[float]) -> None:
+        """Render chart with a line plot.
+
+        Examples:
+            >>> canvas = TextCanvas(35, 10)
+            >>> x: list[float] = list(range(-5, 6))
+            >>> y: list[float] = list(range(-5, 6))
+            >>> Chart.line(canvas, x, y)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠒⠉⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠊⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠉⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢀⡠⠔⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢀⡠⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡠⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+
+        Raises:
+            ValueError: If chart is < 13×4, because it would make plot
+            size < 1×1.
+        """
+        Chart._chart(canvas, x, y, PlotType.LINE)
+
+    @staticmethod
+    def scatter(canvas: TextCanvas, x: list[float], y: list[float]) -> None:
+        """Render chart with a scatter plot.
+
+        Examples:
+            >>> canvas = TextCanvas(35, 10)
+            >>> x: list[float] = list(range(-5, 6))
+            >>> y: list[float] = list(range(-5, 6))
+            >>> Chart.scatter(canvas, x, y)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠀⠈⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠀⠈⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠠⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+
+        Raises:
+            ValueError: If chart is < 13×4, because it would make plot
+            size < 1×1.
+        """
+        Chart._chart(canvas, x, y, PlotType.SCATTER)
+
+    @staticmethod
+    def _chart(
+        canvas: TextCanvas, x: list[float], y: list[float], plot_type: PlotType
+    ) -> None:
+        if not x or not y:
+            return
+        Chart._check_canvas_size(canvas)
+        Chart._plot_values(canvas, x, y, plot_type)
+        Chart._stroke_plot_border(canvas)
+        Chart._draw_min_and_max_values(canvas, x, y)
+
+    @staticmethod
+    def _check_canvas_size(canvas: TextCanvas) -> None:
+        width = canvas.output.width
+        height = canvas.output.height
+        min_width = Chart.HORIZONTAL_MARGIN + 1
+        min_height = Chart.VERTICAL_MARGIN + 1
+        if width < min_width or height < min_height:
+            raise ValueError(
+                f"Canvas size is {width}×{height}, but must be at least {min_width}×{min_height} to accommodate for plot."
+            )
+
+    @staticmethod
+    def _plot_values(
+        canvas: TextCanvas, x: list[float], y: list[float], plot_type: PlotType
+    ) -> None:
+        width = canvas.output.width - Chart.HORIZONTAL_MARGIN
+        height = canvas.output.height - Chart.VERTICAL_MARGIN
+
+        plot = TextCanvas(width, height)
+
+        match plot_type:
+            case PlotType.LINE:
+                Plot.line(plot, x, y)
+            case PlotType.SCATTER:
+                Plot.scatter(plot, x, y)
+
+        canvas.draw_canvas(plot, Chart.MARGIN_LEFT * 2, Chart.MARGIN_TOP * 4)
+
+    @staticmethod
+    def _stroke_plot_border(canvas: TextCanvas) -> None:
+        top: int = (Chart.MARGIN_TOP - 1) * 4 + 2
+        right: int = canvas.w - (Chart.MARGIN_RIGHT - 1) * 2
+        bottom: int = canvas.h - ((Chart.MARGIN_BOTTOM - 1) * 4 + 2)
+        left: int = (Chart.MARGIN_LEFT - 1) * 2
+
+        canvas.stroke_line(left, top, right, top)
+        canvas.stroke_line(right, top, right, bottom)
+        canvas.stroke_line(right, bottom, left, bottom)
+        canvas.stroke_line(left, bottom, left, top)
+
+    @staticmethod
+    def _draw_min_and_max_values(
+        canvas: TextCanvas, x: list[float], y: list[float]
+    ) -> None:
+        min_x: str = Chart._format_number(min(x))
+        max_x: str = Chart._format_number(max(x))
+        min_y: str = Chart._format_number(min(y))
+        max_y: str = Chart._format_number(max(y))
+
+        canvas.draw_text(
+            min_x,
+            Chart.MARGIN_LEFT - len(min_x),
+            canvas.output.height - Chart.MARGIN_TOP,
+        )
+        canvas.draw_text(
+            max_x,
+            canvas.output.width - Chart.MARGIN_RIGHT + 2 - len(max_x),
+            canvas.output.height - Chart.MARGIN_TOP,
+        )
+        canvas.draw_text(
+            min_y,
+            Chart.MARGIN_LEFT - 2 - len(min_y),
+            canvas.output.height - Chart.MARGIN_TOP - 1,
+        )
+        canvas.draw_text(
+            max_y,
+            Chart.MARGIN_LEFT - 2 - len(max_y),
+            Chart.MARGIN_TOP - 1,
+        )
+
+    @staticmethod
+    def _format_number(number: float) -> str:
+        precision = 1
+        suffix = ""
+        if abs(number) >= 1_000_000_000_000.0:
+            number /= 1_000_000_000_000.0
+            suffix = "T"
+        elif abs(number) >= 1_000_000_000.0:
+            number /= 1_000_000_000.0
+            suffix = "B"
+        elif abs(number) >= 1_000_000.0:
+            number /= 1_000_000.0
+            suffix = "M"
+        elif abs(number) >= 10_000.0:
+            number /= 1000.0
+            suffix = "K"
+        elif abs(number - round(number)) < 0.001:
+            precision = 0  # Close enough to being round for display.
+            if abs(number) < 0.000_1:
+                number = 0.0  # Prevent "-0".
+        elif abs(number) < 1.0:
+            precision = 4  # Sub-1 decimals matter a lot.
+
+        return f"{number:.{precision}f}{suffix}"
+
+    @staticmethod
+    def function(
+        canvas: TextCanvas, from_x: float, to_x: float, f: Callable[[float], float]
+    ) -> None:
+        """Render chart with a function.
+
+        Examples:
+            >>> import math
+            >>> canvas = TextCanvas(35, 10)
+            >>> f = lambda x: math.cos(x)
+            >>> Chart.function(canvas, 0.0, 5.0, f)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀1⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠉⠉⠢⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠖⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠃⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠑⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⡰⠁⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⡀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⠤⡠⠤⠒⠁⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+
+        Raises:
+            ValueError: If chart is < 13×4, because it would make plot
+            size < 1×1.
+        """
+        nb_values = (canvas.output.width - Chart.HORIZONTAL_MARGIN) * 2
+        (x, y) = Plot.compute_function(from_x, to_x, nb_values, f)
+        Chart.line(canvas, x, y)

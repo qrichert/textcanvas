@@ -234,7 +234,7 @@ class TextCanvas:
         This value is used by `TextCanvas()` if no size is provided to
         the constructor, but it may be useful to query it separately.
         """
-        return (80, 24)
+        return 80, 24
 
     @staticmethod
     def get_auto_size() -> tuple[int, int]:
@@ -257,7 +257,7 @@ class TextCanvas:
         except ValueError:
             raise LookupError("Cannot read terminal height from environment.")
 
-        return (width, height)
+        return width, height
 
     def __repr__(self) -> str:
         out_w: int = self.output.width

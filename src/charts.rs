@@ -1,6 +1,17 @@
 use crate::TextCanvas;
 use std::cmp::Ordering;
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn cmp_f64(a: &&f64, b: &&f64) -> Ordering {
+    if a < b {
+        Ordering::Less
+    } else if a > b {
+        Ordering::Greater
+    } else {
+        Ordering::Equal
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum PlotType {
     Line,
@@ -213,8 +224,8 @@ impl Plot {
             return None;
         }
 
-        let min_x = x.iter().min_by(Self::cmp_f64).expect("cannot be empty");
-        let max_x = x.iter().max_by(Self::cmp_f64).expect("cannot be empty");
+        let min_x = x.iter().min_by(cmp_f64).expect("cannot be empty");
+        let max_x = x.iter().max_by(cmp_f64).expect("cannot be empty");
         let range_x = max_x - min_x;
         let scale_x = canvas.fw() / range_x;
 
@@ -258,8 +269,8 @@ impl Plot {
             return None;
         }
 
-        let min_y = y.iter().min_by(Self::cmp_f64).expect("cannot be empty");
-        let max_y = y.iter().max_by(Self::cmp_f64).expect("cannot be empty");
+        let min_y = y.iter().min_by(cmp_f64).expect("cannot be empty");
+        let max_y = y.iter().max_by(cmp_f64).expect("cannot be empty");
         let range_y = max_y - min_y;
         let scale_y = canvas.fh() / range_y;
 
@@ -582,16 +593,16 @@ impl Plot {
         let mut pairs: Vec<(&f64, &f64)> = x.iter().zip(y).collect();
         if plot_type == PlotType::Line {
             // Sort by `x`;
-            pairs.sort_by(|a, b| Self::cmp_f64(&a.0, &b.0));
+            pairs.sort_by(|a, b| cmp_f64(&a.0, &b.0));
         }
 
-        let min_x = x.iter().min_by(Self::cmp_f64).expect("cannot be empty");
-        let max_x = x.iter().max_by(Self::cmp_f64).expect("cannot be empty");
+        let min_x = x.iter().min_by(cmp_f64).expect("cannot be empty");
+        let max_x = x.iter().max_by(cmp_f64).expect("cannot be empty");
         let range_x = max_x - min_x;
         let scale_x = canvas.fw() / range_x;
 
-        let min_y = y.iter().min_by(Self::cmp_f64).expect("cannot be empty");
-        let max_y = y.iter().max_by(Self::cmp_f64).expect("cannot be empty");
+        let min_y = y.iter().min_by(cmp_f64).expect("cannot be empty");
+        let max_y = y.iter().max_by(cmp_f64).expect("cannot be empty");
         let range_y = max_y - min_y;
         let scale_y = canvas.fh() / range_y;
 
@@ -692,17 +703,6 @@ impl Plot {
                     }
                 }
             }
-        }
-    }
-
-    #[allow(clippy::trivially_copy_pass_by_ref)]
-    fn cmp_f64(a: &&f64, b: &&f64) -> Ordering {
-        if a < b {
-            Ordering::Less
-        } else if a > b {
-            Ordering::Greater
-        } else {
-            Ordering::Equal
         }
     }
 
@@ -816,6 +816,245 @@ impl Plot {
         py.push(f(to_x));
 
         (px, py)
+    }
+}
+
+/// Helper functions to render charts on a [`TextCanvas`].
+///
+/// Basically, this renders a [`Plot`] and makes it pretty.
+///
+/// The idea comes from <https://github.com/sunetos/TextPlots.jl>.
+pub struct Chart;
+
+impl Chart {
+    const MARGIN_TOP: i32 = 1;
+    const MARGIN_RIGHT: i32 = 2;
+    const MARGIN_BOTTOM: i32 = 2;
+    const MARGIN_LEFT: i32 = 10;
+
+    const HORIZONTAL_MARGIN: i32 = Self::MARGIN_LEFT + Self::MARGIN_RIGHT;
+    const VERTICAL_MARGIN: i32 = Self::MARGIN_TOP + Self::MARGIN_BOTTOM;
+
+    /// Render chart with a line plot.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::{charts::Chart, TextCanvas};
+    ///
+    /// let mut canvas = TextCanvas::new(35, 10);
+    ///
+    /// let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+    /// let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+    ///
+    /// Chart::line(&mut canvas, &x, &y);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠒⠉⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠊⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠉⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢀⡠⠔⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢀⡠⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡠⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+    /// "
+    /// );
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if chart is < 13×4, because it would make plot < 1×1.
+    pub fn line(canvas: &mut TextCanvas, x: &[f64], y: &[f64]) {
+        Self::chart(canvas, x, y, PlotType::Line);
+    }
+
+    /// Render chart with a scatter plot.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::{charts::Chart, TextCanvas};
+    ///
+    /// let mut canvas = TextCanvas::new(35, 10);
+    ///
+    /// let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+    /// let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+    ///
+    /// Chart::scatter(&mut canvas, &x, &y);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠀⠈⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠀⠈⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠠⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+    /// "
+    /// );
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if chart is < 13×4, because it would make plot < 1×1.
+    pub fn scatter(canvas: &mut TextCanvas, x: &[f64], y: &[f64]) {
+        Self::chart(canvas, x, y, PlotType::Scatter);
+    }
+
+    fn chart(canvas: &mut TextCanvas, x: &[f64], y: &[f64], plot_type: PlotType) {
+        if x.is_empty() || y.is_empty() {
+            return;
+        }
+        Self::check_canvas_size(canvas);
+        Self::plot_values(canvas, x, y, plot_type);
+        Self::stroke_plot_border(canvas);
+        Self::draw_min_and_max_values(canvas, x, y);
+    }
+
+    fn check_canvas_size(canvas: &TextCanvas) {
+        let width = canvas.output.width();
+        let height = canvas.output.height();
+        let min_width = Self::HORIZONTAL_MARGIN + 1;
+        let min_height = Self::VERTICAL_MARGIN + 1;
+        assert!(
+            width >= min_width && height >= min_height,
+            "Canvas size is {width}×{height}, but must be at least {min_width}×{min_height} to accommodate for plot."
+        );
+    }
+
+    fn plot_values(canvas: &mut TextCanvas, x: &[f64], y: &[f64], plot_type: PlotType) {
+        let width = canvas.output.width() - Self::HORIZONTAL_MARGIN;
+        let height = canvas.output.height() - Self::VERTICAL_MARGIN;
+
+        let mut plot = TextCanvas::new(width, height);
+
+        match plot_type {
+            PlotType::Line => {
+                Plot::line(&mut plot, x, y);
+            }
+            PlotType::Scatter => {
+                Plot::scatter(&mut plot, x, y);
+            }
+        }
+
+        canvas.draw_canvas(&plot, Self::MARGIN_LEFT * 2, Self::MARGIN_TOP * 4);
+    }
+
+    fn stroke_plot_border(canvas: &mut TextCanvas) {
+        let top = (Self::MARGIN_TOP - 1) * 4 + 2;
+        let right = canvas.w() - (Self::MARGIN_RIGHT - 1) * 2;
+        let bottom = canvas.h() - ((Self::MARGIN_BOTTOM - 1) * 4 + 2);
+        let left = (Self::MARGIN_LEFT - 1) * 2;
+
+        canvas.stroke_line(left, top, right, top);
+        canvas.stroke_line(right, top, right, bottom);
+        canvas.stroke_line(right, bottom, left, bottom);
+        canvas.stroke_line(left, bottom, left, top);
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    fn draw_min_and_max_values(canvas: &mut TextCanvas, x: &[f64], y: &[f64]) {
+        let min_x = Self::format_number(*x.iter().min_by(cmp_f64).expect("cannot be empty"));
+        let max_x = Self::format_number(*x.iter().max_by(cmp_f64).expect("cannot be empty"));
+        let min_y = Self::format_number(*y.iter().min_by(cmp_f64).expect("cannot be empty"));
+        let max_y = Self::format_number(*y.iter().max_by(cmp_f64).expect("cannot be empty"));
+
+        canvas.draw_text(
+            &min_x,
+            Self::MARGIN_LEFT - (min_x.len() as i32),
+            canvas.output.height() - Self::MARGIN_TOP,
+        );
+        canvas.draw_text(
+            &max_x,
+            canvas.output.width() - Self::MARGIN_RIGHT + 2 - (max_x.len() as i32),
+            canvas.output.height() - Self::MARGIN_TOP,
+        );
+        canvas.draw_text(
+            &min_y,
+            Self::MARGIN_LEFT - 2 - (min_y.len() as i32),
+            canvas.output.height() - Self::MARGIN_TOP - 1,
+        );
+        canvas.draw_text(
+            &max_y,
+            Self::MARGIN_LEFT - 2 - (max_y.len() as i32),
+            Self::MARGIN_TOP - 1,
+        );
+    }
+
+    fn format_number(mut number: f64) -> String {
+        let mut precision = 1;
+        let mut suffix = "";
+        if number.abs() >= 1_000_000_000_000.0 {
+            number /= 1_000_000_000_000.0;
+            suffix = "T";
+        } else if number.abs() >= 1_000_000_000.0 {
+            number /= 1_000_000_000.0;
+            suffix = "B";
+        } else if number.abs() >= 1_000_000.0 {
+            number /= 1_000_000.0;
+            suffix = "M";
+        } else if number.abs() >= 10_000.0 {
+            number /= 1000.0;
+            suffix = "K";
+        } else if (number - number.round()).abs() < 0.001 {
+            precision = 0; // Close enough to being round for display.
+            if number.abs() < 0.000_1 {
+                number = 0.0; // Prevent "-0".
+            }
+        } else if number.abs() < 1.0 {
+            precision = 4; // Sub-1 decimals matter a lot.
+        }
+
+        format!("{number:.precision$}{suffix}")
+    }
+
+    /// Render chart with a function.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::{charts::Chart, TextCanvas};
+    ///
+    /// let mut canvas = TextCanvas::new(35, 10);
+    ///
+    /// let f = |x: f64| x.cos();
+    ///
+    /// Chart::function(&mut canvas, 0.0, 5.0, &f);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀1⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠉⠉⠢⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠖⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠃⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠑⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⡰⠁⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⡀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⠤⡠⠤⠒⠁⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+    /// "
+    /// );
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if chart is < 13×4, because it would make plot < 1×1.
+    pub fn function(canvas: &mut TextCanvas, from_x: f64, to_x: f64, f: &impl Fn(f64) -> f64) {
+        let nb_values = f64::from((canvas.output.width() - (Self::HORIZONTAL_MARGIN)) * 2);
+        let (x, y) = Plot::compute_function(from_x, to_x, nb_values, f);
+        Self::line(canvas, &x, &y);
     }
 }
 
@@ -1913,5 +2152,284 @@ mod tests {
 
         assert_eq!(y_foo, vec![-5.0, -2.5, 0.0, 2.5, 5.0]);
         assert_eq!(y_bar, vec![5.0, 2.5, -0.0, -2.5, -5.0]);
+    }
+
+    #[test]
+    fn chart_x_squared() {
+        let mut canvas = TextCanvas::new(71, 19);
+
+        let f = |x| x * x;
+
+        Chart::function(&mut canvas, -10.0, 10.0, &f);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀100⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⢇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠋⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠈⢢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠑⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡰⠁⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠜⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠒⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠒⠢⠤⠤⢄⡠⠤⠤⠴⠒⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀0.0073⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀-10⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀10
+"
+        );
+    }
+
+    #[test]
+    fn chart_polynomial() {
+        let mut canvas = TextCanvas::new(71, 19);
+
+        let f = |x: f64| x.powi(3) - 2.0 * x.powi(2) + 3.0 * x;
+
+        Chart::function(&mut canvas, -5.0, 5.0, &f);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀90⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠉⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠁⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡠⠔⠊⠁⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⡠⠤⠤⠔⠒⠒⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡠⠤⠒⠒⠒⠉⠉⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠚⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⡔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⢠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⡰⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⢀⠜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⢀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡎⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀-190⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+"
+        );
+    }
+
+    #[test]
+    fn chart_cos() {
+        let mut canvas = TextCanvas::new(71, 19);
+
+        let f = |x: f64| x.cos();
+
+        Chart::function(&mut canvas, 0.0, 5.0, &f);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀1⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠉⠉⠉⠒⠢⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠙⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠜⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠒⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠑⠢⠤⠤⢄⠤⠤⠔⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+"
+        );
+    }
+
+    #[test]
+    fn chart_line() {
+        let mut canvas = TextCanvas::new(35, 10);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Chart::line(&mut canvas, &x, &y);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠒⠉⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠊⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠉⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢀⡠⠔⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢀⡠⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡠⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+"
+        );
+    }
+
+    #[test]
+    fn chart_scatter() {
+        let mut canvas = TextCanvas::new(35, 10);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Chart::scatter(&mut canvas, &x, &y);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠀⠈⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠀⠈⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠠⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+"
+        );
+    }
+
+    #[test]
+    fn chart_empty() {
+        let mut canvas = TextCanvas::new(35, 10);
+
+        let x: Vec<f64> = vec![];
+        let y: Vec<f64> = vec![];
+
+        Chart::line(&mut canvas, &x, &y);
+        Chart::scatter(&mut canvas, &x, &y);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Canvas size is 12×3, but must be at least 13×4 to accommodate for plot."
+    )]
+    fn chart_canvas_too_small_both_horizontally_and_vertically() {
+        let mut canvas = TextCanvas::new(Chart::HORIZONTAL_MARGIN, Chart::VERTICAL_MARGIN);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Chart::scatter(&mut canvas, &x, &y);
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Canvas size is 12×4, but must be at least 13×4 to accommodate for plot."
+    )]
+    fn chart_canvas_too_small_horizontally() {
+        let mut canvas = TextCanvas::new(Chart::HORIZONTAL_MARGIN, Chart::VERTICAL_MARGIN + 1);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Chart::line(&mut canvas, &x, &y);
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Canvas size is 13×3, but must be at least 13×4 to accommodate for plot."
+    )]
+    fn chart_canvas_too_small_vertically() {
+        let mut canvas = TextCanvas::new(Chart::HORIZONTAL_MARGIN + 1, Chart::VERTICAL_MARGIN);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Chart::line(&mut canvas, &x, &y);
+    }
+
+    #[test]
+    #[allow(clippy::cognitive_complexity)]
+    fn chart_pretty_number() {
+        assert_eq!(Chart::format_number(1_570_000_000_000.0), "1.6T");
+        assert_eq!(Chart::format_number(1_000_000_000_000.0), "1.0T");
+
+        assert_eq!(Chart::format_number(1_570_000_000.0), "1.6B");
+        assert_eq!(Chart::format_number(1_000_000_000.0), "1.0B");
+
+        assert_eq!(Chart::format_number(1_570_000.0), "1.6M");
+        assert_eq!(Chart::format_number(1_000_000.0), "1.0M");
+
+        assert_eq!(Chart::format_number(100_000.0), "100.0K");
+
+        assert_eq!(Chart::format_number(10_570.0), "10.6K");
+        assert_eq!(Chart::format_number(10_000.0), "10.0K");
+
+        assert_eq!(Chart::format_number(1_570.0), "1570");
+        assert_eq!(Chart::format_number(1_000.0), "1000");
+
+        assert_eq!(Chart::format_number(1.0009), "1");
+        assert_eq!(Chart::format_number(-1.0009), "-1");
+
+        assert_eq!(Chart::format_number(0.010_57), "0.0106");
+        assert_eq!(Chart::format_number(0.010_00), "0.0100");
+
+        assert_eq!(Chart::format_number(0.000_001_57), "0");
+        assert_eq!(Chart::format_number(0.000_001_00), "0");
+
+        assert_eq!(Chart::format_number(-0.000_001_57), "0");
+        assert_eq!(Chart::format_number(-0.000_001_00), "0");
+
+        assert_eq!(Chart::format_number(-0.001_57), "-0.0016");
+        assert_eq!(Chart::format_number(-0.001_00), "-0.0010");
+
+        assert_eq!(Chart::format_number(-1_570.0), "-1570");
+        assert_eq!(Chart::format_number(-1_000.0), "-1000");
+
+        assert_eq!(Chart::format_number(-10_570.0), "-10.6K");
+        assert_eq!(Chart::format_number(-10_000.0), "-10.0K");
+
+        assert_eq!(Chart::format_number(-100_000.0), "-100.0K");
+
+        assert_eq!(Chart::format_number(-1_570_000.0), "-1.6M");
+        assert_eq!(Chart::format_number(-1_000_000.0), "-1.0M");
+
+        assert_eq!(Chart::format_number(-1_570_000_000.0), "-1.6B");
+        assert_eq!(Chart::format_number(-1_000_000_000.0), "-1.0B");
+
+        assert_eq!(Chart::format_number(-1_570_000_000_000.0), "-1.6T");
+        assert_eq!(Chart::format_number(-1_000_000_000_000.0), "-1.0T");
     }
 }

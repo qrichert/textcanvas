@@ -36,7 +36,7 @@ clean: ## Remove temporary files and data
 
 .PHONY: check
 check: ## Most stringent checks (includes checks still in development)
-	@rustup update
+	@rustup update || :
 	@cargo fmt
 	@cargo doc --no-deps --all-features
 	@cargo check
