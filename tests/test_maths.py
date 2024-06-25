@@ -2,7 +2,7 @@ import doctest
 import unittest
 
 import textcanvas.maths
-from textcanvas.maths import Vec2D
+from textcanvas.maths import Interpolation, Vec2D
 
 
 def load_tests(
@@ -231,6 +231,70 @@ class TestVec2D(unittest.TestCase):
         self.assertAlmostEqual(x.projection_onto(u), 0.5)
         self.assertAlmostEqual(y.projection_onto(u), -0.5)
         self.assertAlmostEqual(z.projection_onto(u), 2.0)
+
+
+class TestInterpolation(unittest.TestCase):
+    def assertVecAlmostEqual(self, first: Vec2D, second: Vec2D) -> None:
+        self.assertAlmostEqual(first.x, second.x)
+        self.assertAlmostEqual(first.y, second.y)
+
+    def test_lerp(self) -> None:
+        self.assertAlmostEqual(Interpolation.lerp(10.0, 20.0, 0.5), 15.0)
+
+    def test_rlerp(self) -> None:
+        self.assertAlmostEqual(Interpolation.rlerp(10.0, 20.0, 15.0), 0.5)
+
+    def test_ease_in_quad(self) -> None:
+        self.assertAlmostEqual(Interpolation.ease_in_quad(0.0, 100.0, 0.00), 0.0)
+        self.assertAlmostEqual(Interpolation.ease_in_quad(0.0, 100.0, 0.25), 6.25)
+        self.assertAlmostEqual(Interpolation.ease_in_quad(0.0, 100.0, 0.50), 25.0)
+        self.assertAlmostEqual(Interpolation.ease_in_quad(0.0, 100.0, 0.75), 56.25)
+        self.assertAlmostEqual(Interpolation.ease_in_quad(0.0, 100.0, 1.00), 100.0)
+
+    def test_ease_out_quad(self) -> None:
+        self.assertAlmostEqual(Interpolation.ease_out_quad(0.0, 100.0, 0.00), 0.0)
+        self.assertAlmostEqual(Interpolation.ease_out_quad(0.0, 100.0, 0.25), 43.75)
+        self.assertAlmostEqual(Interpolation.ease_out_quad(0.0, 100.0, 0.50), 75.0)
+        self.assertAlmostEqual(Interpolation.ease_out_quad(0.0, 100.0, 0.75), 93.75)
+        self.assertAlmostEqual(Interpolation.ease_out_quad(0.0, 100.0, 1.00), 100.0)
+
+    def test_ease_in_out_quad(self) -> None:
+        self.assertAlmostEqual(Interpolation.ease_in_out_quad(0.0, 100.0, 0.00), 0.0)
+        self.assertAlmostEqual(Interpolation.ease_in_out_quad(0.0, 100.0, 0.25), 12.5)
+        self.assertAlmostEqual(Interpolation.ease_in_out_quad(0.0, 100.0, 0.50), 50.0)
+        self.assertAlmostEqual(Interpolation.ease_in_out_quad(0.0, 100.0, 0.75), 87.5)
+        self.assertAlmostEqual(Interpolation.ease_in_out_quad(0.0, 100.0, 1.00), 100.0)
+
+    def test_smoothstep(self) -> None:
+        self.assertAlmostEqual(Interpolation.smoothstep(0.0, 100.0, 0.00), 0.0)
+        self.assertAlmostEqual(Interpolation.smoothstep(0.0, 100.0, 0.25), 15.625)
+        self.assertAlmostEqual(Interpolation.smoothstep(0.0, 100.0, 0.50), 50.0)
+        self.assertAlmostEqual(Interpolation.smoothstep(0.0, 100.0, 0.75), 84.375)
+        self.assertAlmostEqual(Interpolation.smoothstep(0.0, 100.0, 1.00), 100.0)
+
+    def test_catmull_rom(self) -> None:
+        p0 = Vec2D(0.0, 0.25)
+        p1 = Vec2D(0.33, 0.85)
+        p2 = Vec2D(0.67, 0.15)
+        p3 = Vec2D(1.0, 0.75)
+
+        self.assertVecAlmostEqual(
+            Interpolation.catmull_rom(p0, p1, p2, p3, 0.00, 0.5), p1
+        )
+        self.assertVecAlmostEqual(
+            Interpolation.catmull_rom(p0, p1, p2, p3, 0.25, 0.5),
+            Vec2D(0.415_570_592_232_469_2, 0.739_802_500_912_719_5),
+        )
+        self.assertVecAlmostEqual(
+            Interpolation.catmull_rom(p0, p1, p2, p3, 0.50, 0.5), Vec2D(0.5, 0.5)
+        )
+        self.assertVecAlmostEqual(
+            Interpolation.catmull_rom(p0, p1, p2, p3, 0.75, 0.5),
+            Vec2D(0.584_429_407_767_530_7, 0.260_197_499_087_280_35),
+        )
+        self.assertVecAlmostEqual(
+            Interpolation.catmull_rom(p0, p1, p2, p3, 1.00, 0.5), p2
+        )
 
 
 if __name__ == "__main__":

@@ -229,6 +229,217 @@ impl Vec2D {
     }
 }
 
+pub struct Interpolation;
+
+impl Interpolation {
+    /// Linear.
+    ///
+    /// Find value given time.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use textcanvas::maths::Interpolation;
+    /// assert_eq!(Interpolation::lerp(10.0, 20.0, 0.5), 15.0);
+    /// ```
+    ///
+    /// # Arguments
+    ///
+    /// - `a` - Start
+    /// - `b` - End
+    /// - `t` - Time [0; 1]
+    #[must_use]
+    pub fn lerp(a: f64, b: f64, t: f64) -> f64 {
+        (1.0 - t) * a + t * b
+    }
+
+    /// Reverse Linear.
+    ///
+    /// Find time given value.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use textcanvas::maths::Interpolation;
+    /// assert_eq!(Interpolation::rlerp(10.0, 20.0, 15.0), 0.5);
+    /// ```
+    ///
+    /// # Arguments
+    ///
+    /// - `a` - Start
+    /// - `b` - End
+    /// - `v` - Value [start; end]
+    #[must_use]
+    pub fn rlerp(a: f64, b: f64, v: f64) -> f64 {
+        (v - a) / (b - a)
+    }
+
+    /// Ease In Quad (^2) - Start slow, accelerate.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use textcanvas::maths::Interpolation;
+    /// assert_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.00), 0.0);
+    /// assert_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.25), 6.25);
+    /// assert_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.50), 25.0);
+    /// assert_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.75), 56.25);
+    /// assert_eq!(Interpolation::ease_in_quad(0.0, 100.0, 1.00), 100.0);
+    /// ```
+    ///
+    /// # Arguments
+    ///
+    /// - `a` - Start
+    /// - `b` - End
+    /// - `t` - Time [0; 1]
+    #[must_use]
+    pub fn ease_in_quad(a: f64, b: f64, mut t: f64) -> f64 {
+        t = t * t;
+        Self::lerp(a, b, t)
+    }
+
+    /// Ease Out Quad (^2) - Start fast, decelerate.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use textcanvas::maths::Interpolation;
+    /// assert_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.00), 0.0);
+    /// assert_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.25), 43.75);
+    /// assert_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.50), 75.0);
+    /// assert_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.75), 93.75);
+    /// assert_eq!(Interpolation::ease_out_quad(0.0, 100.0, 1.00), 100.0);
+    /// ```
+    ///
+    /// # Arguments
+    ///
+    /// - `a` - Start
+    /// - `b` - End
+    /// - `t` - Time [0; 1]
+    #[must_use]
+    pub fn ease_out_quad(a: f64, b: f64, mut t: f64) -> f64 {
+        t = 1.0 - (1.0 - t) * (1.0 - t);
+        Self::lerp(a, b, t)
+    }
+
+    /// Ease In-Out Quad (^2) - Start slow, accelerate, end slow.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use textcanvas::maths::Interpolation;
+    /// assert_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.00), 0.0);
+    /// assert_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.25), 12.5);
+    /// assert_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.50), 50.0);
+    /// assert_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.75), 87.5);
+    /// assert_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 1.00), 100.0);
+    /// ```
+    ///
+    /// # Arguments
+    ///
+    /// - `a` - Start
+    /// - `b` - End
+    /// - `t` - Time [0; 1]
+    #[must_use]
+    pub fn ease_in_out_quad(a: f64, b: f64, mut t: f64) -> f64 {
+        if t < 0.5 {
+            t = 2.0 * t * t;
+        } else {
+            t = 1.0 - (-2.0 * t + 2.0).powi(2) / 2.0;
+        }
+        Self::lerp(a, b, t)
+    }
+
+    /// Smoothstep (Smooth ease in-out).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use textcanvas::maths::Interpolation;
+    /// assert_eq!(Interpolation::smoothstep(0.0, 100.0, 0.00), 0.0);
+    /// assert_eq!(Interpolation::smoothstep(0.0, 100.0, 0.25), 15.625);
+    /// assert_eq!(Interpolation::smoothstep(0.0, 100.0, 0.50), 50.0);
+    /// assert_eq!(Interpolation::smoothstep(0.0, 100.0, 0.75), 84.375);
+    /// assert_eq!(Interpolation::smoothstep(0.0, 100.0, 1.00), 100.0);
+    /// ```
+    ///
+    /// # Arguments
+    ///
+    /// - `a` - Start
+    /// - `b` - End
+    /// - `t` - Time [0; 1]
+    #[must_use]
+    pub fn smoothstep(a: f64, b: f64, mut t: f64) -> f64 {
+        t = t * t * (3.0 - 2.0 * t);
+        Self::lerp(a, b, t)
+    }
+
+    /// Catmull-Rom.
+    ///
+    /// ```text
+    ///       P1              - P3
+    ///       -  *          -
+    ///     -     *      -
+    /// P0 -        *  *
+    ///                P2
+    /// ```
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use textcanvas::maths::{Interpolation, Vec2D};
+    /// let p0 = Vec2D::new(0.0, 0.25);
+    /// let p1 = Vec2D::new(0.33, 0.85);
+    /// let p2 = Vec2D::new(0.67, 0.15);
+    /// let p3 = Vec2D::new(1.0, 0.75);
+    ///
+    /// assert_eq!(Interpolation::catmull_rom(p0, p1, p2, p3, 0.00, 0.5), p1);
+    /// assert_eq!(Interpolation::catmull_rom(p0, p1, p2, p3, 0.25, 0.5), Vec2D::new(0.416, 0.740));
+    /// assert_eq!(Interpolation::catmull_rom(p0, p1, p2, p3, 0.50, 0.5), Vec2D::new(0.5, 0.5));
+    /// assert_eq!(Interpolation::catmull_rom(p0, p1, p2, p3, 0.75, 0.5), Vec2D::new(0.584, 0.260));
+    /// assert_eq!(Interpolation::catmull_rom(p0, p1, p2, p3, 1.00, 0.5), p2);
+    /// ```
+    ///
+    /// # Arguments
+    ///
+    /// - `p0` - Control point 1
+    /// - `p1` - Spline start
+    /// - `p2` - Spline end
+    /// - `p3` - Control point 2
+    /// - `t` - Time [0; 1]
+    /// - `alpha` - 0.5 = centripetal, 0 = uniform, 1 = chordal
+    #[must_use]
+    pub fn catmull_rom(
+        p0: Vec2D,
+        p1: Vec2D,
+        p2: Vec2D,
+        p3: Vec2D,
+        mut t: f64,
+        alpha: f64,
+    ) -> Vec2D {
+        let get_t = |t: f64, alpha: f64, p0: Vec2D, p1: Vec2D| -> f64 {
+            let d = p1 - p0;
+            let a = d.dot_product(d);
+            let b = a.powf(alpha * 0.5);
+            b + t
+        };
+
+        let t0 = 0.0;
+        let t1 = get_t(t0, alpha, p0, p1);
+        let t2 = get_t(t1, alpha, p1, p2);
+        let t3 = get_t(t2, alpha, p2, p3);
+        t = Self::lerp(t1, t2, t);
+
+        let a1 = ((t1 - t) / (t1 - t0) * p0) + ((t - t0) / (t1 - t0) * p1);
+        let a2 = ((t2 - t) / (t2 - t1) * p1) + ((t - t1) / (t2 - t1) * p2);
+        let a3 = ((t3 - t) / (t3 - t2) * p2) + ((t - t2) / (t3 - t2) * p3);
+        let b1 = ((t2 - t) / (t2 - t0) * a1) + ((t - t0) / (t2 - t0) * a2);
+        let b2 = ((t3 - t) / (t3 - t1) * a2) + ((t - t1) / (t3 - t1) * a3);
+
+        ((t2 - t) / (t2 - t1) * b1) + ((t - t1) / (t2 - t1) * b2)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -516,5 +727,83 @@ mod tests {
         assert_almost_eq!(x.projection_onto(u), 0.5);
         assert_almost_eq!(y.projection_onto(u), -0.5);
         assert_almost_eq!(z.projection_onto(u), 2.0);
+    }
+
+    // Interpolation.
+
+    macro_rules! assert_vec_almost_eq {
+        ($a:expr, $b:expr) => {
+            assert_almost_eq!($a.x, $b.x);
+            assert_almost_eq!($a.y, $b.y);
+        };
+    }
+
+    #[test]
+    fn lerp() {
+        assert_almost_eq!(Interpolation::lerp(10.0, 20.0, 0.5), 15.0);
+    }
+
+    #[test]
+    fn rlerp() {
+        assert_almost_eq!(Interpolation::rlerp(10.0, 20.0, 15.0), 0.5);
+    }
+
+    #[test]
+    fn ease_in_quad() {
+        assert_almost_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.00), 0.0);
+        assert_almost_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.25), 6.25);
+        assert_almost_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.50), 25.0);
+        assert_almost_eq!(Interpolation::ease_in_quad(0.0, 100.0, 0.75), 56.25);
+        assert_almost_eq!(Interpolation::ease_in_quad(0.0, 100.0, 1.00), 100.0);
+    }
+
+    #[test]
+    fn ease_out_quad() {
+        assert_almost_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.00), 0.0);
+        assert_almost_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.25), 43.75);
+        assert_almost_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.50), 75.0);
+        assert_almost_eq!(Interpolation::ease_out_quad(0.0, 100.0, 0.75), 93.75);
+        assert_almost_eq!(Interpolation::ease_out_quad(0.0, 100.0, 1.00), 100.0);
+    }
+
+    #[test]
+    fn ease_in_out_quad() {
+        assert_almost_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.00), 0.0);
+        assert_almost_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.25), 12.5);
+        assert_almost_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.50), 50.0);
+        assert_almost_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 0.75), 87.5);
+        assert_almost_eq!(Interpolation::ease_in_out_quad(0.0, 100.0, 1.00), 100.0);
+    }
+
+    #[test]
+    fn smoothstep() {
+        assert_almost_eq!(Interpolation::smoothstep(0.0, 100.0, 0.00), 0.0);
+        assert_almost_eq!(Interpolation::smoothstep(0.0, 100.0, 0.25), 15.625);
+        assert_almost_eq!(Interpolation::smoothstep(0.0, 100.0, 0.50), 50.0);
+        assert_almost_eq!(Interpolation::smoothstep(0.0, 100.0, 0.75), 84.375);
+        assert_almost_eq!(Interpolation::smoothstep(0.0, 100.0, 1.00), 100.0);
+    }
+
+    #[test]
+    fn catmull_rom() {
+        let p0 = Vec2D::new(0.0, 0.25);
+        let p1 = Vec2D::new(0.33, 0.85);
+        let p2 = Vec2D::new(0.67, 0.15);
+        let p3 = Vec2D::new(1.0, 0.75);
+
+        assert_vec_almost_eq!(Interpolation::catmull_rom(p0, p1, p2, p3, 0.00, 0.5), p1);
+        assert_vec_almost_eq!(
+            Interpolation::catmull_rom(p0, p1, p2, p3, 0.25, 0.5),
+            Vec2D::new(0.415_570_592_232_469_2, 0.739_802_500_912_719_5)
+        );
+        assert_vec_almost_eq!(
+            Interpolation::catmull_rom(p0, p1, p2, p3, 0.50, 0.5),
+            Vec2D::new(0.5, 0.5)
+        );
+        assert_vec_almost_eq!(
+            Interpolation::catmull_rom(p0, p1, p2, p3, 0.75, 0.5),
+            Vec2D::new(0.584_429_407_767_530_7, 0.260_197_499_087_280_35)
+        );
+        assert_vec_almost_eq!(Interpolation::catmull_rom(p0, p1, p2, p3, 1.00, 0.5), p2);
     }
 }
