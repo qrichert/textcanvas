@@ -1,6 +1,6 @@
 [package]
 name = "textcanvas"
-version = "3.3.0"
+version = "3.4.0"
 edition = "2021"
 authors = ["Quentin Richert <noreply@richert.co>"]
 description = "Draw to the terminal like an HTML Canvas."

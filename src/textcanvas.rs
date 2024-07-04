@@ -2,7 +2,7 @@ use crate::Color;
 
 use std::cmp;
 use std::env;
-use std::{fmt, fmt::Formatter};
+use std::fmt;
 
 pub type PixelBuffer = Vec<Vec<bool>>;
 pub type ColorBuffer = Vec<Vec<Color>>;
@@ -48,6 +48,17 @@ macro_rules! to_i32 {
         i32::try_from($value).expect("the value should not exceed max resolution.")
     };
 }
+
+#[derive(Debug)]
+pub struct TextCanvasError(pub &'static str);
+
+impl fmt::Display for TextCanvasError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for TextCanvasError {}
 
 /// Grid-like area with a width and a height.
 ///
@@ -328,7 +339,7 @@ impl TextCanvas {
     ///
     /// If either or both `WIDTH` and `HEIGHT` variables cannot be read
     /// from the environment.
-    pub fn new_auto() -> Result<Self, &'static str> {
+    pub fn new_auto() -> Result<Self, TextCanvasError> {
         let (width, height) = Self::get_auto_size()?;
         Ok(Self::new(width, height))
     }
@@ -351,13 +362,17 @@ impl TextCanvas {
     ///
     /// If either or both `WIDTH` and `HEIGHT` variables cannot be read
     /// from the environment.
-    pub fn get_auto_size() -> Result<(i32, i32), &'static str> {
+    pub fn get_auto_size() -> Result<(i32, i32), TextCanvasError> {
         let Some(width) = env::var("WIDTH").ok().and_then(|w| w.parse().ok()) else {
-            return Err("Cannot read terminal width from environment.");
+            return Err(TextCanvasError(
+                "cannot read terminal width from environment",
+            ));
         };
 
         let Some(height) = env::var("HEIGHT").ok().and_then(|h| h.parse().ok()) else {
-            return Err("Cannot read terminal height from environment.");
+            return Err(TextCanvasError(
+                "cannot read terminal height from environment",
+            ));
         };
 
         Ok((width, height))
@@ -1434,7 +1449,7 @@ impl Default for TextCanvas {
 }
 
 impl fmt::Display for TextCanvas {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.render())
     }
 }
@@ -1450,6 +1465,15 @@ mod tests {
             canvas.set_pixel(x, y, true);
             y += 1;
         }
+    }
+
+    // Errors.
+
+    #[test]
+    fn textcanvaserror_format() {
+        let error = TextCanvasError("an error has occurred");
+
+        assert_eq!(error.to_string(), "an error has occurred");
     }
 
     // Surface.
@@ -1659,7 +1683,7 @@ mod tests {
 
         assert_eq!(canvas.output.width, 12, "Incorrect auto width.");
         assert_eq!(canvas.output.height, 5, "Incorrect auto height.");
-        assert_eq!(TextCanvas::get_auto_size(), Ok((12, 5)));
+        assert_eq!(TextCanvas::get_auto_size().unwrap(), (12, 5));
     }
 
     #[test]
