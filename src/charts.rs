@@ -796,8 +796,13 @@ impl Plot {
         // 1   2   3   4   5
         let step = range / (nb_values - 1.0);
 
-        let mut px: Vec<f64> = Vec::new();
-        let mut py: Vec<T> = Vec::new();
+        // This is fine. `nb_values` will realistically never be big
+        // enough to overflow `usize`, and even then, this is just for
+        // pre-allocation.
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let nb_values = nb_values.ceil() as usize;
+        let mut px: Vec<f64> = Vec::with_capacity(nb_values);
+        let mut py: Vec<T> = Vec::with_capacity(nb_values);
 
         // Always add first value.
         px.push(from_x);

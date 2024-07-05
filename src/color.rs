@@ -230,7 +230,7 @@ impl Color {
             return String::from("0");
         }
 
-        let mut attributes = Vec::new();
+        let mut attributes = Vec::with_capacity(3);
         if self.is_bold {
             attributes.push("1");
         }

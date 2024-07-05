@@ -605,8 +605,8 @@ impl TextCanvas {
     }
 
     fn init_color_buffer(&mut self) {
-        self.color_buffer = Vec::new();
-        for _ in 0..self.output.height() {
+        self.color_buffer = Vec::with_capacity(self.output.uheight());
+        for _ in 0..self.output.uheight() {
             let row = vec![Color::new(); self.output.uwidth()];
             self.color_buffer.push(row);
         }
@@ -752,8 +752,8 @@ impl TextCanvas {
     }
 
     fn init_text_buffer(&mut self) {
-        self.text_buffer = Vec::new();
-        for _ in 0..self.output.height() {
+        self.text_buffer = Vec::with_capacity(self.output.uheight());
+        for _ in 0..self.output.uheight() {
             let row = vec![String::new(); self.output.uwidth()];
             self.text_buffer.push(row);
         }
@@ -766,7 +766,8 @@ impl TextCanvas {
     /// `\n`s), and each canvas column becomes a single character in
     /// each line. What you would expect. It can be printed as-is.
     fn render(&self) -> String {
-        let mut res = String::new();
+        let nb_output_chars = (self.output.uwidth() + 1) * self.output.uheight();
+        let mut res = String::with_capacity(nb_output_chars);
 
         for (i, pixel_block) in self.iter_buffer_by_blocks_lrtb().enumerate() {
             let x = i % self.output.uwidth();
@@ -1298,7 +1299,7 @@ impl TextCanvas {
         let radius = f64::from(radius);
         let slice = (2.0 * std::f64::consts::PI) / f64::from(sides);
 
-        let mut vertices: Vec<(i32, i32)> = vec![];
+        let mut vertices: Vec<(i32, i32)> = Vec::with_capacity(to_usize!(sides));
         for vertex in 0..sides {
             let theta = f64::from(vertex) * slice + angle;
             let x = cx + (theta.cos() * radius);
