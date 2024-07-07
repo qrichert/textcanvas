@@ -2,6 +2,7 @@ use crate::Color;
 
 use std::cmp;
 use std::env;
+use std::error::Error;
 use std::fmt;
 
 pub type PixelBuffer = Vec<Vec<bool>>;
@@ -58,7 +59,7 @@ impl fmt::Display for TextCanvasError {
     }
 }
 
-impl std::error::Error for TextCanvasError {}
+impl Error for TextCanvasError {}
 
 /// Grid-like area with a width and a height.
 ///

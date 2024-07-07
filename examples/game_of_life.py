@@ -5,12 +5,14 @@ $ python -m examples.game_of_life
 ```
 """
 
+import datetime as dt
 import os
 import random
 import sys
 from typing import Literal
 
 from textcanvas.textcanvas import PixelBuffer, TextCanvas
+from textcanvas.utils import GameLoop
 
 CLEAR_CMD: Literal["clear", "cls"] = "cls" if os.name == "nt" else "clear"
 CLEAR_SEQUENCE: str = "\x1b[2J\x1b[1;1H"
@@ -47,11 +49,17 @@ class GameOfLife:
             print(SHOW_TEXT_CURSOR_SEQUENCE)
 
     def _game_loop(self, nb_iterations: int) -> None:
-        os.system(CLEAR_CMD)
-        for _ in range(nb_iterations):
+        i: int = 0
+
+        def loop() -> str | None:
+            nonlocal i
+            i += 1
+            if i > nb_iterations:
+                return None
             self.update()
-            output: str = self.canvas.to_string().rstrip("\n")
-            print(CLEAR_SEQUENCE + output, end="")
+            return self.canvas.to_string()
+
+        GameLoop.loop_fixed(dt.timedelta(seconds=1 / 24), loop)
 
     def update(self) -> None:
         self.copy_buffer()

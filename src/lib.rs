@@ -100,6 +100,7 @@
 pub mod charts;
 pub mod color;
 pub mod textcanvas;
+pub mod utils;
 
 pub use color::*;
 pub use textcanvas::*;
