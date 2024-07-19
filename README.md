@@ -254,6 +254,7 @@ TextCanvas provides the same API for both Python and Rust.
 To install for Python, run this:
 
 ```shell
+pip install textcanvas
 pip install git+https://github.com/qrichert/textcanvas.git
 ```
 

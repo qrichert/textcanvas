@@ -3,6 +3,7 @@
 
 /.venv/
 /_wip/
+/dist
 /target
 __pycache__/
 .coverage
