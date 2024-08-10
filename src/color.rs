@@ -1,5 +1,23 @@
-use std::fmt;
-use std::fmt::{Formatter, Write};
+use std::fmt::{self, Formatter, Write};
+
+use std::env;
+use std::sync::LazyLock;
+
+/// `true` if `NO_COLOR` is set and is non-empty.
+#[cfg(not(tarpaulin_include))]
+#[allow(unreachable_code)]
+pub static NO_COLOR: LazyLock<bool> = LazyLock::new(|| {
+    #[cfg(test)]
+    {
+        return false;
+    }
+    // Contrary to `env::var()`, `env::var_os()` does not require the
+    // value to be valid Unicode.
+    match env::var_os("NO_COLOR") {
+        Some(value) => !value.is_empty(),
+        None => false,
+    }
+});
 
 const ESC: &str = "\x1b[";
 const RESET: &str = "\x1b[0m";
@@ -938,7 +956,7 @@ impl Color {
 
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if self.is_empty() {
+        if self.is_empty() || *NO_COLOR {
             return write!(f, "{PLACEHOLDER}");
         }
 

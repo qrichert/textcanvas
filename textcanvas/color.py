@@ -1,5 +1,9 @@
 import enum
+import os
 from typing import Any, Self
+
+# `True` if `NO_COLOR` is set and is non-empty.
+NO_COLOR: bool = bool(os.environ.get("NO_COLOR"))
 
 ESC: str = "\x1b["
 RESET: str = "\x1b[0m"
@@ -98,10 +102,11 @@ class Color:
         return self.to_string() == other
 
     def to_string(self) -> str:
-        if self._is_empty():
+        if self._is_empty() or NO_COLOR:
             return PLACEHOLDER
 
         res: str = ESC
+
         res += self._format_display_attributes()
 
         if self._has_colors():
