@@ -177,6 +177,49 @@ _(See `examples/cube.rs`.)_
 </p>
 </details>
 
+## Quick Start
+
+<table>
+<tr><th>Rust</th><th>Python</th></tr>
+<tr><td>
+
+```rust
+use textcanvas::{Color, TextCanvas};
+
+// 80×24 characters, yielding 160×96 screen pixels.
+let mut canvas = TextCanvas::new(80, 24);
+
+canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+canvas.draw_text("hello, world", 34, 12);
+
+canvas.set_color(Color::new().red().bg_bright_blue());
+canvas.fill_triangle(108, 55, 120, 60, 90, 67);
+
+print!("{canvas}");
+```
+
+</td><td>
+
+```python
+from textcanvas.textcanvas import Color, TextCanvas
+
+# 80×24 characters, yielding 160×96 screen pixels.
+canvas = TextCanvas(80, 24)
+
+canvas.stroke_line(0, 0, canvas.w, canvas.h)
+canvas.draw_text("hello, world", 34, 12)
+
+canvas.set_color(Color().red().bg_bright_blue())
+canvas.fill_triangle(108, 55, 120, 60, 90, 67)
+
+print(canvas)
+```
+
+</td></tr>
+</table>
+
+Check out [`examples/`](./examples) for more.
+
 ## How It Works
 
 Braille characters start at Unicode offset `U2800` (hexadecimal), and
@@ -242,10 +285,10 @@ on the last row like so:
 
 ## See Also
 
-- https://en.wikipedia.org/wiki/Braille_Patterns
-- https://www.unicode.org/charts/PDF/U2800.pdf
+- <https://en.wikipedia.org/wiki/Braille_Patterns>
+- <https://www.unicode.org/charts/PDF/U2800.pdf>
 
-[^1]: https://github.com/asciimoo/drawille
+[^1]: <https://github.com/asciimoo/drawille>
 
 ## Installation
 
