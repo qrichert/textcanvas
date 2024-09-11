@@ -1,6 +1,5 @@
-use std::fmt::{self, Formatter, Write};
-
 use std::env;
+use std::fmt::{self, Formatter, Write};
 use std::sync::LazyLock;
 
 /// `true` if `NO_COLOR` is set and is non-empty.

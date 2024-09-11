@@ -1,9 +1,9 @@
-use crate::Color;
-
 use std::cmp;
 use std::env;
 use std::error::Error;
 use std::fmt;
+
+use crate::Color;
 
 pub type PixelBuffer = Vec<Vec<bool>>;
 pub type ColorBuffer = Vec<Vec<Color>>;

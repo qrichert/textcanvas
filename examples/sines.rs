@@ -39,6 +39,7 @@
 //! ```
 
 use std::time;
+
 use textcanvas::charts::Plot;
 use textcanvas::utils::GameLoop;
 use textcanvas::TextCanvas;

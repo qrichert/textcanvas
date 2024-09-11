@@ -1,5 +1,5 @@
+use std::io::{self, Write};
 use std::time;
-use std::{io, io::Write};
 
 /// Help animate [`TextCanvas`](crate::TextCanvas).
 ///

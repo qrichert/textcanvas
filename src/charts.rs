@@ -1,5 +1,6 @@
-use crate::TextCanvas;
 use std::cmp::Ordering;
+
+use crate::TextCanvas;
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn cmp_f64(a: &&f64, b: &&f64) -> Ordering {
