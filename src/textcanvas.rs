@@ -1565,55 +1565,55 @@ mod tests {
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_zero_panics_for_width() {
-        let _ = TextCanvas::new(0, 1);
+        _ = TextCanvas::new(0, 1);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_zero_panics_for_height() {
-        let _ = TextCanvas::new(1, 0);
+        _ = TextCanvas::new(1, 0);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_zero_panics_for_width_and_height() {
-        let _ = TextCanvas::new(0, 0);
+        _ = TextCanvas::new(0, 0);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_negative_panics_for_width() {
-        let _ = TextCanvas::new(-1, 1);
+        _ = TextCanvas::new(-1, 1);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_negative_panics_for_height() {
-        let _ = TextCanvas::new(1, -1);
+        _ = TextCanvas::new(1, -1);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_negative_panics_for_width_and_height() {
-        let _ = TextCanvas::new(-1, -1);
+        _ = TextCanvas::new(-1, -1);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_too_big_panics_for_width() {
-        let _ = TextCanvas::new(100_000, 1);
+        _ = TextCanvas::new(100_000, 1);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_too_big_panics_for_height() {
-        let _ = TextCanvas::new(1, 100_000);
+        _ = TextCanvas::new(1, 100_000);
     }
 
     #[test]
     #[should_panic(expected = "TextCanvas' minimal size is 1×1.")]
     fn size_too_big_panics_for_width_and_height() {
-        let _ = TextCanvas::new(100_000, 100_000);
+        _ = TextCanvas::new(100_000, 100_000);
     }
 
     #[test]
@@ -1627,7 +1627,7 @@ mod tests {
         // multiply with overflow`. The solution is to divide instead:
         //
         //     if width <= MAX_RESOLUTION / 2
-        let _ = TextCanvas::new(i32::MAX, 1);
+        _ = TextCanvas::new(i32::MAX, 1);
     }
 
     #[test]
@@ -1641,7 +1641,7 @@ mod tests {
         // multiply with overflow`. The solution is to divide instead:
         //
         //     if height <= MAX_RESOLUTION / 4
-        let _ = TextCanvas::new(1, i32::MAX);
+        _ = TextCanvas::new(1, i32::MAX);
     }
 
     #[test]

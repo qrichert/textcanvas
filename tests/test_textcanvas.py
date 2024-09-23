@@ -1209,7 +1209,7 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         # print(f"{canvas}")
 
-        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n" "⠀a⠀⠀012\n" "⠀⠀⠀⠀⠀⠀⠀\n")
+        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n⠀a⠀⠀012\n⠀⠀⠀⠀⠀⠀⠀\n")
 
     def test_draw_canvas_with_colored_text(self) -> None:
         canvas = TextCanvas(7, 3)
@@ -1381,7 +1381,7 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         # print(f"{canvas}")
 
-        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n" "⠀a012e⠀\n" "⠀⠀⠀⠀⠀⠀⠀\n")
+        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n⠀a012e⠀\n⠀⠀⠀⠀⠀⠀⠀\n")
 
     def test_merge_canvas_with_colored_text(self) -> None:
         canvas = TextCanvas(7, 3)

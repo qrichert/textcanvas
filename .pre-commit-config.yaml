@@ -1,21 +1,21 @@
 default_install_hook_types: [pre-commit, pre-push]
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.3
+    rev: v0.9.6
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
+    rev: 06907d0
     hooks:
       - id: docformatter
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.372
+    rev: v1.1.394
     hooks:
       - id: pyright
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.18.0
+    rev: 1.19.1
     hooks:
       - id: blacken-docs
         additional_dependencies:
