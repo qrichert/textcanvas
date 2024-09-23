@@ -258,7 +258,7 @@ impl GameLoop<'_> {
             print!("{string}");
             return;
         }
-        let _ = write!(self.stdout, "{string}");
+        _ = write!(self.stdout, "{string}");
     }
 
     /// Flush stdout.
@@ -270,7 +270,7 @@ impl GameLoop<'_> {
     /// Flushing stdout forces the immediate display of what's in the
     /// buffer, even if there is no `\n`.
     pub fn flush(&mut self) {
-        let _ = self.stdout.flush();
+        _ = self.stdout.flush();
     }
 
     /// Sleep for some duration.
