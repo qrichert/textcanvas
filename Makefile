@@ -64,7 +64,7 @@ light-rust-test: ## Run light Rust unit tests
 
 .PHONY: doc
 doc: ## Build documentation
-	@cargo doc
+	@cargo doc --all-features
 
 .PHONY: c
 c: coverage
