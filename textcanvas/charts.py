@@ -7,6 +7,7 @@ from .textcanvas import TextCanvas
 class PlotType(enum.Enum):
     LINE = "LINE"
     SCATTER = "SCATTER"
+    BARS = "BARS"
 
 
 class Plot:
@@ -455,6 +456,35 @@ class Plot:
         Plot._plot(canvas, x, y, PlotType.SCATTER)
 
     @staticmethod
+    def bars(canvas: TextCanvas, x: list[float], y: list[float]) -> None:
+        """Plot bars.
+
+        The data is scaled to take up the entire canvas.
+
+        <div class="warning">
+
+        `x` and `y` _should_ match in length,
+
+        If `x` and `y` are not the same length, plotting will stop once
+        the smallest of the two collections is consumed.
+
+        </div>
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> x: list[float] = list(range(-5, 6))
+            >>> y: list[float] = list(range(-5, 6))
+            >>> Plot.bars(canvas, x, y)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸
+            ⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸
+            ⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸
+            ⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+            ⡀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+        """
+        Plot._plot(canvas, x, y, PlotType.BARS)
+
+    @staticmethod
     def _plot(
         canvas: TextCanvas,
         x_vals: list[float],
@@ -522,6 +552,8 @@ class Plot:
                     previous = pair
                 case PlotType.SCATTER:
                     canvas.set_pixel(x, y, True)
+                case PlotType.BARS:
+                    canvas.stroke_line(x, y, x, canvas.h)
 
     @staticmethod
     def _handle_axes_without_range(
@@ -547,10 +579,18 @@ class Plot:
             # something, but the values are off.
             canvas.set_pixel(canvas.cx, canvas.cy, True)
 
+            if plot_type == PlotType.BARS:
+                # Add the bar for bar plots.
+                canvas.stroke_line(canvas.cx, canvas.cy, canvas.cx, canvas.h)
+
     @staticmethod
     def _draw_horizontally_centered_line(
         canvas: TextCanvas, x_vals: list[float], plot_type: PlotType
     ) -> None:
+        """Draw all points at the same Y coordinate.
+
+        This is a fallback for when the data has no range on the Y axis.
+        """
         match plot_type:
             case PlotType.LINE:
                 canvas.stroke_line(0, canvas.cy, canvas.w, canvas.cy)
@@ -558,13 +598,21 @@ class Plot:
                 for x_val in x_vals:
                     if (x := Plot.compute_screen_x(canvas, x_val, x_vals)) is not None:
                         canvas.set_pixel(x, canvas.cy, True)
+            case PlotType.BARS:
+                for x_val in x_vals:
+                    if (x := Plot.compute_screen_x(canvas, x_val, x_vals)) is not None:
+                        canvas.stroke_line(x, canvas.cy, x, canvas.h)
 
     @staticmethod
     def _draw_vertically_centered_line(
         canvas: TextCanvas, y_vals: list[float], plot_type: PlotType
     ) -> None:
+        """Draw all points at the same X coordinate.
+
+        This is a fallback for when the data has no range on the X axis.
+        """
         match plot_type:
-            case PlotType.LINE:
+            case PlotType.LINE | PlotType.BARS:
                 canvas.stroke_line(canvas.cx, 0, canvas.cx, canvas.h)
             case PlotType.SCATTER:
                 for y_val in y_vals:
@@ -593,6 +641,32 @@ class Plot:
         nb_values: int = canvas.screen.width
         (x, y) = Plot.compute_function(from_x, to_x, nb_values, f)
         Plot.line(canvas, x, y)
+
+    @staticmethod
+    def function_filled(
+        canvas: TextCanvas, from_x: float, to_x: float, f: Callable[[float], float]
+    ) -> None:
+        """Plot a function, and fill the area under the curve.
+
+        The function is scaled to take up the entire canvas, and is
+        assumed to be continuous (points will be line-joined together).
+
+        Examples:
+            >>> canvas = TextCanvas(15, 5)
+            >>> Plot.function_filled(canvas, -10.0, 10.0, lambda x: x ** 2)
+            >>> print(canvas, end="")
+            ⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼
+            ⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿
+            ⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿
+            ⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿
+            ⣿⣿⣿⣿⣿⣶⣤⣀⣤⣶⣿⣿⣿⣿⣿
+        """
+        nb_values: int = canvas.screen.width
+        (x, y) = Plot.compute_function(from_x, to_x, nb_values, f)
+        # This is a "trick". Since we've just computed the value of the
+        # function for every horizontal pixel, we can now plot the
+        # points as bars to fill up the whole area under the curve.
+        Plot.bars(canvas, x, y)
 
     @staticmethod
     def compute_function[T](
@@ -739,6 +813,33 @@ class Chart:
         Chart._chart(canvas, x, y, PlotType.SCATTER)
 
     @staticmethod
+    def bars(canvas: TextCanvas, x: list[float], y: list[float]) -> None:
+        """Render chart with a bars plot.
+
+        Examples:
+            >>> canvas = TextCanvas(35, 10)
+            >>> x: list[float] = list(range(-5, 6))
+            >>> y: list[float] = list(range(-5, 6))
+            >>> Chart.bars(canvas, x, y)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡄⠀⢸⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⡇⠀⢸⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⢠⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⢰⠀⢸⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡀⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+            ⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+
+        Raises:
+            ValueError: If chart is < 13×4, because it would make plot
+            size < 1×1.
+        """
+        Chart._chart(canvas, x, y, PlotType.BARS)
+
+    @staticmethod
     def _chart(
         canvas: TextCanvas, x: list[float], y: list[float], plot_type: PlotType
     ) -> None:
@@ -774,6 +875,8 @@ class Chart:
                 Plot.line(plot, x, y)
             case PlotType.SCATTER:
                 Plot.scatter(plot, x, y)
+            case PlotType.BARS:
+                Plot.bars(plot, x, y)
 
         canvas.draw_canvas(plot, Chart.MARGIN_LEFT * 2, Chart.MARGIN_TOP * 4)
 
@@ -874,3 +977,38 @@ class Chart:
         nb_values = (canvas.output.width - Chart.HORIZONTAL_MARGIN) * 2
         (x, y) = Plot.compute_function(from_x, to_x, nb_values, f)
         Chart.line(canvas, x, y)
+
+    @staticmethod
+    def function_filled(
+        canvas: TextCanvas, from_x: float, to_x: float, f: Callable[[float], float]
+    ) -> None:
+        """Render chart with a function, and fill the area under the
+        curve.
+
+        Examples:
+            >>> import math
+            >>> canvas = TextCanvas(35, 10)
+            >>> f = lambda x: math.cos(x)
+            >>> Chart.function_filled(canvas, 0.0, 5.0, f)
+            >>> print(canvas, end="")
+            ⠀⠀⠀⠀⠀⠀⠀1⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⢸⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣤⣠⣤⣶⣿⣿⣿⣿⣿⣿⢸⠀
+            ⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+
+        Raises:
+            ValueError: If chart is < 13×4, because it would make plot
+            size < 1×1.
+        """
+        nb_values = (canvas.output.width - Chart.HORIZONTAL_MARGIN) * 2
+        (x, y) = Plot.compute_function(from_x, to_x, nb_values, f)
+        # This is a "trick". Since we've just computed the value of the
+        # function for every horizontal pixel, we can now plot the
+        # points as bars to fill up the whole area under the curve.
+        Chart.bars(canvas, x, y)

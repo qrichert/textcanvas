@@ -17,6 +17,7 @@ fn cmp_f64(a: &&f64, b: &&f64) -> Ordering {
 enum PlotType {
     Line,
     Scatter,
+    Bars,
 }
 
 /// Helper functions to plot data on a [`TextCanvas`].
@@ -585,6 +586,46 @@ impl Plot {
         Self::plot(canvas, x, y, PlotType::Scatter);
     }
 
+    /// Plot bars.
+    ///
+    /// The data is scaled to take up the entire canvas.
+    ///
+    /// <div class="warning">
+    ///
+    /// `x` and `y` _should_ match in length,
+    ///
+    /// If `x` and `y` are not the same length, plotting will stop once
+    /// the smallest of the two collections is consumed.
+    ///
+    /// </div>
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::{TextCanvas, charts::Plot};
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5);
+    ///
+    /// let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+    /// let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+    ///
+    /// Plot::bars(&mut canvas, &x, &y);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸
+    /// ⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸
+    /// ⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+    /// ⡀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+    /// "
+    /// );
+    /// ```
+    pub fn bars(canvas: &mut TextCanvas, x: &[f64], y: &[f64]) {
+        Self::plot(canvas, x, y, PlotType::Bars);
+    }
+
     #[allow(clippy::cast_possible_truncation)]
     fn plot(canvas: &mut TextCanvas, x: &[f64], y: &[f64], plot_type: PlotType) {
         if x.is_empty() || y.is_empty() {
@@ -648,6 +689,9 @@ impl Plot {
                 PlotType::Scatter => {
                     canvas.set_pixel(x, y, true);
                 }
+                PlotType::Bars => {
+                    canvas.stroke_line(x, y, x, canvas.h());
+                }
             }
         }
     }
@@ -674,9 +718,17 @@ impl Plot {
             // Draw a dot in the middle to show the user we tried to do
             // something, but the values are off.
             canvas.set_pixel(canvas.cx(), canvas.cy(), true);
+
+            if plot_type == PlotType::Bars {
+                // Add the bar for bar plots.
+                canvas.stroke_line(canvas.cx(), canvas.cy(), canvas.cx(), canvas.h());
+            }
         }
     }
 
+    /// Draw all points at the same Y coordinate.
+    ///
+    /// This is a fallback for when the data has no range on the Y axis.
     fn draw_horizontally_centered_line(canvas: &mut TextCanvas, x: &[f64], plot_type: PlotType) {
         match plot_type {
             PlotType::Line => {
@@ -689,12 +741,22 @@ impl Plot {
                     }
                 }
             }
+            PlotType::Bars => {
+                for &x_val in x {
+                    if let Some(x) = Self::compute_screen_x(canvas, x_val, x) {
+                        canvas.stroke_line(x, canvas.cy(), x, canvas.h());
+                    }
+                }
+            }
         }
     }
 
+    /// Draw all points at the same X coordinate.
+    ///
+    /// This is a fallback for when the data has no range on the X axis.
     fn draw_vertically_centered_line(canvas: &mut TextCanvas, y: &[f64], plot_type: PlotType) {
         match plot_type {
-            PlotType::Line => {
+            PlotType::Line | PlotType::Bars => {
                 canvas.stroke_line(canvas.cx(), 0, canvas.cx(), canvas.h());
             }
             PlotType::Scatter => {
@@ -736,6 +798,45 @@ impl Plot {
         let nb_values = canvas.screen.fwidth();
         let (x, y) = Self::compute_function(from_x, to_x, nb_values, f);
         Self::line(canvas, &x, &y);
+    }
+
+    /// Plot a function, and fill the area under the curve.
+    ///
+    /// The function is scaled to take up the entire canvas, and is
+    /// assumed to be continuous (points will be line-joined together).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::{TextCanvas, charts::Plot};
+    ///
+    /// let mut canvas = TextCanvas::new(15, 5);
+    ///
+    /// Plot::function_filled(&mut canvas, -10.0, 10.0, &|x| x * x);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼
+    /// ⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿
+    /// ⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿
+    /// ⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿
+    /// ⣿⣿⣿⣿⣿⣶⣤⣀⣤⣶⣿⣿⣿⣿⣿
+    /// "
+    /// );
+    /// ```
+    pub fn function_filled(
+        canvas: &mut TextCanvas,
+        from_x: f64,
+        to_x: f64,
+        f: &impl Fn(f64) -> f64,
+    ) {
+        let nb_values = canvas.screen.fwidth();
+        let (x, y) = Self::compute_function(from_x, to_x, nb_values, f);
+        // This is a "trick". Since we've just computed the value of the
+        // function for every horizontal pixel, we can now plot the
+        // points as bars to fill up the whole area under the curve.
+        Self::bars(canvas, &x, &y);
     }
 
     /// Compute the values of a function.
@@ -917,6 +1018,44 @@ impl Chart {
         Self::chart(canvas, x, y, PlotType::Scatter);
     }
 
+    /// Render chart with a bars plot.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::{charts::Chart, TextCanvas};
+    ///
+    /// let mut canvas = TextCanvas::new(35, 10);
+    ///
+    /// let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+    /// let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+    ///
+    /// Chart::bars(&mut canvas, &x, &y);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡄⠀⢸⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⡇⠀⢸⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⢠⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⢰⠀⢸⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡀⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+    /// "
+    /// );
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if chart is < 13×4, because it would make plot < 1×1.
+    pub fn bars(canvas: &mut TextCanvas, x: &[f64], y: &[f64]) {
+        Self::chart(canvas, x, y, PlotType::Bars);
+    }
+
     fn chart(canvas: &mut TextCanvas, x: &[f64], y: &[f64], plot_type: PlotType) {
         if x.is_empty() || y.is_empty() {
             return;
@@ -950,6 +1089,9 @@ impl Chart {
             }
             PlotType::Scatter => {
                 Plot::scatter(&mut plot, x, y);
+            }
+            PlotType::Bars => {
+                Plot::bars(&mut plot, x, y);
             }
         }
 
@@ -1061,6 +1203,53 @@ impl Chart {
         let nb_values = f64::from((canvas.output.width() - (Self::HORIZONTAL_MARGIN)) * 2);
         let (x, y) = Plot::compute_function(from_x, to_x, nb_values, f);
         Self::line(canvas, &x, &y);
+    }
+
+    /// Render chart with a function, and fill the area under the curve.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use textcanvas::{charts::Chart, TextCanvas};
+    ///
+    /// let mut canvas = TextCanvas::new(35, 10);
+    ///
+    /// let f = |x: f64| x.cos();
+    ///
+    /// Chart::function_filled(&mut canvas, 0.0, 5.0, &f);
+    ///
+    /// assert_eq!(
+    ///     canvas.to_string(),
+    ///     "\
+    /// ⠀⠀⠀⠀⠀⠀⠀1⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣤⣠⣤⣶⣿⣿⣿⣿⣿⣿⢸⠀
+    /// ⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+    /// ⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+    /// "
+    /// );
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if chart is < 13×4, because it would make plot < 1×1.
+    pub fn function_filled(
+        canvas: &mut TextCanvas,
+        from_x: f64,
+        to_x: f64,
+        f: &impl Fn(f64) -> f64,
+    ) {
+        let nb_values = f64::from((canvas.output.width() - (Self::HORIZONTAL_MARGIN)) * 2);
+        let (x, y) = Plot::compute_function(from_x, to_x, nb_values, f);
+        // This is a "trick". Since we've just computed the value of the
+        // function for every horizontal pixel, we can now plot the
+        // points as bars to fill up the whole area under the curve.
+        Self::bars(canvas, &x, &y);
     }
 }
 
@@ -2052,6 +2241,206 @@ mod tests {
     }
 
     #[test]
+    fn plot_bars() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Plot::stroke_xy_axes(&mut canvas, &x, &y);
+        Plot::bars(&mut canvas, &x, &y);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⢀⠀⡆⢸
+⠀⠀⠀⠀⠀⠀⠀⡇⢀⠀⡆⢸⠀⡇⢸
+⠤⠤⠤⠤⠤⢤⠤⡧⢼⠤⡧⢼⠤⡧⢼
+⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+⡀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_empty_x() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = vec![];
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Plot::stroke_xy_axes(&mut canvas, &x, &y);
+        Plot::bars(&mut canvas, &x, &y);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_empty_y() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = vec![];
+
+        Plot::stroke_xy_axes(&mut canvas, &x, &y);
+        Plot::bars(&mut canvas, &x, &y);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_single_value() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = vec![0.0];
+        let y: Vec<f64> = vec![0.0];
+
+        Plot::bars(&mut canvas, &x, &y);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢠⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_range_xy_zero() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = (-5..=5).map(|_| 0.0).collect();
+        let y: Vec<f64> = (-5..=5).map(|_| 0.0).collect();
+
+        Plot::bars(&mut canvas, &x, &y);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢠⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_range_x_zero() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = (-5..=5).map(|_| 0.0).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Plot::bars(&mut canvas, &x, &y);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_range_y_zero() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(|_| 0.0).collect();
+
+        Plot::bars(&mut canvas, &x, &y);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡄⡄⢠⠀⡄⢠⠀⡄⢠⠀⡄⢠⠀⡄⢠
+⡇⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+⡇⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_x_and_y_of_different_lengths_more_x() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = (-10..=10).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Plot::stroke_xy_axes(&mut canvas, &x, &y);
+        Plot::bars(&mut canvas, &x, &y);
+
+        // The scale is correct. At X = 0, Y = 5. To see values on the
+        // right, you'd have to increase the range of Y (up to 15, to
+        // match X).
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⢀⢰⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⡀⣾⢸⡇⠀⠀⠀⠀⠀⠀⠀
+⠤⠤⢤⢴⡧⣿⢼⡧⠤⠤⠤⠤⠤⠤⠤
+⠀⡀⣾⢸⡇⣿⢸⡇⠀⠀⠀⠀⠀⠀⠀
+⣰⡇⣿⢸⡇⣿⢸⡇⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn plot_bars_with_x_and_y_of_different_lengths_more_y() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-10..=10).map(f64::from).collect();
+
+        Plot::stroke_xy_axes(&mut canvas, &x, &y);
+        Plot::bars(&mut canvas, &x, &y);
+
+        // The scale is correct. Y range is [-10;10], (0;10) is just
+        // not rendered because X stops when Y = 0. If you'd continue
+        // to the right, Y would reach 10 at X = 15.
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀
+⠤⠤⠤⠤⠤⠤⠤⡧⠤⠤⠤⢤⠤⡤⢴
+⠀⠀⠀⠀⠀⢀⠀⡇⢰⠀⡇⢸⠀⡇⢸
+⡀⡄⢰⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+"
+        );
+    }
+
+    #[test]
     fn plot_function() {
         let mut canvas = TextCanvas::new(15, 5);
 
@@ -2113,6 +2502,67 @@ mod tests {
     }
 
     #[test]
+    fn plot_function_filled() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let f = |x| x * x;
+
+        Plot::stroke_xy_axes_of_function(&mut canvas, -10.0, 10.0, &f);
+        Plot::function_filled(&mut canvas, -10.0, 10.0, &f);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⣧⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⣼
+⣿⣇⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⣸⣿
+⣿⣿⣦⠀⠀⠀⠀⡇⠀⠀⠀⠀⣴⣿⣿
+⣿⣿⣿⣷⡀⠀⠀⡇⠀⠀⢀⣾⣿⣿⣿
+⣿⣿⣿⣿⣿⣶⣤⣇⣤⣶⣿⣿⣿⣿⣿
+"
+        );
+    }
+
+    #[test]
+    fn plot_function_filled_with_single_value() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let f = |_| 0.0;
+
+        Plot::function_filled(&mut canvas, 0.0, 0.0, &f);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢠⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀
+"
+        );
+    }
+
+    #[test]
+    fn plot_function_filled_with_range_zero() {
+        let mut canvas = TextCanvas::new(15, 5);
+
+        let f = |_| 0.0;
+
+        Plot::function_filled(&mut canvas, -10.0, 10.0, &f);
+
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+"
+        );
+    }
+
+    #[test]
     fn compute_function_works_with_structs() {
         #[derive(Debug, PartialEq)]
         struct Mock {
@@ -2161,7 +2611,7 @@ mod tests {
     }
 
     #[test]
-    fn chart_x_squared() {
+    fn chart_function_x_squared() {
         let mut canvas = TextCanvas::new(71, 19);
 
         let f = |x| x * x;
@@ -2196,7 +2646,7 @@ mod tests {
     }
 
     #[test]
-    fn chart_polynomial() {
+    fn chart_function_polynomial() {
         let mut canvas = TextCanvas::new(71, 19);
 
         let f = |x: f64| x.powi(3) - 2.0 * x.powi(2) + 3.0 * x;
@@ -2231,7 +2681,7 @@ mod tests {
     }
 
     #[test]
-    fn chart_cos() {
+    fn chart_function_cos() {
         let mut canvas = TextCanvas::new(71, 19);
 
         let f = |x: f64| x.cos();
@@ -2259,6 +2709,111 @@ mod tests {
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠒⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠑⠢⠤⠤⢄⠤⠤⠔⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+"
+        );
+    }
+
+    #[test]
+    fn chart_function_filled_x_squared() {
+        let mut canvas = TextCanvas::new(71, 19);
+
+        let f = |x| x * x;
+
+        Chart::function_filled(&mut canvas, -10.0, 10.0, &f);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀100⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡄⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣶⣦⣤⣤⣄⣠⣤⣤⢰⡆⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀0.0073⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀-10⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀10
+"
+        );
+    }
+
+    #[test]
+    fn chart_function_filled_polynomial() {
+        let mut canvas = TextCanvas::new(71, 19);
+
+        let f = |x: f64| x.powi(3) - 2.0 * x.powi(2) + 3.0 * x;
+
+        Chart::function_filled(&mut canvas, -5.0, 5.0, &f);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀90⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣠⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⡀⣀⣀⣀⣀⣀⣠⣤⣤⡄⣶⢰⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣤⣶⣶⣶⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⡄⣾⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⢀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡇⡇⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⢸⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀-190⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+"
+        );
+    }
+
+    #[test]
+    fn chart_function_filled_cos() {
+        let mut canvas = TextCanvas::new(71, 19);
+
+        let f = |x: f64| x.cos();
+
+        Chart::function_filled(&mut canvas, 0.0, 5.0, &f);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀1⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣶⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢰⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣤⣤⣄⣤⣤⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⠀
 ⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
 "
@@ -2313,6 +2868,33 @@ mod tests {
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠠⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
+⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
+"
+        );
+    }
+
+    #[test]
+    fn chart_bars() {
+        let mut canvas = TextCanvas::new(35, 10);
+
+        let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+        let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+        Chart::bars(&mut canvas, &x, &y);
+
+        println!("{canvas}");
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡄⠀⢸⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⡇⠀⢸⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⢠⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⢰⠀⢸⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡀⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⠀⢸⠀⠀⡇⠀⡇⠀⢸⢸⠀
 ⠀⠀⠀⠀⠀⠀-5⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
 "
