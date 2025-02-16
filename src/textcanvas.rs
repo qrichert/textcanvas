@@ -1648,8 +1648,10 @@ mod tests {
     fn auto_size() {
         // This is fine, as long as this is the only test that modifies
         // the environment.
-        env::remove_var("WIDTH");
-        env::remove_var("HEIGHT");
+        unsafe {
+            env::remove_var("WIDTH");
+            env::remove_var("HEIGHT");
+        }
 
         assert!(
             TextCanvas::new_auto().is_err(),
@@ -1657,8 +1659,10 @@ mod tests {
         );
         assert!(TextCanvas::get_auto_size().is_err());
 
-        env::set_var("WIDTH", "1");
-        env::set_var("HEIGHT", "2147483648");
+        unsafe {
+            env::set_var("WIDTH", "1");
+            env::set_var("HEIGHT", "2147483648");
+        }
 
         assert!(
             TextCanvas::new_auto().is_err(),
@@ -1666,20 +1670,26 @@ mod tests {
         );
         assert!(TextCanvas::get_auto_size().is_err());
 
-        env::set_var("WIDTH", "abc");
-        env::set_var("HEIGHT", "1");
+        unsafe {
+            env::set_var("WIDTH", "abc");
+            env::set_var("HEIGHT", "1");
+        }
 
         assert!(TextCanvas::new_auto().is_err(), "`WIDTH` is not a number.");
         assert!(TextCanvas::get_auto_size().is_err());
 
-        env::set_var("WIDTH", "1");
-        env::set_var("HEIGHT", "abc");
+        unsafe {
+            env::set_var("WIDTH", "1");
+            env::set_var("HEIGHT", "abc");
+        }
 
         assert!(TextCanvas::new_auto().is_err(), "`HEIGHT` is not a number.");
         assert!(TextCanvas::get_auto_size().is_err());
 
-        env::set_var("WIDTH", "12");
-        env::set_var("HEIGHT", "5");
+        unsafe {
+            env::set_var("WIDTH", "12");
+            env::set_var("HEIGHT", "5");
+        }
 
         let canvas = TextCanvas::new_auto().unwrap();
 
