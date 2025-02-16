@@ -359,11 +359,13 @@ class TestTextCanvas(unittest.TestCase):
         self.assertTrue(canvas.is_inverted)
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀\n"
-            "⠀⠀⠀⣿⡟⠛⠛⠛⠛⠛⠛⢻⣿⠀⠀\n"
-            "⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀\n"
-            "⠀⠀⠀⣿⣇⣀⣀⣀⣀⣀⣀⣸⣿⠀⠀\n"
-            "⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀\n",
+            """\
+⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀
+⠀⠀⠀⣿⡟⠛⠛⠛⠛⠛⠛⢻⣿⠀⠀
+⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀
+⠀⠀⠀⣿⣇⣀⣀⣀⣀⣀⣀⣸⣿⠀⠀
+⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀
+""",
         )
 
     def test_double_invert(self) -> None:
@@ -900,11 +902,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠑⠢⣀⠀⠀⠀⠀⢸⠀⠀⠀⠀⢀⠔⠊\n"
-            "⠀⠀⠀⠑⠢⣀⠀⢸⠀⢀⠤⠊⠁⠀⠀\n"
-            "⠤⠤⠤⠤⠤⠤⢵⣾⣶⠥⠤⠤⠤⠤⠤\n"
-            "⠀⠀⠀⣀⠤⠊⠁⢸⠀⠑⠢⣀⠀⠀⠀\n"
-            "⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄\n",
+            """\
+⠑⠢⣀⠀⠀⠀⠀⢸⠀⠀⠀⠀⢀⠔⠊
+⠀⠀⠀⠑⠢⣀⠀⢸⠀⢀⠤⠊⠁⠀⠀
+⠤⠤⠤⠤⠤⠤⢵⣾⣶⠥⠤⠤⠤⠤⠤
+⠀⠀⠀⣀⠤⠊⠁⢸⠀⠑⠢⣀⠀⠀⠀
+⡠⠔⠊⠀⠀⠀⠀⢸⠀⠀⠀⠀⠉⠢⢄
+""",
             "Lines not drawn correctly.",
         )
 
@@ -915,11 +919,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠉⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠈⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠉⠢⣀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⡀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⣀⠀\n",
+            """\
+⠀⠉⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠈⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠉⠢⣀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⡀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⣀⠀
+""",
             "Line not drawn correctly.",
         )
 
@@ -937,11 +943,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
-            "⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
-            "⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿\n"
-            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿\n"
-            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻\n",
+            """\
+⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣮⣝⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣮⣝⡻⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⡻
+""",
             "Line not erased correctly.",
         )
 
@@ -952,11 +960,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀\n"
-            "⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀\n"
-            "⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀\n"
-            "⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀\n"
-            "⠀⠀⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀⠀\n",
+            """\
+⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀
+⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀
+⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀
+⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀
+⠀⠀⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀⠀
+""",
         )
 
     def test_frame(self) -> None:
@@ -966,11 +976,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹\n"
-            "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸\n"
-            "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸\n"
-            "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸\n"
-            "⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸\n",
+            """\
+⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸
+⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸
+""",
         )
 
     def test_fill_rect(self) -> None:
@@ -980,11 +992,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀\n"
-            "⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀\n"
-            "⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀\n"
-            "⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀\n"
-            "⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀\n",
+            """\
+⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀
+""",
         )
 
     def test_stroke_triangle(self) -> None:
@@ -994,11 +1008,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⣀⣀⣀⡠⠤⠤⠤⡄⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠈⠢⣀⠀⠀⠀⠀⢱⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠘⡄⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠑⠤⡀⡇⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠺⠀⠀⠀\n",
+            """\
+⠀⠀⠀⣀⣀⣀⡠⠤⠤⠤⡄⠀⠀⠀⠀
+⠀⠀⠀⠈⠢⣀⠀⠀⠀⠀⢱⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠘⡄⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠑⠤⡀⡇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠺⠀⠀⠀
+""",
         )
 
     def test_fill_triangle(self) -> None:
@@ -1008,11 +1024,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⣀⣀⣀⣠⣤⣤⣤⡄⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠈⠻⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠙⢿⣿⣿⣿⡄⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⡇⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⠀⠀⠀\n",
+            """\
+⠀⠀⠀⣀⣀⣀⣠⣤⣤⣤⡄⠀⠀⠀⠀
+⠀⠀⠀⠈⠻⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠙⢿⣿⣿⣿⡄⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⡇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⠀⠀⠀
+""",
         )
 
     def test_stroke_circle(self) -> None:
@@ -1022,11 +1040,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⡠⠊⠀⠀⠀⠈⠢⡀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⡠⠃⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⡠⠊⠀⠀⠀⠈⠢⡀⠀⠀⠀
+⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀
+⠀⠀⠀⠀⠣⡀⠀⠀⠀⠀⡠⠃⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀
+""",
         )
 
     def test_fill_circle(self) -> None:
@@ -1036,11 +1056,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣦⡀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣦⡀⠀⠀⠀
+⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀
+⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠛⠛⠛⠋⠀⠀⠀⠀⠀
+""",
         )
 
     def test_stroke_ngon(self) -> None:
@@ -1050,11 +1072,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⡰⠉⠉⠉⠱⡀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⢜⠀⠀⠀⠀⠀⢘⠄⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠈⢆⠀⠀⠀⢠⠊⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⡰⠉⠉⠉⠱⡀⠀⠀⠀⠀
+⠀⠀⠀⠀⢜⠀⠀⠀⠀⠀⢘⠄⠀⠀⠀
+⠀⠀⠀⠀⠈⢆⠀⠀⠀⢠⠊⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀
+""",
         )
 
     def test_stroke_ngon_at_angle(self) -> None:
@@ -1064,11 +1088,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⢠⠔⠊⠁⠉⠢⢄⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠘⠤⡀⠀⠀⣀⠼⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠈⠑⠉⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢠⠔⠊⠁⠉⠢⢄⠀⠀⠀⠀
+⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀
+⠀⠀⠀⠀⠘⠤⡀⠀⠀⣀⠼⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⠑⠉⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_stroke_ngon_radius_matches_circle(self) -> None:
@@ -1080,11 +1106,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⡠⠊⢠⠃⢣⠈⠢⡀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⡇⡰⠁⠀⠀⢣⠀⡇⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠳⡓⠒⠢⠤⠤⡧⠃⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⡠⠊⢠⠃⢣⠈⠢⡀⠀⠀⠀
+⠀⠀⠀⠀⡇⡰⠁⠀⠀⢣⠀⡇⠀⠀⠀
+⠀⠀⠀⠀⠳⡓⠒⠢⠤⠤⡧⠃⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠒⠒⠒⠊⠀⠀⠀⠀⠀
+""",
         )
 
     def test_fill_ngon(self) -> None:
@@ -1094,11 +1122,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⣰⣿⣿⣿⣷⡀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⢼⣿⣿⣿⣿⣿⣿⠄⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⠋⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⣰⣿⣿⣿⣷⡀⠀⠀⠀⠀
+⠀⠀⠀⠀⢼⣿⣿⣿⣿⣿⣿⠄⠀⠀⠀
+⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⠋⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀
+""",
         )
 
     def test_fill_ngon_not_enough_sides(self) -> None:
@@ -1121,11 +1151,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹\n"
-            "⡇⠀⠀⠑⡏⠉⠉⠉⢉⡩⢻⠀⠀⠀⢸\n"
-            "⡇⠀⠀⠀⡇⠀⢀⠔⠁⠀⢸⠀⠀⠀⢸\n"
-            "⡇⠀⠀⠀⣧⣊⣁⣀⣀⣀⣸⢄⠀⠀⢸\n"
-            "⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼\n",
+            """\
+⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+⡇⠀⠀⠑⡏⠉⠉⠉⢉⡩⢻⠀⠀⠀⢸
+⡇⠀⠀⠀⡇⠀⢀⠔⠁⠀⢸⠀⠀⠀⢸
+⡇⠀⠀⠀⣧⣊⣁⣀⣀⣀⣸⢄⠀⠀⢸
+⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼
+""",
         )
 
     def test_draw_canvas_with_overflow(self) -> None:
@@ -1144,11 +1176,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠁⠀⢸⠉⠉⠉⠉⠉⠉⠉⠉⠉⡇⠀⢀\n"
-            "⣀⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣁\n"
-            "⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸\n"
-            "⢉⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⠉\n"
-            "⠁⠀⢸⣀⣀⣀⣀⣀⣀⣀⣀⣀⡇⠀⢀\n",
+            """\
+⠁⠀⢸⠉⠉⠉⠉⠉⠉⠉⠉⠉⡇⠀⢀
+⣀⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣁
+⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸
+⢉⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⠉
+⠁⠀⢸⣀⣀⣀⣀⣀⣀⣀⣀⣀⡇⠀⢀
+""",
         )
 
     def test_draw_canvas_with_color(self) -> None:
@@ -1166,11 +1200,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀\n",
+            """\
+⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀
+""",
         )
 
     def test_draw_canvas_with_color_onto_non_colorized_canvas(self) -> None:
@@ -1191,11 +1227,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠈⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀\n",
+            """\
+⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠈⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀
+""",
         )
 
     def test_draw_canvas_with_text(self) -> None:
@@ -1209,7 +1247,14 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         # print(f"{canvas}")
 
-        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n⠀a⠀⠀012\n⠀⠀⠀⠀⠀⠀⠀\n")
+        self.assertEqual(
+            canvas.to_string(),
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀a⠀⠀012
+⠀⠀⠀⠀⠀⠀⠀
+""",
+        )
 
     def test_draw_canvas_with_colored_text(self) -> None:
         canvas = TextCanvas(7, 3)
@@ -1226,9 +1271,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31ma\x1b[0m⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
-            "⠀⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31ma\x1b[0m⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_draw_canvas_with_colored_text_onto_non_textual_canvas(self) -> None:
@@ -1250,9 +1297,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
-            "⠀⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_draw_canvas_with_colored_text_onto_non_colorized_canvas(self) -> None:
@@ -1275,9 +1324,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀a⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
-            "⠀⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀a⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_merge_canvas(self) -> None:
@@ -1293,11 +1344,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹\n"
-            "⡇⠀⠀⠑⡯⣉⠉⠉⢉⡩⢻⠀⠀⠀⢸\n"
-            "⡇⠀⠀⠀⡇⠀⢑⠶⢅⠀⢸⠀⠀⠀⢸\n"
-            "⡇⠀⠀⠀⣧⣊⣁⣀⣀⣉⣺⢄⠀⠀⢸\n"
-            "⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼\n",
+            """\
+⡟⠫⣉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹
+⡇⠀⠀⠑⡯⣉⠉⠉⢉⡩⢻⠀⠀⠀⢸
+⡇⠀⠀⠀⡇⠀⢑⠶⢅⠀⢸⠀⠀⠀⢸
+⡇⠀⠀⠀⣧⣊⣁⣀⣀⣉⣺⢄⠀⠀⢸
+⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣉⣢⣼
+""",
         )
 
     def test_merge_canvas_with_overflow(self) -> None:
@@ -1316,11 +1369,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⡟⠫⣹⠉⠉⠉⠉⠉⠉⠉⠉⠉⡏⠉⢹\n"
-            "⣇⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣹\n"
-            "⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸\n"
-            "⣏⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⢹\n"
-            "⣇⣀⣸⣀⣀⣀⣀⣀⣀⣀⣀⣀⣏⣢⣼\n",
+            """\
+⡟⠫⣹⠉⠉⠉⠉⠉⠉⠉⠉⠉⡏⠉⢹
+⣇⣀⣸⠑⠢⣀⠀⠀⠀⠀⠀⠀⣧⣊⣹
+⡇⠀⠀⠀⠀⠀⠑⠢⢄⠀⠀⠀⠀⠀⢸
+⣏⡩⢻⠀⠀⠀⠀⠀⠀⠉⠢⢄⡏⠉⢹
+⣇⣀⣸⣀⣀⣀⣀⣀⣀⣀⣀⣀⣏⣢⣼
+""",
         )
 
     def test_merge_canvas_with_color(self) -> None:
@@ -1338,11 +1393,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀\x1b[0;31m⢀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⣀\x1b[0m\x1b[0;31m⡀\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⡇\x1b[0m⠀⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⢸\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;31m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31m⠈\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;31m⠉\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_merge_canvas_with_color_onto_non_colorized_canvas(self) -> None:
@@ -1363,11 +1420,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⢸⣿⣿\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠈⠉⠉\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⢀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣿\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀⠈⠉⠉\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m\x1b[0;32m⣿\x1b[0m⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m\x1b[0;32m⠛\x1b[0m⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_merge_canvas_with_text(self) -> None:
@@ -1381,7 +1440,14 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         # print(f"{canvas}")
 
-        self.assertEqual(canvas.to_string(), "⠀⠀⠀⠀⠀⠀⠀\n⠀a012e⠀\n⠀⠀⠀⠀⠀⠀⠀\n")
+        self.assertEqual(
+            canvas.to_string(),
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀a012e⠀
+⠀⠀⠀⠀⠀⠀⠀
+""",
+        )
 
     def test_merge_canvas_with_colored_text(self) -> None:
         canvas = TextCanvas(7, 3)
@@ -1398,9 +1464,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
-            "⠀⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_merge_canvas_with_colored_text_onto_non_textual_canvas(self) -> None:
@@ -1422,9 +1490,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
-            "⠀⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_merge_canvas_with_colored_text_onto_non_colorized_canvas(self) -> None:
@@ -1447,9 +1517,11 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀⠀⠀⠀⠀\n"
-            "⠀abc\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m\n"
-            "⠀⠀⠀⠀⠀⠀⠀\n",
+            """\
+⠀⠀⠀⠀⠀⠀⠀
+⠀abc\x1b[0;32m0\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;32m2\x1b[0m
+⠀⠀⠀⠀⠀⠀⠀
+""",
         )
 
     def test_merge_canvas_with_pixels_color_and_text(self) -> None:
@@ -1471,11 +1543,13 @@ class TestTextCanvasDrawingPrimitives(unittest.TestCase):
 
         self.assertEqual(
             canvas.to_string(),
-            "⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀\n"
-            "⠀⠀⠀\x1b[0;32m0\x1b[0m⠀⠀⠀\n"
-            "\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;31me\x1b[0m\x1b[0;31mf\x1b[0m\x1b[0;31mg\x1b[0m\n"
-            "\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;32m2\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\n"
-            "⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀\n",
+            """\
+⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀
+⠀⠀⠀\x1b[0;32m0\x1b[0m⠀⠀⠀
+\x1b[0;31ma\x1b[0m\x1b[0;31mb\x1b[0m\x1b[0;31mc\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;31me\x1b[0m\x1b[0;31mf\x1b[0m\x1b[0;31mg\x1b[0m
+\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;32m2\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m\x1b[0;34m⠒\x1b[0m
+⠀⠀⠀\x1b[0;33m⢸\x1b[0m⠀⠀⠀
+""",
         )
 
 
