@@ -1273,6 +1273,66 @@ impl Chart {
     }
 }
 
+pub struct Resampling;
+
+impl Resampling {
+    // TODO: doc: - This implementation always keeps first and last unchanged.
+    //  the caller _should_ ensure the data is sorted, otherwise he will probably get inconsistent results.
+    #[must_use]
+    pub fn downsample_min_max(points: &[(f64, f64)], max_nb_points: usize) -> Vec<(f64, f64)> {
+        assert!(
+            max_nb_points >= 2,
+            "minimum number of X pixels in canvas is 2"
+        );
+        assert_eq!(max_nb_points % 2, 0, "canvas pixels always come in pairs.");
+
+        if points.len() <= max_nb_points {
+            return points.to_owned();
+        }
+        // Prevent divide-by-zero issues.
+        if max_nb_points - 2 == 0 {
+            return vec![points[0], points[points.len() - 1]];
+        }
+
+        // `- 2` to exclude first and last.
+        let nb_points = (points.len() - 2) as f64;
+        let nb_buckets = (max_nb_points - 2) as f64 / 2.0; // Buckets yield 2 points: min/max
+
+        // _ceil_ so `bucket_size` is large enough to never leave rest.
+        let bucket_size = (nb_points / nb_buckets).ceil() as usize;
+
+        let mut downsampled_points = Vec::with_capacity(max_nb_points);
+        downsampled_points.push(points.first().copied().expect("min 2 points"));
+
+        for bucket in points[1..points.len() - 1].chunks(bucket_size) {
+            let mut bucket = bucket.iter();
+            let &first_point = bucket.next().expect("bucket is non-empty");
+
+            let (mut min, mut max) = (first_point, first_point);
+
+            for &point in bucket {
+                if point.1 < min.1 {
+                    min = point;
+                }
+                if point.1 > max.1 {
+                    max = point;
+                }
+            }
+
+            // Preserve original order based on X value.
+            if min.0 <= max.0 {
+                downsampled_points.extend([min, max]);
+            } else {
+                downsampled_points.extend([max, min]);
+            }
+        }
+
+        downsampled_points.push(points.last().copied().expect("min 2 points"));
+
+        downsampled_points
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3039,5 +3099,106 @@ mod tests {
 
         assert_eq!(Chart::format_number(-1_570_000_000_000.0), "-1.6T");
         assert_eq!(Chart::format_number(-1_000_000_000_000.0), "-1.0T");
+    }
+
+    #[test]
+    fn downsample_min_max_regular() {
+        let points = [
+            // 1 point.
+            (0.0, 0.0),
+            // 2 points (min/max).
+            (1.0, 3.0),
+            (2.0, -1.0),
+            (3.0, -4.0),
+            (4.0, 6.0),
+            (5.0, 1.0),
+            // 2 points (min/max).
+            (6.0, 7.0),
+            (7.0, -4.0),
+            (8.0, -2.0),
+            (9.0, 2.5),
+            // 1 point.
+            (10.0, 0.0),
+        ];
+
+        let res = Resampling::downsample_min_max(&points, 6);
+
+        assert_eq!(
+            res,
+            [
+                // First.
+                (0.0, 0.0),
+                // Bucket 1.
+                (3.0, -4.0),
+                (4.0, 6.0),
+                // Bucket 2.
+                (6.0, 7.0),
+                (7.0, -4.0),
+                // Last.
+                (10.0, 0.0),
+            ]
+        );
+    }
+
+    #[test]
+    fn downsample_min_max_no_op_nb_points_lt_max_nb_points() {
+        let points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)];
+
+        let res = Resampling::downsample_min_max(&points, 6);
+
+        assert_eq!(res, points);
+    }
+
+    #[test]
+    fn downsample_min_max_keep_only_first_and_last() {
+        let points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)];
+
+        let res = Resampling::downsample_min_max(&points, 2);
+
+        assert_eq!(res, [(0.0, 0.0), (3.0, 0.0),]);
+    }
+
+    #[test]
+    fn plot_data_with_downsampling_min_max() {
+        let f = |x: f64| x.sin();
+
+        // Compute lots of values.
+        let (x, y) = Plot::compute_function(0.0, std::f64::consts::TAU, 1000.0, &f);
+
+        let mut canvas = TextCanvas::new(15, 5);
+        Plot::scatter(&mut canvas, &x, &y);
+
+        assert_eq!(x.len(), 1000);
+        assert_eq!(
+            canvas.to_string(),
+            "\
+⠀⣠⠞⠉⠙⢦⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⣰⠃⠀⠀⠀⠈⢧⠀⠀⠀⠀⠀⠀⠀⠀
+⠃⠀⠀⠀⠀⠀⠈⢧⠀⠀⠀⠀⠀⢀⡖
+⠀⠀⠀⠀⠀⠀⠀⠈⢧⠀⠀⠀⢀⡞⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⢤⠴⠋⠀⠀
+"
+        );
+
+        let mut canvas_downsampled = TextCanvas::new(15, 5);
+
+        let points: Vec<(f64, f64)> = x.iter().copied().zip(y).collect();
+        let points = Resampling::downsample_min_max(&points, 60);
+        let (x, y): (Vec<f64>, Vec<f64>) = points.into_iter().unzip();
+
+        Plot::scatter(&mut canvas_downsampled, &x, &y);
+
+        // 1000 points downsampled to 60.
+        assert_eq!(x.len(), 60);
+        assert_eq!(
+            canvas_downsampled.to_string(),
+            "\
+⠀⢀⠔⠉⠉⢂⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢀⠂⠀⠀⠀⠀⠡⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⢁⠀⠀⠀⠀⠀⠀⠖
+⠀⠀⠀⠀⠀⠀⠀⠀⠢⠀⠀⠀⠀⠌⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢤⠤⠊⠀⠀
+"
+        );
     }
 }
