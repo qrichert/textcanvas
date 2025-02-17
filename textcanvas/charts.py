@@ -1,4 +1,5 @@
 import enum
+import itertools
 import math
 from typing import Callable
 
@@ -168,9 +169,12 @@ class Plot:
         Examples:
             >>> canvas = TextCanvas(15, 5)
             >>> x: list[float] = list(range(-10, 11))
-            >>> assert 0 == Plot.compute_screen_x(canvas, -10.0, x)
-            >>> assert 29 == Plot.compute_screen_x(canvas, 10.0, x)
-            >>> assert 14 == Plot.compute_screen_x(canvas, 0.0, x)
+            >>> Plot.compute_screen_x(canvas, -10.0, x)
+            0
+            >>> Plot.compute_screen_x(canvas, 10.0, x)
+            29
+            >>> Plot.compute_screen_x(canvas, 0.0, x)
+            14
         """
         if not x:
             return None
@@ -204,9 +208,12 @@ class Plot:
         Examples:
             >>> canvas = TextCanvas(15, 5)
             >>> y: list[float] = list(range(-10, 11))
-            >>> assert 19 == Plot.compute_screen_y(canvas, -10.0, y)
-            >>> assert 0 == Plot.compute_screen_y(canvas, 10.0, y)
-            >>> assert 10 == Plot.compute_screen_y(canvas, 0.0, y)
+            >>> Plot.compute_screen_y(canvas, -10.0, y)
+            19
+            >>> Plot.compute_screen_y(canvas, 10.0, y)
+            0
+            >>> Plot.compute_screen_y(canvas, 0.0, y)
+            10
         """
         if not y:
             return None
@@ -234,7 +241,7 @@ class Plot:
         """Stroke X and Y axes, given a function.
 
         The function is scaled to take up the entire canvas. The axes
-        are then placed where _X_ and _Y_ = _0_;
+        are then placed where _X_ and _Y_ = _0_.
 
         If 0 is not visible on an axis, the axis will not be drawn.
 
@@ -366,9 +373,12 @@ class Plot:
         Examples:
             >>> canvas = TextCanvas(15, 5)
             >>> f = lambda x: x
-            >>> assert 0 == Plot.compute_screen_x_of_function(canvas, -10.0, -10.0, 10.0, f)
-            >>> assert 14 == Plot.compute_screen_x_of_function(canvas, 0.0, -10.0, 10.0, f)
-            >>> assert 29 == Plot.compute_screen_x_of_function(canvas, 10.0, -10.0, 10.0, f)
+            >>> Plot.compute_screen_x_of_function(canvas, -10.0, -10.0, 10.0, f)
+            0
+            >>> Plot.compute_screen_x_of_function(canvas, 0.0, -10.0, 10.0, f)
+            14
+            >>> Plot.compute_screen_x_of_function(canvas, 10.0, -10.0, 10.0, f)
+            29
         """
         nb_values: int = canvas.screen.width
         (x, _) = Plot.compute_function(from_x, to_x, nb_values, f)
@@ -390,9 +400,12 @@ class Plot:
         Examples:
             >>> canvas = TextCanvas(15, 5)
             >>> f = lambda x: x
-            >>> assert 19 == Plot.compute_screen_y_of_function(canvas, -10.0, -10.0, 10.0, f)
-            >>> assert 10 == Plot.compute_screen_y_of_function(canvas, 0.0, -10.0, 10.0, f)
-            >>> assert 0 == Plot.compute_screen_y_of_function(canvas, 10.0, -10.0, 10.0, f)
+            >>> Plot.compute_screen_y_of_function(canvas, -10.0, -10.0, 10.0, f)
+            19
+            >>> Plot.compute_screen_y_of_function(canvas, 0.0, -10.0, 10.0, f)
+            10
+            >>> Plot.compute_screen_y_of_function(canvas, 10.0, -10.0, 10.0, f)
+            0
         """
         nb_values: int = canvas.screen.width
         (_, y) = Plot.compute_function(from_x, to_x, nb_values, f)
@@ -784,7 +797,7 @@ class Chart:
 
         Raises:
             ValueError: If chart is < 13×4, because it would make plot
-            size < 1×1.
+                size < 1×1.
         """
         Chart._chart(canvas, x, y, PlotType.LINE)
 
@@ -811,7 +824,7 @@ class Chart:
 
         Raises:
             ValueError: If chart is < 13×4, because it would make plot
-            size < 1×1.
+                size < 1×1.
         """
         Chart._chart(canvas, x, y, PlotType.SCATTER)
 
@@ -838,7 +851,7 @@ class Chart:
 
         Raises:
             ValueError: If chart is < 13×4, because it would make plot
-            size < 1×1.
+                size < 1×1.
         """
         Chart._chart(canvas, x, y, PlotType.BARS)
 
@@ -975,7 +988,7 @@ class Chart:
 
         Raises:
             ValueError: If chart is < 13×4, because it would make plot
-            size < 1×1.
+                size < 1×1.
         """
         nb_values = (canvas.output.width - Chart.HORIZONTAL_MARGIN) * 2
         (x, y) = Plot.compute_function(from_x, to_x, nb_values, f)
@@ -1007,7 +1020,7 @@ class Chart:
 
         Raises:
             ValueError: If chart is < 13×4, because it would make plot
-            size < 1×1.
+                size < 1×1.
         """
         nb_values: float = (canvas.output.width - Chart.HORIZONTAL_MARGIN) * 2.0
         # Increase density to prevent "holes" due to rounding (missing
@@ -1018,3 +1031,166 @@ class Chart:
         # function for every horizontal pixel, we can now plot the
         # points as bars to fill up the whole area under the curve.
         Chart.bars(canvas, x, y)
+
+
+class Resampling:
+    """Helper functions to resample data.
+
+    Rendering too many data points can quickly lead to messy charts.
+    Downsampling aims at reducing the number of data points, while
+    trying to preserve the essence of the data (e.g., curve and
+    distribution should look similar).
+
+    Resampling is very idiosyncratic to the dataset, and so is not done
+    automatically by `Plot`.
+    """
+
+    @staticmethod
+    def downsample_mean(
+        points: list[tuple[float, float]], max_nb_points: int
+    ) -> list[tuple[float, float]]:
+        """Downsample data using the mean technique.
+
+        Mean downsampling reduces the number of values by averaging them
+        out. The data points are split into `n` buckets (where `n` is
+        the target resolution), and for each bucket we keep the meanof
+        the values.
+
+        Compared to min/max downsampling for instance, mean will
+        smoothen the data, and lose information about local minima and
+        maxima in the process.
+
+        Examples:
+            >>> points = [
+            ...     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
+            ...     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
+            ... ]
+            >>> Resampling.downsample_mean(points, 4)
+            [(0.0, 1.0), (1.5, 2.5), (3.5, 4.5), (5.0, 6.0)]
+
+        Note:
+            This implementation keeps the first and last points in the
+            data unchanged. Thus, the resulting graphs will always start
+            and end at the exact same values.
+
+        Pitfalls:
+            The caller _should_ ensure the data is sorted, otherwise he
+            will probably get inconsistent results.
+
+        Raises:
+            ValueError: If `max_nb_points` is `< 2`.
+        """
+        if max_nb_points < 2:
+            raise ValueError("Minimum two points are required as output.")
+
+        if len(points) <= max_nb_points:
+            return points
+        # Prevent divide-by-zero issues.
+        if max_nb_points - 2 == 0:
+            return [points[0], points[-1]]
+
+        # `- 2` to exclude first and last.
+        nb_points = len(points) - 2
+        nb_buckets = max_nb_points - 2
+
+        # _ceil_ so `bucket_size` is large enough to never leave rest.
+        bucket_size: int = int(math.ceil(nb_points / nb_buckets))
+
+        downsampled_points: list[tuple[float, float]] = [points[0]]
+
+        for bucket in itertools.batched(points[1:-1], bucket_size):
+            mean_x = sum(p[0] for p in bucket) / len(bucket)
+            mean_y = sum(p[1] for p in bucket) / len(bucket)
+            downsampled_points.append((mean_x, mean_y))
+
+        downsampled_points.append(points[-1])
+
+        return downsampled_points
+
+    @staticmethod
+    def downsample_min_max(
+        points: list[tuple[float, float]], max_nb_points: int
+    ) -> list[tuple[float, float]]:
+        """Downsample data using the min/max technique.
+
+        The idea behind min/max downsampling is to preserve the local
+        peaks and trophes in the data. The data points are split into
+        `n` buckets (where `n` is the target resolution divided by 2),
+        and for each bucket we keep the minimum and maximum values.
+
+        Compared to mean downsampling for instance, min/max will render
+        the noise, while mean would smooth it out, losing information
+        about local minima and maxima.
+
+        Examples:
+            >>> points = [
+            ...     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
+            ...     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
+            ... ]
+            >>> Resampling.downsample_min_max(points, 4)
+            [(0.0, 1.0), (1.0, 2.0), (4.0, 5.0), (5.0, 6.0)]
+
+        Note:
+            This implementation keeps the first and last points in the
+            data unchanged. Thus, the resulting graphs will always start
+            and end at the exact same values.
+
+        Note:
+            This implementation also preserves the ordering of the
+            minimum and maximum values in a bucket. This means that if
+            the minimum comes before the maxiumum in the input, it will
+            also come before it in the output, same the other way
+            around.
+
+        Pitfall:
+            The caller _should_ ensure the data is sorted, otherwise he
+            will probably get inconsistent results.
+
+        Pitfall:
+            `max_nb_points` _must_ be even. Points always come in pairs
+            (min/max), it doesn't make sense to cap the data at an odd
+            length.
+
+        Raises:
+            ValueError: If `max_nb_points` is `< 2` or is odd.
+        """
+        if max_nb_points < 2:
+            raise ValueError("Minimum two points are required as output.")
+        if max_nb_points % 2 != 0:
+            raise ValueError("Number of output points must be even.")
+
+        if len(points) <= max_nb_points:
+            return points
+        # Prevent divide-by-zero issues.
+        if max_nb_points - 2 == 0:
+            return [points[0], points[-1]]
+
+        # `- 2` to exclude first and last.
+        nb_points = len(points) - 2
+        nb_buckets = (max_nb_points - 2) / 2  # Buckets yield 2 points: min/max
+
+        # _ceil_ so `bucket_size` is large enough to never leave rest.
+        bucket_size: int = int(math.ceil(nb_points / nb_buckets))
+
+        downsampled_points: list[tuple[float, float]] = [points[0]]
+
+        for bucket in itertools.batched(points[1:-1], bucket_size):
+            first_point, *rest_of_bucket = bucket
+
+            (min_, max_) = (first_point, first_point)
+
+            for point in rest_of_bucket:
+                if point[1] < min_[1]:
+                    min_ = point
+                if point[1] > max_[1]:
+                    max_ = point
+
+            # Preserve original order based on X value.
+            if min_[0] <= max_[0]:
+                downsampled_points.extend([min_, max_])
+            else:
+                downsampled_points.extend([max_, min_])
+
+        downsampled_points.append(points[-1])
+
+        return downsampled_points

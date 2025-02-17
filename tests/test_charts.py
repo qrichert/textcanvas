@@ -4,7 +4,7 @@ import unittest
 from dataclasses import dataclass
 
 import textcanvas.charts
-from textcanvas.charts import Chart, Plot
+from textcanvas.charts import Chart, Plot, Resampling
 from textcanvas.textcanvas import TextCanvas
 
 
@@ -1208,7 +1208,7 @@ class TestPlot(unittest.TestCase):
             return Mock(foo=x, bar=-x)
 
         # Compute all values once. Y will contain structs.
-        (x, y) = Plot.compute_function(-5.0, 5.0, 5.0, f)
+        x, y = Plot.compute_function(-5.0, 5.0, 5.0, f)
 
         self.assertEqual(x, [-5.0, -2.5, 0.0, 2.5, 5.0])
         self.assertEqual(
@@ -1615,6 +1615,211 @@ class TestChart(unittest.TestCase):
 
         self.assertEqual(Chart._format_number(-1_570_000_000_000.0), "-1.6T")
         self.assertEqual(Chart._format_number(-1_000_000_000_000.0), "-1.0T")
+
+
+class TestResampling(unittest.TestCase):
+    def test_downsample_mean_regular(self) -> None:
+        points = [
+            # 1 point.
+            (0.0, 0.0),
+            # 1 point.
+            (1.0, 3.0),
+            (2.0, -1.0),
+            (3.0, -4.0),
+            (4.0, 6.0),
+            (5.0, 1.0),
+            # 1 point.
+            (6.0, 7.0),
+            (7.0, -4.0),
+            (8.0, -2.0),
+            (9.0, 2.5),
+            # 1 point.
+            (10.0, 0.0),
+        ]
+
+        res = Resampling.downsample_mean(points, 4)
+
+        self.assertEqual(
+            res,
+            [
+                # First.
+                (0.0, 0.0),
+                # Bucket 1.
+                (3.0, 1.0),
+                # Bucket 2.
+                (7.5, 0.875),
+                # Last.
+                (10.0, 0.0),
+            ],
+        )
+
+    def test_downsample_mean_no_op_nb_points_lt_max_nb_points(self) -> None:
+        points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)]
+
+        res = Resampling.downsample_mean(points, 6)
+
+        self.assertEqual(res, points)
+
+    def test_downsample_mean_keep_only_first_and_last(self) -> None:
+        points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)]
+
+        res = Resampling.downsample_mean(points, 2)
+
+        self.assertEqual(res, [(0.0, 0.0), (3.0, 0.0)])
+
+    def test_downsample_mean_error_max_nb_points_lt_2(self) -> None:
+        Resampling.downsample_mean([], 2)  # OK
+        with self.assertRaises(ValueError) as ctx:
+            ctx.msg = "`max_nb_points` < 2 did not raise error."
+            Resampling.downsample_mean([], 1)
+
+    def test_plot_data_with_downsampling_mean(self) -> None:
+        def f(x):
+            return math.sin(x)
+
+        # Compute lots of values.
+        x, y = Plot.compute_function(0.0, math.tau, 1000.0, f)
+
+        canvas = TextCanvas(15, 5)
+        Plot.scatter(canvas, x, y)
+
+        self.assertEqual(len(x), 1000)
+        self.assertEqual(
+            canvas.to_string(),
+            """\
+⠀⣠⠞⠉⠙⢦⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⣰⠃⠀⠀⠀⠈⢧⠀⠀⠀⠀⠀⠀⠀⠀
+⠃⠀⠀⠀⠀⠀⠈⢧⠀⠀⠀⠀⠀⢀⡖
+⠀⠀⠀⠀⠀⠀⠀⠈⢧⠀⠀⠀⢀⡞⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⢤⠴⠋⠀⠀
+""",
+        )
+
+        canvas_downsampled = TextCanvas(15, 5)
+
+        points = list(zip(x, y))
+        points = Resampling.downsample_mean(points, 30)
+        x, y = map(list, zip(*points))  # unzip
+
+        Plot.scatter(canvas_downsampled, x, y)
+
+        # 1000 points downsampled to 30.
+        self.assertEqual(len(x), 30)
+        self.assertEqual(
+            canvas_downsampled.to_string(),
+            """\
+⠀⠠⠊⠉⠑⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠠⠁⠀⠀⠀⠀⠡⠀⠀⠀⠀⠀⠀⠀⠀
+⠃⠀⠀⠀⠀⠀⠀⠡⠀⠀⠀⠀⠀⠀⠔
+⠀⠀⠀⠀⠀⠀⠀⠀⠡⠀⠀⠀⢀⠌⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠤⠂⠀⠀
+""",
+        )
+
+    def test_downsample_min_max_regular(self) -> None:
+        points = [
+            # 1 point.
+            (0.0, 0.0),
+            # 2 points (min/max).
+            (1.0, 3.0),
+            (2.0, -1.0),
+            (3.0, -4.0),
+            (4.0, 6.0),
+            (5.0, 1.0),
+            # 2 points (min/max).
+            (6.0, 7.0),
+            (7.0, -4.0),
+            (8.0, -2.0),
+            (9.0, 2.5),
+            # 1 point.
+            (10.0, 0.0),
+        ]
+
+        res = Resampling.downsample_min_max(points, 6)
+
+        self.assertEqual(
+            res,
+            [
+                # First.
+                (0.0, 0.0),
+                # Bucket 1.
+                (3.0, -4.0),
+                (4.0, 6.0),
+                # Bucket 2.
+                (6.0, 7.0),
+                (7.0, -4.0),
+                # Last.
+                (10.0, 0.0),
+            ],
+        )
+
+    def test_downsample_min_max_no_op_nb_points_lt_max_nb_points(self) -> None:
+        points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)]
+
+        res = Resampling.downsample_min_max(points, 6)
+
+        self.assertEqual(res, points)
+
+    def test_downsample_min_max_keep_only_first_and_last(self) -> None:
+        points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)]
+
+        res = Resampling.downsample_min_max(points, 2)
+
+        self.assertEqual(res, [(0.0, 0.0), (3.0, 0.0)])
+
+    def test_downsample_min_max_error_max_nb_points_lt_2(self) -> None:
+        Resampling.downsample_min_max([], 2)  # OK
+        with self.assertRaises(ValueError) as ctx:
+            ctx.msg = "`max_nb_points` < 2 did not raise error."
+            Resampling.downsample_min_max([], 1)
+
+    def test_downsample_min_max_error_max_nb_points_is_odd(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            ctx.msg = "Odd `max_nb_points` did not raise error."
+            Resampling.downsample_min_max([], 3)
+
+    def test_plot_data_with_downsampling_min_max(self) -> None:
+        def f(x):
+            return math.sin(x)
+
+        # Compute lots of values.
+        x, y = Plot.compute_function(0.0, math.tau, 1000.0, f)
+
+        canvas = TextCanvas(15, 5)
+        Plot.scatter(canvas, x, y)
+
+        self.assertEqual(len(x), 1000)
+        self.assertEqual(
+            canvas.to_string(),
+            """\
+⠀⣠⠞⠉⠙⢦⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⣰⠃⠀⠀⠀⠈⢧⠀⠀⠀⠀⠀⠀⠀⠀
+⠃⠀⠀⠀⠀⠀⠈⢧⠀⠀⠀⠀⠀⢀⡖
+⠀⠀⠀⠀⠀⠀⠀⠈⢧⠀⠀⠀⢀⡞⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⢤⠴⠋⠀⠀
+""",
+        )
+
+        canvas_downsampled = TextCanvas(15, 5)
+
+        points = list(zip(x, y))
+        points = Resampling.downsample_min_max(points, 60)
+        x, y = map(list, zip(*points))  # unzip
+
+        Plot.scatter(canvas_downsampled, x, y)
+
+        # 1000 points downsampled to 60.
+        self.assertEqual(len(x), 60)
+        self.assertEqual(
+            canvas_downsampled.to_string(),
+            """\
+⠀⢀⠔⠉⠉⢂⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢀⠂⠀⠀⠀⠀⠡⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⢁⠀⠀⠀⠀⠀⠀⠖
+⠀⠀⠀⠀⠀⠀⠀⠀⠢⠀⠀⠀⠀⠌⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢤⠤⠊⠀⠀
+""",
+        )
 
 
 if __name__ == "__main__":
