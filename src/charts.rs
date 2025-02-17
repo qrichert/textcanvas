@@ -632,10 +632,17 @@ impl Plot {
             return;
         }
 
-        let mut pairs: Vec<(&f64, &f64)> = x.iter().zip(y).collect();
+        let mut points: Vec<(&f64, &f64)> = x.iter().zip(y).collect();
         if plot_type == PlotType::Line {
             // Sort by `x`;
-            pairs.sort_by(|a, b| cmp_f64(&a.0, &b.0));
+            points.sort_by(|a, b| cmp_f64(&a.0, &b.0));
+        }
+        if let Some(max_nb_points) =
+            Self::does_data_need_downsampling(points.len(), canvas.screen.uwidth(), plot_type)
+        {
+            dbg!(points.len(), canvas.screen.uwidth(), max_nb_points);
+            points = Self::downsample_min_max(&points, max_nb_points);
+            panic!();
         }
 
         let min_x = x.iter().min_by(cmp_f64).expect("cannot be empty");
@@ -664,7 +671,7 @@ impl Plot {
         }
 
         let mut previous: Option<(i32, i32)> = None; // For line plot.
-        for (x, y) in pairs {
+        for (x, y) in points {
             let mut x = *x;
             // Shift data left so that `min_x` = 0, then scale so that
             // `max_x` = width.
@@ -694,6 +701,32 @@ impl Plot {
                 }
             }
         }
+    }
+
+    /// Return the number of values to downsample to, or `None` if OK.
+    fn does_data_need_downsampling(
+        nb_points: usize,
+        nb_pixels: usize,
+        plot_type: PlotType,
+    ) -> Option<usize> {
+        let max_nb_points = if plot_type == PlotType::Bars {
+            // Bar charts are allowed more density, which is necessary
+            // for functions, lest rounding can cause "holes".
+            (nb_pixels as f64 * 1.2).round() as usize
+        } else {
+            nb_pixels
+        };
+        if nb_points > max_nb_points {
+            Some(max_nb_points)
+        } else {
+            None
+        }
+    }
+
+    fn downsample_min_max<T>(points: &Vec<T>, max_nb_points: usize) -> Vec<T> {
+        let nb_points = points.len();
+        let nb_buckets = nb_points as f64 / max_nb_points as f64;
+        Vec::new()
     }
 
     fn handle_axes_without_range(
