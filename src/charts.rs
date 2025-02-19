@@ -2,8 +2,7 @@ use std::cmp::Ordering;
 
 use crate::TextCanvas;
 
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn cmp_f64(a: &&f64, b: &&f64) -> Ordering {
+fn cmp_f64(a: f64, b: f64) -> Ordering {
     if a < b {
         Ordering::Less
     } else if a > b {
@@ -11,6 +10,18 @@ fn cmp_f64(a: &&f64, b: &&f64) -> Ordering {
     } else {
         Ordering::Equal
     }
+}
+
+/// Find the minimum value of a `&[f64]`, concisely.
+#[inline]
+fn min_of(arr: &[f64]) -> Option<f64> {
+    arr.iter().min_by(|a, b| cmp_f64(**a, **b)).copied()
+}
+
+/// Find the maximum value of a `&[f64]`, concisely.
+#[inline]
+fn max_of(arr: &[f64]) -> Option<f64> {
+    arr.iter().max_by(|a, b| cmp_f64(**a, **b)).copied()
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -221,13 +232,14 @@ impl Plot {
     /// assert_eq!(14, Plot::compute_screen_x(&canvas, 0.0, &x).unwrap());
     /// ```
     #[allow(clippy::cast_possible_truncation, clippy::missing_panics_doc)]
+    #[must_use]
     pub fn compute_screen_x(canvas: &TextCanvas, value: f64, x: &[f64]) -> Option<i32> {
         if x.is_empty() {
             return None;
         }
 
-        let min_x = x.iter().min_by(cmp_f64).expect("cannot be empty");
-        let max_x = x.iter().max_by(cmp_f64).expect("cannot be empty");
+        let min_x = min_of(x).expect("cannot be empty");
+        let max_x = max_of(x).expect("cannot be empty");
         let range_x = max_x - min_x;
         let scale_x = canvas.fw() / range_x;
 
@@ -266,13 +278,14 @@ impl Plot {
     /// assert_eq!(10, Plot::compute_screen_y(&canvas, 0.0, &y).unwrap());
     /// ```
     #[allow(clippy::cast_possible_truncation, clippy::missing_panics_doc)]
+    #[must_use]
     pub fn compute_screen_y(canvas: &TextCanvas, value: f64, y: &[f64]) -> Option<i32> {
         if y.is_empty() {
             return None;
         }
 
-        let min_y = y.iter().min_by(cmp_f64).expect("cannot be empty");
-        let max_y = y.iter().max_by(cmp_f64).expect("cannot be empty");
+        let min_y = min_of(y).expect("cannot be empty");
+        let max_y = max_of(y).expect("cannot be empty");
         let range_y = max_y - min_y;
         let scale_y = canvas.fh() / range_y;
 
@@ -632,19 +645,20 @@ impl Plot {
             return;
         }
 
-        let mut pairs: Vec<(&f64, &f64)> = x.iter().zip(y).collect();
+        // `.copied()` is necessary to get `(f64, f64)` instead of `(&f64, &f64)`.
+        let mut points: Vec<(f64, f64)> = x.iter().copied().zip(y.iter().copied()).collect();
         if plot_type == PlotType::Line {
             // Sort by `x`;
-            pairs.sort_by(|a, b| cmp_f64(&a.0, &b.0));
+            points.sort_by(|a, b| cmp_f64(a.0, b.0));
         }
 
-        let min_x = x.iter().min_by(cmp_f64).expect("cannot be empty");
-        let max_x = x.iter().max_by(cmp_f64).expect("cannot be empty");
+        let min_x = min_of(x).expect("cannot be empty");
+        let max_x = max_of(x).expect("cannot be empty");
         let range_x = max_x - min_x;
         let scale_x = canvas.fw() / range_x;
 
-        let min_y = y.iter().min_by(cmp_f64).expect("cannot be empty");
-        let max_y = y.iter().max_by(cmp_f64).expect("cannot be empty");
+        let min_y = min_of(y).expect("cannot be empty");
+        let max_y = max_of(y).expect("cannot be empty");
         let range_y = max_y - min_y;
         let scale_y = canvas.fh() / range_y;
 
@@ -664,14 +678,14 @@ impl Plot {
         }
 
         let mut previous: Option<(i32, i32)> = None; // For line plot.
-        for (x, y) in pairs {
-            let mut x = *x;
+        for (x, y) in points {
+            let mut x = x;
             // Shift data left so that `min_x` = 0, then scale so that
             // `max_x` = width.
             x = (x - min_x) * scale_x;
             let x = x.trunc() as i32;
 
-            let mut y = *y;
+            let mut y = y;
             y = (y - min_y) * scale_y;
             y = canvas.fh() - y; // Y-axis is inverted.
             let y = y.trunc() as i32;
@@ -1115,10 +1129,10 @@ impl Chart {
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     fn draw_min_and_max_values(canvas: &mut TextCanvas, x: &[f64], y: &[f64]) {
-        let min_x = Self::format_number(*x.iter().min_by(cmp_f64).expect("cannot be empty"));
-        let max_x = Self::format_number(*x.iter().max_by(cmp_f64).expect("cannot be empty"));
-        let min_y = Self::format_number(*y.iter().min_by(cmp_f64).expect("cannot be empty"));
-        let max_y = Self::format_number(*y.iter().max_by(cmp_f64).expect("cannot be empty"));
+        let min_x = Self::format_number(min_of(x).expect("cannot be empty"));
+        let max_x = Self::format_number(max_of(x).expect("cannot be empty"));
+        let min_y = Self::format_number(min_of(y).expect("cannot be empty"));
+        let max_y = Self::format_number(max_of(y).expect("cannot be empty"));
 
         canvas.draw_text(
             &min_x,
