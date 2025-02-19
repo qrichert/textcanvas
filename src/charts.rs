@@ -1276,7 +1276,8 @@ impl Chart {
 pub struct Resampling;
 
 impl Resampling {
-    // TODO: doc: This implementation always keeps first and last unchanged.
+    // TODO: doc: - This implementation always keeps first and last unchanged.
+    //  the caller _should_ ensure the data is sorted, otherwise he will probably get inconsistent results.
     #[must_use]
     pub fn downsample_min_max(points: &[(f64, f64)], max_nb_points: usize) -> Vec<(f64, f64)> {
         assert!(
