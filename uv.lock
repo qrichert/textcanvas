@@ -1,0 +1,8 @@
+version = 1
+revision = 1
+requires-python = ">=3.12"
+
+[[package]]
+name = "textcanvas"
+version = "3.6.1"
+source = { virtual = "." }
