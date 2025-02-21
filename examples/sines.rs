@@ -40,9 +40,9 @@
 
 use std::time;
 
+use textcanvas::TextCanvas;
 use textcanvas::charts::Plot;
 use textcanvas::utils::GameLoop;
-use textcanvas::TextCanvas;
 
 fn main() {
     for _ in 0..3 {

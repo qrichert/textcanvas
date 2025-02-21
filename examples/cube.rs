@@ -36,8 +36,8 @@
 
 #![allow(clippy::cast_possible_truncation)]
 
-use textcanvas::utils::GameLoop;
 use textcanvas::TextCanvas;
+use textcanvas::utils::GameLoop;
 
 type Vec2D = [f64; 2];
 type Vec3D = [f64; 3];

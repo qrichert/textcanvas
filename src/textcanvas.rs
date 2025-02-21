@@ -151,6 +151,7 @@ where
             self.x = T::from(0);
         }
 
+        #[cfg(not(tarpaulin_include))]
         Some(pixel)
     }
 }
