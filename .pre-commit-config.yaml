@@ -7,7 +7,7 @@ repos:
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/PyCQA/docformatter
-    rev: 06907d0
+    rev: eb1df347edd128b30cd3368dddc3aa65edcfac38
     hooks:
       - id: docformatter
   - repo: https://github.com/RobertCraigie/pyright-python
@@ -44,7 +44,7 @@ repos:
         types: [rust]
         entry: cargo doc --no-deps --all-features
         pass_filenames: false
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.5.1
     hooks:
       - id: prettier
