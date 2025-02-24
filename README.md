@@ -241,6 +241,8 @@ print(canvas)
 
 Check out [`examples/`](./examples) for more.
 
+<https://github.com/qrichert/painter/?tab=readme-ov-file#quick-start>
+
 ## How It Works
 
 Braille characters start at Unicode offset `U2800` (hexadecimal), and
