@@ -1,3 +1,6 @@
+// https://github.com/vlwkaos/rsmatrix/tree/dev?tab=readme-ov-file
+// https://user-images.githubusercontent.com/44766242/173190374-e3cedba0-6ac1-49c6-9a02-edec3735ca23.gif
+
 use textcanvas::TextCanvas;
 
 const NB_STREAMS: i32 = 80;
@@ -70,8 +73,10 @@ impl Rng {
     }
 
     fn seed() -> u32 {
-        use std::hash::{Hasher, BuildHasher};
-        std::collections::hash_map::RandomState::new().build_hasher().finish() as u32
+        use std::hash::{BuildHasher, Hasher};
+        std::collections::hash_map::RandomState::new()
+            .build_hasher()
+            .finish() as u32
     }
 
     pub fn next(self: &mut Self) -> i32 {
