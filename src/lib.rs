@@ -100,6 +100,7 @@
 pub mod charts;
 pub mod color;
 pub mod maths;
+pub mod random;
 pub mod textcanvas;
 pub mod utils;
 
