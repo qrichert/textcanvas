@@ -112,7 +112,7 @@ coverage-pct: ## Ensure code coverage == 100%
 l: lint
 .PHONY: lint
 lint: ## Run various linting tools
-	@pre-commit run --all-files
+	@ __CARGO_FIX_YOLO=1 pre-commit run --all-files
 
 .PHONY: extractdocstring
 extractdocstring: ## Use docstring as README
