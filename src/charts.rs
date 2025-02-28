@@ -1273,18 +1273,63 @@ impl Chart {
     }
 }
 
+// TODO:
+//  - Coverage is OK (apart from second line in assert, but that's a tarpaulin issue)
+//  - check to remove limitation around output being %2
+//  - doctest examples
+//  - missing Python version
+/// Helper functions to resample data.
+///
+/// Rendering too many data points can quickly lead to messy charts.
+/// Downsampling aims at reducing the number of data poits, while trying
+/// to preserve the essence of the data (e.g., curve and distribution
+/// should look similar).
+///
+/// Resampling is very idiosyncratic to the dataset, and so is not done
+/// automatically by [`Plot`].
 pub struct Resampling;
 
 impl Resampling {
-    // TODO: doc: - This implementation always keeps first and last unchanged.
-    //  the caller _should_ ensure the data is sorted, otherwise he will probably get inconsistent results.
+    /// Downsample data using the min/max technique.
+    ///
+    /// The idea behind min/max downsampling is to preserve the local
+    /// peaks and trophes in the data. The data points are split into
+    /// `n` buckets (where `n` is the target resolution divided by 2),
+    /// and for each bucket we keep the minimum and maximum values.
+    ///
+    /// Compared to mean downsampling for instance, min/max will render
+    /// the noise, while mean would smooth it out, losing information
+    /// about local minima and maxima.
+    ///
+    /// # Notes
+    ///
+    /// This implementation keeps the first and last points in the data
+    /// unchanged. Thus, the resulting graphs will always start and end
+    /// at the exact same values.
+    ///
+    /// This implementation also preserves the ordering of the minimum
+    /// and maximum values in a bucket. This means that if the minimum
+    /// comes before the maxiumum in the input, it will also come before
+    /// it in the output, same the other way around.
+    ///
+    /// # Pitfalls
+    ///
+    /// The caller _should_ ensure the data is sorted, otherwise he will
+    /// probably get inconsistent results.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if `max_nb_points` is `< 2` or is odd.
     #[must_use]
     pub fn downsample_min_max(points: &[(f64, f64)], max_nb_points: usize) -> Vec<(f64, f64)> {
         assert!(
             max_nb_points >= 2,
             "minimum number of X pixels in canvas is 2"
         );
-        assert_eq!(max_nb_points % 2, 0, "canvas pixels always come in pairs.");
+        // TODO: is this strictly necessary? input data may not be even either.
+        //   if we can remote this check, update the docs.
+        //   else explain why it's needed (division errors?)
+        //assert_eq!(max_nb_points % 2, 0, "canvas pixels always come in pairs.");
 
         if points.len() <= max_nb_points {
             return points.to_owned();
