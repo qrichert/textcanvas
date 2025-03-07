@@ -284,12 +284,32 @@ impl Rng {
     /// let sample = rng.sample(&numbers, 3);
     ///
     /// assert_eq!(sample, [2, 5, 4]);
+    ///
+    /// // Works for `n > numbers.len()`, too.
+    /// let sample = rng.sample(&numbers, 10);
+    ///
+    /// assert_eq!(sample, [5, 0, 4, 2, 1, 3, 5, 3, 4, 1]);
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if `data` is empty.
     #[must_use]
     pub fn sample<T: Clone>(&mut self, data: &[T], n: usize) -> Vec<T> {
+        assert!(!data.is_empty(), "cannot sample from empty data");
         let mut data: Vec<T> = data.to_vec();
-        self.shuffle(&mut data);
-        data.into_iter().take(n).collect()
+        let mut sample = Vec::with_capacity(n);
+        // This _could_ be optimized by looping only if `n > data.len()`
+        // (which would save the extra `cloned()`), but simplicity is
+        // the goal here; no special case.
+        while sample.len() < n {
+            self.shuffle(&mut data);
+            sample.extend(data.iter().take(n - sample.len()).cloned());
+        }
+        #[cfg(not(tarpaulin_include))] // Wrongly marked uncovered.
+        {
+            sample
+        }
     }
 }
 
@@ -533,5 +553,27 @@ mod tests {
         for x in sample {
             assert!(numbers.contains(&x));
         }
+    }
+
+    #[test]
+    fn rng_sample_n_gt_data_len() {
+        let mut rng = Rng::new();
+        let numbers = vec![0, 1, 2, 3, 4, 5];
+
+        let sample = rng.sample(&numbers, 10_000);
+
+        assert_eq!(sample.len(), 10_000);
+        for x in sample {
+            assert!(numbers.contains(&x));
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot sample from empty data")]
+    fn rng_sample_empty_data_panics() {
+        let mut rng = Rng::new();
+        let numbers: Vec<i32> = Vec::new();
+
+        _ = rng.sample(&numbers, 10);
     }
 }
