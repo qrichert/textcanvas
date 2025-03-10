@@ -21,8 +21,9 @@ features.
 ## Examples
 
 <p align="center">
-  <img src="./examples/game_of_life.png" alt="Game of Life" style="width: 47%;" />
-  <img src="./examples/graph.png" alt="Graph" style="width: 47%;" />
+  <img src="./examples/game_of_life.png" alt="Game of Life" style="width: 31%;" />
+  <img src="./examples/graph.png" alt="Graph" style="width: 31%;" />
+  <img src="./examples/matrix.png" alt="Matrix" style="width: 31%;" />
 </p>
 
 ```
