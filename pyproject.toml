@@ -15,6 +15,9 @@ classifiers = [
 ]
 license = { file="LICENSE" }
 keywords = ["tui", "canvas", "draw", "terminal", "console"]
+dependencies = [
+    "coverage>=7.6.12",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/qrichert/textcanvas"
