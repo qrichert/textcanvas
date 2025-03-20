@@ -15,8 +15,7 @@ It is inspired by drawille[^1], which uses Braille Unicode characters to
 increase the resolution of the terminal by a factor of 8 (8 Braille dots
 in one terminal character).
 
-The API is inspired by JavaScript Canvas's API, but has barely any
-features.
+The API is inspired by JavaScript's Canvas API.
 
 ## Examples
 
