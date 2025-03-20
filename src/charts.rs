@@ -1,27 +1,15 @@
-use std::cmp::Ordering;
-
 use crate::TextCanvas;
-
-fn cmp_f64(a: f64, b: f64) -> Ordering {
-    if a < b {
-        Ordering::Less
-    } else if a > b {
-        Ordering::Greater
-    } else {
-        Ordering::Equal
-    }
-}
 
 /// Find the minimum value of a `&[f64]`, concisely.
 #[inline]
 fn min_of(arr: &[f64]) -> Option<f64> {
-    arr.iter().min_by(|a, b| cmp_f64(**a, **b)).copied()
+    arr.iter().copied().min_by(f64::total_cmp)
 }
 
 /// Find the maximum value of a `&[f64]`, concisely.
 #[inline]
 fn max_of(arr: &[f64]) -> Option<f64> {
-    arr.iter().max_by(|a, b| cmp_f64(**a, **b)).copied()
+    arr.iter().copied().max_by(f64::total_cmp)
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -648,8 +636,8 @@ impl Plot {
         // `.copied()` is necessary to get `(f64, f64)` instead of `(&f64, &f64)`.
         let mut points: Vec<(f64, f64)> = x.iter().copied().zip(y.iter().copied()).collect();
         if plot_type == PlotType::Line {
-            // Sort by `x`;
-            points.sort_by(|a, b| cmp_f64(a.0, b.0));
+            // Sort by `x`.
+            points.sort_by(|a, b| f64::total_cmp(&a.0, &b.0));
         }
 
         let min_x = min_of(x).expect("cannot be empty");
