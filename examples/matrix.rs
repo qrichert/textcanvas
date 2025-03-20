@@ -53,9 +53,8 @@ impl Droplet {
         let y = f64::from(-length) * 1.5; // Just out-of-bounds, and some.
 
         let mut chars: Vec<char> = CHARS.chars().collect();
-        rng.shuffle(&mut chars);
-        chars.truncate(STREAM_LENGTH as usize);
-        let chars = chars.into_iter().collect();
+        chars = rng.sample(&chars, STREAM_LENGTH as usize);
+        let chars: String = chars.into_iter().collect();
 
         let speed = rng.frand_between(0.3, 0.8);
 
