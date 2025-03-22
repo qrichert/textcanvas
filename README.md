@@ -1,6 +1,6 @@
 # TextCanvas
 
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/license/mit)
+![Crates.io License](https://img.shields.io/crates/l/textcanvas)
 ![GitHub Tag](https://img.shields.io/github/v/tag/qrichert/textcanvas?sort=semver&filter=*.*.*&label=release)
 [![crates.io](https://img.shields.io/crates/d/textcanvas?logo=rust&logoColor=white&color=orange)](https://crates.io/crates/textcanvas)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/qrichert/textcanvas/run-tests.yml?label=tests)](https://github.com/qrichert/textcanvas/actions)
