@@ -57,6 +57,10 @@ The API is inspired by JavaScript's Canvas API.
 
 ## Shapes
 
+<table>
+<tr><th></th><th>Rust</th><th>Python</th></tr>
+<tr><td>
+
 ```
 ⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠑⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -89,23 +93,163 @@ The API is inspired by JavaScript's Canvas API.
 ⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠀⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⠀⠀⠙⠁⠀⠀⠀⠀⠀⠀
 ```
 
+</td><td>
+
+```rust
+let mut canvas = TextCanvas::new(15, 5);
+canvas.stroke_line(0, 0, canvas.w(), canvas.h());
+canvas.draw_text("hello, world", 1, 2);
+
+
+
+let mut canvas = TextCanvas::new(15, 5);
+canvas.stroke_rect(5, 5, 20, 10);
+
+
+
+
+let mut canvas = TextCanvas::new(15, 5);
+canvas.stroke_triangle(5, 5, 20, 10, 4, 17);
+
+
+
+
+let mut canvas = TextCanvas::new(15, 5);
+canvas.stroke_circle(canvas.cx(), canvas.cy(), 7);
+
+
+
+
+let mut canvas = TextCanvas::new(15, 5);
+canvas.stroke_ngon(canvas.cx(), canvas.cy(), 7, 5, PI / 2.0);
+```
+
+</td><td>
+
+<!-- blacken-docs:off -->
+
+```python
+canvas = TextCanvas(15, 5)
+canvas.stroke_line(0, 0, canvas.w, canvas.h)
+canvas.draw_text("hello, world", 1, 2)
+
+
+
+canvas = TextCanvas(15, 5)
+canvas.fill_rect(5, 5, 20, 10)
+
+
+
+
+canvas = TextCanvas(15, 5)
+canvas.fill_triangle(5, 5, 20, 10, 4, 17)
+
+
+
+
+canvas = TextCanvas(15, 5)
+canvas.fill_circle(canvas.cx, canvas.cy, 7)
+
+
+
+
+canvas = TextCanvas(15, 5)
+canvas.fill_ngon(canvas.cx, canvas.cy, 7, 4, 0.0)
+```
+
+<!-- blacken-docs:on -->
+
+</td></tr>
+</table>
+
 ## Plots
 
-```
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠒⠉ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠂⠈ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸ ⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜
-⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠊⠁⠀⠀⠀ ⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠂⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸ ⠀⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜⠀
-⠀⠀⠀⠀⠀⢀⠤⠊⠁⠀⠀⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⢀⠀⠂⠀⠀⠀⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸ ⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⡔⠁⠀
-⠀⠀⢀⠤⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⠀⠀⢀⠀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸ ⠀⠀⠀⠑⡄⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀
-⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⡀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⡀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸ ⠀⠀⠀⠀⠈⠒⠤⣀⠤⠒⠁⠀⠀⠀⠀
+<table>
+<tr><th></th><th>Rust</th><th>Python</th></tr>
+<tr><td>
 
-⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼ ⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⢀⠤⠒⠉ ⠀⠀⠀⠀⡇⢠⠋⠑⡄⠀⠀⠀⠀⠀⢀
-⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿ ⠀⠀⠀⠀⠀⠀⠀⡇⢀⠤⠊⠁⠀⠀⠀ ⠀⠀⠀⠀⣇⠇⠀⠀⢱⠀⠀⠀⠀⠀⡎
-⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿ ⠤⠤⠤⠤⠤⢤⠤⡯⠥⠤⠤⠤⠤⠤⠤ ⡤⠤⠤⠤⡿⠤⠤⠤⠤⡧⠤⠤⠤⡼⠤
-⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿ ⠀⠀⢀⠤⠊⠁⠀⡇⠀⠀⠀⠀⠀⠀⠀ ⠸⡀⠀⢰⡇⠀⠀⠀⠀⠸⡀⠀⢠⠃⠀
-⣿⣿⣿⣿⣿⣶⣤⣀⣤⣶⣿⣿⣿⣿⣿ ⡠⠊⠁⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀ ⠀⠱⡠⠃⡇⠀⠀⠀⠀⠀⠑⠤⠊⠀⠀
 ```
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠒⠉ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠂⠈ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸
+⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠊⠁⠀⠀⠀ ⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠂⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸
+⠀⠀⠀⠀⠀⢀⠤⠊⠁⠀⠀⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⢀⠀⠂⠀⠀⠀⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸
+⠀⠀⢀⠤⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⠀⠀⢀⠀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⠀⠀⢀⠀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⡀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⡀⡆⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸⠀⡇⢸
+
+⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜ ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿
+⠀⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜⠀ ⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿
+⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⡔⠁⠀ ⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⣿
+⠀⠀⠀⠑⡄⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀ ⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿
+⠀⠀⠀⠀⠈⠒⠤⣀⠤⠒⠁⠀⠀⠀⠀ ⣿⣿⣿⣿⣿⣦⣤⣠⣤⣾⣿⣿⣿⣿⣿
+
+⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⢀⠤⠒⠉ ⠀⠀⠀⠀⡇⢠⠋⠑⡄⠀⠀⠀⠀⠀⢀
+⠀⠀⠀⠀⠀⠀⠀⡇⢀⠤⠊⠁⠀⠀⠀ ⠀⠀⠀⠀⣇⠇⠀⠀⢱⠀⠀⠀⠀⠀⡎
+⠤⠤⠤⠤⠤⢤⠤⡯⠥⠤⠤⠤⠤⠤⠤ ⡤⠤⠤⠤⡿⠤⠤⠤⠤⡧⠤⠤⠤⡼⠤
+⠀⠀⢀⠤⠊⠁⠀⡇⠀⠀⠀⠀⠀⠀⠀ ⠸⡀⠀⢰⡇⠀⠀⠀⠀⠸⡀⠀⢠⠃⠀
+⡠⠊⠁⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀ ⠀⠱⡠⠃⡇⠀⠀⠀⠀⠀⠑⠤⠊⠀⠀
+```
+
+</td><td>
+
+```rust
+let mut canvas = TextCanvas::new(15, 5);
+let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+// Row 1.
+Plot::line(&mut canvas, &x, &y);
+Plot::scatter(&mut canvas, &x, &y);
+Plot::bars(&mut canvas, &x, &y);
+
+// Row 2.
+Plot::function(&mut canvas, -10.0, 10.0, &|x| x * x);
+Plot::function_filled(&mut canvas, -10.0, 10.0, &|x| x * x);
+
+// Row 3.
+Plot::stroke_xy_axes(&mut canvas, &x, &y);
+Plot::line(&mut canvas, &x, &y);
+
+let f = |x: f64| x.sin();
+Plot::stroke_xy_axes_of_function(&mut canvas, -3.0, 7.0, &f);
+Plot::function(&mut canvas, -3.0, 7.0, &f);
+```
+
+</td><td>
+
+<!-- blacken-docs:off -->
+
+```python
+canvas = TextCanvas(15, 5)
+x: list[float] = list(range(-5, 6))
+y: list[float] = list(range(-5, 6))
+
+# Row 1.
+Plot.line(canvas, x, y)
+Plot.scatter(canvas, x, y)
+Plot.bars(canvas, x, y)
+
+# Row 2.
+Plot.function(canvas, -10.0, 10.0, lambda x: x ** 2)
+Plot.function_filled(canvas, -10.0, 10.0, lambda x: x ** 2)
+
+# Row 3.
+Plot.stroke_xy_axes(canvas, x, y)
+Plot.line(canvas, x, y)
+
+f = lambda x: math.sin(x)
+Plot.stroke_xy_axes_of_function(canvas, -3.0, 7.0, f)
+Plot.function(canvas, -3.0, 7.0, f)
+```
+
+<!-- blacken-docs:on -->
+
+</td></tr>
+</table>
 
 ## Charts
+
+<table>
+<tr><th></th><th>Rust</th><th>Python</th></tr>
+<tr><td>
 
 ```
 ⠀⠀⠀⠀⠀⠀⠀5⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
@@ -153,16 +297,131 @@ The API is inspired by JavaScript's Canvas API.
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
 
 ⠀⠀⠀⠀⠀⠀⠀1⠀⡤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢤⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⢸⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⢸⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⢸⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⢸⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣤⣠⣤⣶⣿⣿⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⢸⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣤⣤⣤⣾⣿⣿⣿⣿⣿⣿⢸⠀
 ⠀⠀⠀⠀⠀⠀-1⠀⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀0⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5
 ```
+
+</td><td>
+
+```rust
+let mut canvas = TextCanvas::new(35, 10);
+
+let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+Chart::line(&mut canvas, &x, &y);
+
+
+
+
+
+let mut canvas = TextCanvas::new(35, 10);
+
+let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+Chart::scatter(&mut canvas, &x, &y);
+
+
+
+
+
+let mut canvas = TextCanvas::new(35, 10);
+
+let x: Vec<f64> = (-5..=5).map(f64::from).collect();
+let y: Vec<f64> = (-5..=5).map(f64::from).collect();
+
+Chart::bars(&mut canvas, &x, &y);
+
+
+
+
+
+let mut canvas = TextCanvas::new(35, 10);
+
+let f = |x: f64| x.cos();
+
+Chart::function(&mut canvas, 0.0, 5.0, &f);
+
+
+
+
+
+
+let mut canvas = TextCanvas::new(35, 10);
+
+let f = |x: f64| x.cos();
+
+Chart::function_filled(&mut canvas, 0.0, 5.0, &f);
+```
+
+</td><td>
+
+<!-- blacken-docs:off -->
+
+```python
+canvas = TextCanvas(35, 10)
+
+x: list[float] = list(range(-5, 6))
+y: list[float] = list(range(-5, 6))
+
+Chart.line(canvas, x, y)
+
+
+
+
+
+canvas = TextCanvas(35, 10)
+
+x: list[float] = list(range(-5, 6))
+y: list[float] = list(range(-5, 6))
+
+Chart.scatter(canvas, x, y)
+
+
+
+
+
+canvas = TextCanvas(35, 10)
+
+x: list[float] = list(range(-5, 6))
+y: list[float] = list(range(-5, 6))
+
+Chart.bars(canvas, x, y)
+
+
+
+
+
+canvas = TextCanvas(35, 10)
+
+f = lambda x: math.cos(x)
+
+Chart.function(canvas, 0.0, 5.0, f)
+
+
+
+
+
+
+canvas = TextCanvas(35, 10)
+
+f = lambda x: math.cos(x)
+
+Chart.function_filled(canvas, 0.0, 5.0, f)
+```
+
+<!-- blacken-docs:on -->
+
+</td></tr>
+</table>
 
 ## 3D
 
