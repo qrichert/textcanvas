@@ -1047,8 +1047,8 @@ class Resampling:
 
     @staticmethod
     def downsample_mean(
-        points: list[tuple[float, float]], max_nb_points: int
-    ) -> list[tuple[float, float]]:
+        x: list[float], y: list[float], max_nb_points: int
+    ) -> tuple[list[float], list[float]]:
         """Downsample data using the mean technique.
 
         Mean downsampling reduces the number of values by averaging them
@@ -1061,12 +1061,13 @@ class Resampling:
         maxima in the process.
 
         Examples:
-            >>> points = [
-            ...     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
-            ...     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
-            ... ]
-            >>> Resampling.downsample_mean(points, 4)
-            [(0.0, 1.0), (1.5, 2.5), (3.5, 4.5), (5.0, 6.0)]
+            >>> x = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+            >>> y = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            >>> x, y = Resampling.downsample_mean(x, y, 4)
+            >>> x
+            [0.0, 1.5, 3.5, 5.0]
+            >>> y
+            [1.0, 2.5, 4.5, 6.0]
 
         Note:
             This implementation keeps the first and last points in the
@@ -1076,6 +1077,30 @@ class Resampling:
         Pitfalls:
             The caller _should_ ensure the data is sorted, otherwise he
             will probably get inconsistent results.
+
+        Raises:
+            ValueError: If `max_nb_points` is `< 2`.
+        """
+        points: list[tuple[float, float]] = list(zip(x, y))
+        points = Resampling.downsample_points_mean(points, max_nb_points)
+        x, y = [list(v) for v in zip(*points)]
+        return x, y
+
+    @staticmethod
+    def downsample_points_mean(
+        points: list[tuple[float, float]], max_nb_points: int
+    ) -> list[tuple[float, float]]:
+        """Downsample data using the mean technique.
+
+        Same as `downsample_mean()`, with another signature.
+
+        Examples:
+            >>> points = [
+            ...     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
+            ...     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
+            ... ]
+            >>> Resampling.downsample_points_mean(points, 4)
+            [(0.0, 1.0), (1.5, 2.5), (3.5, 4.5), (5.0, 6.0)]
 
         Raises:
             ValueError: If `max_nb_points` is `< 2`.
@@ -1109,8 +1134,8 @@ class Resampling:
 
     @staticmethod
     def downsample_min_max(
-        points: list[tuple[float, float]], max_nb_points: int
-    ) -> list[tuple[float, float]]:
+        x: list[float], y: list[float], max_nb_points: int
+    ) -> tuple[list[float], list[float]]:
         """Downsample data using the min/max technique.
 
         The idea behind min/max downsampling is to preserve the local
@@ -1123,12 +1148,13 @@ class Resampling:
         about local minima and maxima.
 
         Examples:
-            >>> points = [
-            ...     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
-            ...     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
-            ... ]
-            >>> Resampling.downsample_min_max(points, 4)
-            [(0.0, 1.0), (1.0, 2.0), (4.0, 5.0), (5.0, 6.0)]
+            >>> x = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+            >>> y = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            >>> x, y = Resampling.downsample_min_max(x, y, 4)
+            >>> x
+            [0.0, 1.0, 4.0, 5.0]
+            >>> y
+            [1.0, 2.0, 5.0, 6.0]
 
         Note:
             This implementation keeps the first and last points in the
@@ -1138,7 +1164,7 @@ class Resampling:
         Note:
             This implementation also preserves the ordering of the
             minimum and maximum values in a bucket. This means that if
-            the minimum comes before the maxiumum in the input, it will
+            the minimum comes before the maximum in the input, it will
             also come before it in the output, same the other way
             around.
 
@@ -1150,6 +1176,30 @@ class Resampling:
             `max_nb_points` _must_ be even. Points always come in pairs
             (min/max), it doesn't make sense to cap the data at an odd
             length.
+
+        Raises:
+            ValueError: If `max_nb_points` is `< 2` or is odd.
+        """
+        points: list[tuple[float, float]] = list(zip(x, y))
+        points = Resampling.downsample_points_min_max(points, max_nb_points)
+        x, y = [list(v) for v in zip(*points)]
+        return list(x), list(y)
+
+    @staticmethod
+    def downsample_points_min_max(
+        points: list[tuple[float, float]], max_nb_points: int
+    ) -> list[tuple[float, float]]:
+        """Downsample data using the min/max technique.
+
+        Same as `downsample_min_max()`, with another signature.
+
+        Examples:
+            >>> points = [
+            ...     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
+            ...     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
+            ... ]
+            >>> Resampling.downsample_points_min_max(points, 4)
+            [(0.0, 1.0), (1.0, 2.0), (4.0, 5.0), (5.0, 6.0)]
 
         Raises:
             ValueError: If `max_nb_points` is `< 2` or is odd.

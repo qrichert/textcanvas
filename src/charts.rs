@@ -1288,14 +1288,13 @@ impl Resampling {
     ///
     /// ```
     /// # use textcanvas::charts::Resampling;
-    /// let points = [
-    ///     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
-    ///     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
-    /// ];
+    /// let x = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
+    /// let y = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
     ///
-    /// let downsampled = Resampling::downsample_mean(&points, 4);
+    /// let (x, y) = Resampling::downsample_mean(&x, &y, 4);
     ///
-    /// assert_eq!(downsampled, [(0.0, 1.0), (1.5, 2.5), (3.5, 4.5), (5.0, 6.0)]);
+    /// assert_eq!(x, [0.0, 1.5, 3.5, 5.0]);
+    /// assert_eq!(y, [1.0, 2.5, 4.5, 6.0]);
     /// ```
     ///
     /// # Notes
@@ -1312,9 +1311,38 @@ impl Resampling {
     /// # Panics
     ///
     /// This function panics if `max_nb_points` is `< 2`.
+    #[must_use]
+    pub fn downsample_mean(x: &[f64], y: &[f64], max_nb_points: usize) -> (Vec<f64>, Vec<f64>) {
+        let points: Vec<(f64, f64)> = x.iter().copied().zip(y.iter().copied()).collect();
+        let points = Self::downsample_points_mean(&points, max_nb_points);
+        let (x, y) = points.into_iter().unzip();
+        (x, y)
+    }
+
+    /// Downsample data using the mean technique.
+    ///
+    /// Same as [`Self::downsample_mean()`], with another signature.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use textcanvas::charts::Resampling;
+    /// let points = [
+    ///     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
+    ///     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
+    /// ];
+    ///
+    /// let downsampled = Resampling::downsample_points_mean(&points, 4);
+    ///
+    /// assert_eq!(downsampled, [(0.0, 1.0), (1.5, 2.5), (3.5, 4.5), (5.0, 6.0)]);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// This function panics if `max_nb_points` is `< 2`.
     #[allow(clippy::cast_precision_loss)]
     #[must_use]
-    pub fn downsample_mean(points: &[(f64, f64)], max_nb_points: usize) -> Vec<(f64, f64)> {
+    pub fn downsample_points_mean(points: &[(f64, f64)], max_nb_points: usize) -> Vec<(f64, f64)> {
         assert!(
             max_nb_points >= 2,
             "minimum two points are required as output"
@@ -1365,14 +1393,13 @@ impl Resampling {
     ///
     /// ```
     /// # use textcanvas::charts::Resampling;
-    /// let points = [
-    ///     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
-    ///     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
-    /// ];
+    /// let x = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
+    /// let y = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
     ///
-    /// let downsampled = Resampling::downsample_min_max(&points, 4);
+    /// let (x, y) = Resampling::downsample_min_max(&x, &y, 4);
     ///
-    /// assert_eq!(downsampled, [(0.0, 1.0), (1.0, 2.0), (4.0, 5.0), (5.0, 6.0)]);
+    /// assert_eq!(x, [0.0, 1.0, 4.0, 5.0]);
+    /// assert_eq!(y, [1.0, 2.0, 5.0, 6.0]);
     /// ```
     ///
     /// # Notes
@@ -1383,7 +1410,7 @@ impl Resampling {
     ///
     /// This implementation also preserves the ordering of the minimum
     /// and maximum values in a bucket. This means that if the minimum
-    /// comes before the maxiumum in the input, it will also come before
+    /// comes before the maximum in the input, it will also come before
     /// it in the output, same the other way around.
     ///
     /// # Pitfalls
@@ -1398,9 +1425,41 @@ impl Resampling {
     /// # Panics
     ///
     /// This function panics if `max_nb_points` is `< 2` or is odd.
+    #[must_use]
+    pub fn downsample_min_max(x: &[f64], y: &[f64], max_nb_points: usize) -> (Vec<f64>, Vec<f64>) {
+        let points: Vec<(f64, f64)> = x.iter().copied().zip(y.iter().copied()).collect();
+        let points = Self::downsample_points_min_max(&points, max_nb_points);
+        let (x, y) = points.into_iter().unzip();
+        (x, y)
+    }
+
+    /// Downsample data using the min/max technique.
+    ///
+    /// Same as [`Self::downsample_min_max()`], with another signature.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use textcanvas::charts::Resampling;
+    /// let points = [
+    ///     (0.0, 1.0), (1.0, 2.0), (2.0, 3.0),
+    ///     (3.0, 4.0), (4.0, 5.0), (5.0, 6.0),
+    /// ];
+    ///
+    /// let downsampled = Resampling::downsample_points_min_max(&points, 4);
+    ///
+    /// assert_eq!(downsampled, [(0.0, 1.0), (1.0, 2.0), (4.0, 5.0), (5.0, 6.0)]);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// This function panics if `max_nb_points` is `< 2` or is odd.
     #[allow(clippy::cast_precision_loss)]
     #[must_use]
-    pub fn downsample_min_max(points: &[(f64, f64)], max_nb_points: usize) -> Vec<(f64, f64)> {
+    pub fn downsample_points_min_max(
+        points: &[(f64, f64)],
+        max_nb_points: usize,
+    ) -> Vec<(f64, f64)> {
         assert!(
             max_nb_points >= 2,
             "minimum two points are required as output"
@@ -3244,8 +3303,39 @@ mod tests {
             // 1 point.
             (10.0, 0.0),
         ];
+        let (x, y): (Vec<f64>, Vec<f64>) = points.iter().copied().unzip();
 
-        let res = Resampling::downsample_mean(&points, 4);
+        let res = Resampling::downsample_mean(&x, &y, 4);
+
+        let res_points = Resampling::downsample_points_mean(&points, 4);
+        let res_points: (Vec<f64>, Vec<f64>) = res_points.into_iter().unzip();
+
+        // `downsample_mean()` uses `downsample_points_mean()` under
+        // the hood. We just ensure they are equal.
+        assert_eq!(res, res_points);
+    }
+
+    #[test]
+    fn downsample_points_mean_regular() {
+        let points = [
+            // 1 point.
+            (0.0, 0.0),
+            // 1 point.
+            (1.0, 3.0),
+            (2.0, -1.0),
+            (3.0, -4.0),
+            (4.0, 6.0),
+            (5.0, 1.0),
+            // 1 point.
+            (6.0, 7.0),
+            (7.0, -4.0),
+            (8.0, -2.0),
+            (9.0, 2.5),
+            // 1 point.
+            (10.0, 0.0),
+        ];
+
+        let res = Resampling::downsample_points_mean(&points, 4);
 
         assert_eq!(
             res,
@@ -3263,28 +3353,28 @@ mod tests {
     }
 
     #[test]
-    fn downsample_mean_no_op_nb_points_lt_max_nb_points() {
+    fn downsample_points_mean_no_op_nb_points_lt_max_nb_points() {
         let points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)];
 
-        let res = Resampling::downsample_mean(&points, 6);
+        let res = Resampling::downsample_points_mean(&points, 6);
 
         assert_eq!(res, points);
     }
 
     #[test]
-    fn downsample_mean_keep_only_first_and_last() {
+    fn downsample_points_mean_keep_only_first_and_last() {
         let points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)];
 
-        let res = Resampling::downsample_mean(&points, 2);
+        let res = Resampling::downsample_points_mean(&points, 2);
 
         assert_eq!(res, [(0.0, 0.0), (3.0, 0.0)]);
     }
 
     #[test]
     #[should_panic(expected = "minimum two points are required as output")]
-    fn downsample_mean_error_max_nb_points_lt_2() {
-        _ = Resampling::downsample_mean(&[], 2); // OK
-        _ = Resampling::downsample_mean(&[], 1);
+    fn downsample_points_mean_error_max_nb_points_lt_2() {
+        _ = Resampling::downsample_points_mean(&[], 2); // OK
+        _ = Resampling::downsample_points_mean(&[], 1);
     }
 
     #[test]
@@ -3312,7 +3402,7 @@ mod tests {
         let mut canvas_downsampled = TextCanvas::new(15, 5);
 
         let points: Vec<(f64, f64)> = x.iter().copied().zip(y).collect();
-        let points = Resampling::downsample_mean(&points, 30);
+        let points = Resampling::downsample_points_mean(&points, 30);
         let (x, y): (Vec<f64>, Vec<f64>) = points.into_iter().unzip();
 
         Plot::scatter(&mut canvas_downsampled, &x, &y);
@@ -3350,8 +3440,39 @@ mod tests {
             // 1 point.
             (10.0, 0.0),
         ];
+        let (x, y): (Vec<f64>, Vec<f64>) = points.iter().copied().unzip();
 
-        let res = Resampling::downsample_min_max(&points, 6);
+        let res = Resampling::downsample_min_max(&x, &y, 4);
+
+        let res_points = Resampling::downsample_points_min_max(&points, 4);
+        let res_points: (Vec<f64>, Vec<f64>) = res_points.into_iter().unzip();
+
+        // `downsample_min_max()` uses `downsample_points_min_max()`
+        // under the hood. We just ensure they are equal.
+        assert_eq!(res, res_points);
+    }
+
+    #[test]
+    fn downsample_points_min_max_regular() {
+        let points = [
+            // 1 point.
+            (0.0, 0.0),
+            // 2 points (min/max).
+            (1.0, 3.0),
+            (2.0, -1.0),
+            (3.0, -4.0),
+            (4.0, 6.0),
+            (5.0, 1.0),
+            // 2 points (min/max).
+            (6.0, 7.0),
+            (7.0, -4.0),
+            (8.0, -2.0),
+            (9.0, 2.5),
+            // 1 point.
+            (10.0, 0.0),
+        ];
+
+        let res = Resampling::downsample_points_min_max(&points, 6);
 
         assert_eq!(
             res,
@@ -3371,34 +3492,34 @@ mod tests {
     }
 
     #[test]
-    fn downsample_min_max_no_op_nb_points_lt_max_nb_points() {
+    fn downsample_points_min_max_no_op_nb_points_lt_max_nb_points() {
         let points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)];
 
-        let res = Resampling::downsample_min_max(&points, 6);
+        let res = Resampling::downsample_points_min_max(&points, 6);
 
         assert_eq!(res, points);
     }
 
     #[test]
-    fn downsample_min_max_keep_only_first_and_last() {
+    fn downsample_points_min_max_keep_only_first_and_last() {
         let points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)];
 
-        let res = Resampling::downsample_min_max(&points, 2);
+        let res = Resampling::downsample_points_min_max(&points, 2);
 
         assert_eq!(res, [(0.0, 0.0), (3.0, 0.0)]);
     }
 
     #[test]
     #[should_panic(expected = "minimum two points are required as output")]
-    fn downsample_min_max_error_max_nb_points_lt_2() {
-        _ = Resampling::downsample_min_max(&[], 2); // OK
-        _ = Resampling::downsample_min_max(&[], 1);
+    fn downsample_points_min_max_error_max_nb_points_lt_2() {
+        _ = Resampling::downsample_points_min_max(&[], 2); // OK
+        _ = Resampling::downsample_points_min_max(&[], 1);
     }
 
     #[test]
     #[should_panic(expected = "number of output points must be even")]
-    fn downsample_min_max_error_max_nb_points_is_odd() {
-        _ = Resampling::downsample_min_max(&[], 3);
+    fn downsample_points_min_max_error_max_nb_points_is_odd() {
+        _ = Resampling::downsample_points_min_max(&[], 3);
     }
 
     #[test]
@@ -3426,7 +3547,7 @@ mod tests {
         let mut canvas_downsampled = TextCanvas::new(15, 5);
 
         let points: Vec<(f64, f64)> = x.iter().copied().zip(y).collect();
-        let points = Resampling::downsample_min_max(&points, 60);
+        let points = Resampling::downsample_points_min_max(&points, 60);
         let (x, y): (Vec<f64>, Vec<f64>) = points.into_iter().unzip();
 
         Plot::scatter(&mut canvas_downsampled, &x, &y);

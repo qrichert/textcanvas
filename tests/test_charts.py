@@ -1636,8 +1636,37 @@ class TestResampling(unittest.TestCase):
             # 1 point.
             (10.0, 0.0),
         ]
+        x, y = [list(v) for v in zip(*points)]
 
-        res = Resampling.downsample_mean(points, 4)
+        res = Resampling.downsample_mean(x, y, 4)
+
+        res_points = Resampling.downsample_points_mean(points, 4)
+        res_points = tuple(list(v) for v in zip(*res_points))
+
+        # `downsample_mean()` uses `downsample_points_mean()` under
+        # the hood. We just ensure they are equal.
+        self.assertEqual(res, res_points)
+
+    def test_downsample_points_mean_regular(self) -> None:
+        points = [
+            # 1 point.
+            (0.0, 0.0),
+            # 1 point.
+            (1.0, 3.0),
+            (2.0, -1.0),
+            (3.0, -4.0),
+            (4.0, 6.0),
+            (5.0, 1.0),
+            # 1 point.
+            (6.0, 7.0),
+            (7.0, -4.0),
+            (8.0, -2.0),
+            (9.0, 2.5),
+            # 1 point.
+            (10.0, 0.0),
+        ]
+
+        res = Resampling.downsample_points_mean(points, 4)
 
         self.assertEqual(
             res,
@@ -1653,25 +1682,25 @@ class TestResampling(unittest.TestCase):
             ],
         )
 
-    def test_downsample_mean_no_op_nb_points_lt_max_nb_points(self) -> None:
+    def test_downsample_points_mean_no_op_nb_points_lt_max_nb_points(self) -> None:
         points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)]
 
-        res = Resampling.downsample_mean(points, 6)
+        res = Resampling.downsample_points_mean(points, 6)
 
         self.assertEqual(res, points)
 
-    def test_downsample_mean_keep_only_first_and_last(self) -> None:
+    def test_downsample_points_mean_keep_only_first_and_last(self) -> None:
         points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)]
 
-        res = Resampling.downsample_mean(points, 2)
+        res = Resampling.downsample_points_mean(points, 2)
 
         self.assertEqual(res, [(0.0, 0.0), (3.0, 0.0)])
 
-    def test_downsample_mean_error_max_nb_points_lt_2(self) -> None:
-        Resampling.downsample_mean([], 2)  # OK
+    def test_downsample_points_mean_error_max_nb_points_lt_2(self) -> None:
+        Resampling.downsample_points_mean([], 2)  # OK
         with self.assertRaises(ValueError) as ctx:
             ctx.msg = "`max_nb_points` < 2 did not raise error."
-            Resampling.downsample_mean([], 1)
+            Resampling.downsample_points_mean([], 1)
 
     def test_plot_data_with_downsampling_mean(self) -> None:
         def f(x):
@@ -1698,7 +1727,7 @@ class TestResampling(unittest.TestCase):
         canvas_downsampled = TextCanvas(15, 5)
 
         points = list(zip(x, y))
-        points = Resampling.downsample_mean(points, 30)
+        points = Resampling.downsample_points_mean(points, 30)
         x, y = map(list, zip(*points))  # unzip
 
         Plot.scatter(canvas_downsampled, x, y)
@@ -1720,6 +1749,35 @@ class TestResampling(unittest.TestCase):
         points = [
             # 1 point.
             (0.0, 0.0),
+            # 1 point.
+            (1.0, 3.0),
+            (2.0, -1.0),
+            (3.0, -4.0),
+            (4.0, 6.0),
+            (5.0, 1.0),
+            # 1 point.
+            (6.0, 7.0),
+            (7.0, -4.0),
+            (8.0, -2.0),
+            (9.0, 2.5),
+            # 1 point.
+            (10.0, 0.0),
+        ]
+        x, y = [list(v) for v in zip(*points)]
+
+        res = Resampling.downsample_min_max(x, y, 4)
+
+        res_points = Resampling.downsample_points_min_max(points, 4)
+        res_points = tuple(list(v) for v in zip(*res_points))
+
+        # `downsample_min_max()` uses `downsample_points_min_max()`
+        # under the hood. We just ensure they are equal.
+        self.assertEqual(res, res_points)
+
+    def test_downsample_points_min_max_regular(self) -> None:
+        points = [
+            # 1 point.
+            (0.0, 0.0),
             # 2 points (min/max).
             (1.0, 3.0),
             (2.0, -1.0),
@@ -1735,7 +1793,7 @@ class TestResampling(unittest.TestCase):
             (10.0, 0.0),
         ]
 
-        res = Resampling.downsample_min_max(points, 6)
+        res = Resampling.downsample_points_min_max(points, 6)
 
         self.assertEqual(
             res,
@@ -1753,30 +1811,30 @@ class TestResampling(unittest.TestCase):
             ],
         )
 
-    def test_downsample_min_max_no_op_nb_points_lt_max_nb_points(self) -> None:
+    def test_downsample_points_min_max_no_op_nb_points_lt_max_nb_points(self) -> None:
         points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)]
 
-        res = Resampling.downsample_min_max(points, 6)
+        res = Resampling.downsample_points_min_max(points, 6)
 
         self.assertEqual(res, points)
 
-    def test_downsample_min_max_keep_only_first_and_last(self) -> None:
+    def test_downsample_points_min_max_keep_only_first_and_last(self) -> None:
         points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)]
 
-        res = Resampling.downsample_min_max(points, 2)
+        res = Resampling.downsample_points_min_max(points, 2)
 
         self.assertEqual(res, [(0.0, 0.0), (3.0, 0.0)])
 
-    def test_downsample_min_max_error_max_nb_points_lt_2(self) -> None:
-        Resampling.downsample_min_max([], 2)  # OK
+    def test_downsample_points_min_max_error_max_nb_points_lt_2(self) -> None:
+        Resampling.downsample_points_min_max([], 2)  # OK
         with self.assertRaises(ValueError) as ctx:
             ctx.msg = "`max_nb_points` < 2 did not raise error."
-            Resampling.downsample_min_max([], 1)
+            Resampling.downsample_points_min_max([], 1)
 
-    def test_downsample_min_max_error_max_nb_points_is_odd(self) -> None:
+    def test_downsample_points_min_max_error_max_nb_points_is_odd(self) -> None:
         with self.assertRaises(ValueError) as ctx:
             ctx.msg = "Odd `max_nb_points` did not raise error."
-            Resampling.downsample_min_max([], 3)
+            Resampling.downsample_points_min_max([], 3)
 
     def test_plot_data_with_downsampling_min_max(self) -> None:
         def f(x):
@@ -1803,7 +1861,7 @@ class TestResampling(unittest.TestCase):
         canvas_downsampled = TextCanvas(15, 5)
 
         points = list(zip(x, y))
-        points = Resampling.downsample_min_max(points, 60)
+        points = Resampling.downsample_points_min_max(points, 60)
         x, y = map(list, zip(*points))  # unzip
 
         Plot.scatter(canvas_downsampled, x, y)
