@@ -471,16 +471,26 @@ class TextCanvas:
         """
         if not self.is_textual:
             self._init_text_buffer()
+
+        char_x, char_y = x, y
         for char in text:
-            self._draw_char(char, x, y, False)
-            x += 1
+            if char == "\n":
+                char_x, char_y = x, char_y + 1
+                continue
+            self._draw_char(char, char_x, char_y, False)
+            char_x += 1
 
     def draw_text_vertical(self, text: str, x: int, y: int) -> None:
         if not self.is_textual:
             self._init_text_buffer()
+
+        char_x, char_y = x, y
         for char in text:
-            self._draw_char(char, x, y, False)
-            y += 1
+            if char == "\n":
+                char_x, char_y = char_x + 1, y
+                continue
+            self._draw_char(char, char_x, char_y, False)
+            char_y += 1
 
     def merge_text(self, text: str, x: int, y: int) -> None:
         """Merge text onto the canvas.
@@ -490,16 +500,26 @@ class TextCanvas:
         """
         if not self.is_textual:
             self._init_text_buffer()
+
+        char_x, char_y = x, y
         for char in text:
-            self._draw_char(char, x, y, True)
-            x += 1
+            if char == "\n":
+                char_x, char_y = x, char_y + 1
+                continue
+            self._draw_char(char, char_x, char_y, True)
+            char_x += 1
 
     def merge_text_vertical(self, text: str, x: int, y: int) -> None:
         if not self.is_textual:
             self._init_text_buffer()
+
+        char_x, char_y = x, y
         for char in text:
-            self._draw_char(char, x, y, True)
-            y += 1
+            if char == "\n":
+                char_x, char_y = char_x + 1, y
+                continue
+            self._draw_char(char, char_x, char_y, True)
+            char_y += 1
 
     def _draw_char(self, char: str, x: int, y: int, merge: bool) -> None:
         if not self._check_output_bounds(x, y):

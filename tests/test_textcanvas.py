@@ -667,6 +667,20 @@ class TestTextCanvasText(unittest.TestCase):
             canvas.text_buffer, [["", "b", "a", "r", ""]], "Incorrect text buffer."
         )
 
+    def test_draw_text_multiline(self) -> None:
+        canvas = TextCanvas(6, 2)
+
+        canvas.draw_text("hello\nworld!", 0, 0)
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [
+                ["h", "e", "l", "l", "o", ""],
+                ["w", "o", "r", "l", "d", "!"],
+            ],
+            "Incorrect text buffer.",
+        )
+
     def test_draw_text_vertical(self) -> None:
         canvas = TextCanvas(1, 5)
 
@@ -684,6 +698,24 @@ class TestTextCanvasText(unittest.TestCase):
                 ["a"],
                 ["r"],
                 [""],
+            ],
+            "Incorrect text buffer.",
+        )
+
+    def test_draw_text_vertical_multiline(self) -> None:
+        canvas = TextCanvas(2, 6)
+
+        canvas.draw_text_vertical("hello\nworld!", 0, 0)
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [
+                ["h", "w"],
+                ["e", "o"],
+                ["l", "r"],
+                ["l", "l"],
+                ["o", "d"],
+                ["", "!"],
             ],
             "Incorrect text buffer.",
         )
@@ -791,6 +823,21 @@ class TestTextCanvasText(unittest.TestCase):
             "Incorrect text buffer.",
         )
 
+    def test_merge_text_multiline(self) -> None:
+        canvas = TextCanvas(6, 2)
+
+        canvas.merge_text("@@@@@@\n@@@@@@", 0, 0)
+        canvas.merge_text("h ll \nw rld!", 0, 0)
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [
+                ["h", "@", "l", "l", "@", "@"],
+                ["w", "@", "r", "l", "d", "!"],
+            ],
+            "Incorrect text buffer.",
+        )
+
     def test_merge_text_vertical(self) -> None:
         canvas = TextCanvas(1, 5)
 
@@ -809,6 +856,25 @@ class TestTextCanvasText(unittest.TestCase):
                 ["a"],
                 ["z"],
                 [""],
+            ],
+            "Incorrect text buffer.",
+        )
+
+    def test_merge_text_vertical_multiline(self) -> None:
+        canvas = TextCanvas(2, 6)
+
+        canvas.merge_text_vertical("@@@@@@\n@@@@@@", 0, 0)
+        canvas.merge_text_vertical("h ll \nw rld!", 0, 0)
+
+        self.assertEqual(
+            canvas.text_buffer,
+            [
+                ["h", "w"],
+                ["@", "@"],
+                ["l", "r"],
+                ["l", "l"],
+                ["@", "d"],
+                ["@", "!"],
             ],
             "Incorrect text buffer.",
         )

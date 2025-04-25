@@ -687,25 +687,35 @@ impl TextCanvas {
     ///
     /// Note: `set_color()` works for text as well, but text does not
     /// share its color buffer with pixels.
-    pub fn draw_text(&mut self, text: &str, mut x: i32, y: i32) {
+    pub fn draw_text(&mut self, text: &str, x: i32, y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
 
+        let (mut char_x, mut char_y) = (x, y);
         for char in text.chars() {
-            self.draw_char(char, x, y, false);
-            x += 1;
+            if char == '\n' {
+                (char_x, char_y) = (x, char_y + 1);
+                continue;
+            }
+            self.draw_char(char, char_x, char_y, false);
+            char_x += 1;
         }
     }
 
-    pub fn draw_text_vertical(&mut self, text: &str, x: i32, mut y: i32) {
+    pub fn draw_text_vertical(&mut self, text: &str, x: i32, y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
 
+        let (mut char_x, mut char_y) = (x, y);
         for char in text.chars() {
-            self.draw_char(char, x, y, false);
-            y += 1;
+            if char == '\n' {
+                (char_x, char_y) = (char_x + 1, y);
+                continue;
+            }
+            self.draw_char(char, char_x, char_y, false);
+            char_y += 1;
         }
     }
 
@@ -713,25 +723,35 @@ impl TextCanvas {
     ///
     /// This is the same as [`draw_text()`](TextCanvas::draw_text), but
     /// spaces do not erase text underneath.
-    pub fn merge_text(&mut self, text: &str, mut x: i32, y: i32) {
+    pub fn merge_text(&mut self, text: &str, x: i32, y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
 
+        let (mut char_x, mut char_y) = (x, y);
         for char in text.chars() {
-            self.draw_char(char, x, y, true);
-            x += 1;
+            if char == '\n' {
+                (char_x, char_y) = (x, char_y + 1);
+                continue;
+            }
+            self.draw_char(char, char_x, char_y, true);
+            char_x += 1;
         }
     }
 
-    pub fn merge_text_vertical(&mut self, text: &str, x: i32, mut y: i32) {
+    pub fn merge_text_vertical(&mut self, text: &str, x: i32, y: i32) {
         if !self.is_textual() {
             self.init_text_buffer();
         }
 
+        let (mut char_x, mut char_y) = (x, y);
         for char in text.chars() {
-            self.draw_char(char, x, y, true);
-            y += 1;
+            if char == '\n' {
+                (char_x, char_y) = (char_x + 1, y);
+                continue;
+            }
+            self.draw_char(char, char_x, char_y, true);
+            char_y += 1;
         }
     }
 
@@ -2367,6 +2387,22 @@ mod tests {
     }
 
     #[test]
+    fn draw_text_multiline() {
+        let mut canvas = TextCanvas::new(6, 2);
+
+        canvas.draw_text("hello\nworld!", 0, 0);
+
+        assert_eq!(
+            canvas.text_buffer,
+            [
+                ["h", "e", "l", "l", "o", ""],
+                ["w", "o", "r", "l", "d", "!"],
+            ],
+            "Incorrect text buffer."
+        );
+    }
+
+    #[test]
     fn draw_text_vertical() {
         let mut canvas = TextCanvas::new(1, 5);
 
@@ -2379,6 +2415,26 @@ mod tests {
         assert_eq!(
             canvas.text_buffer,
             [[""], ["b"], ["a"], ["r"], [""],],
+            "Incorrect text buffer."
+        );
+    }
+
+    #[test]
+    fn draw_text_vertical_multiline() {
+        let mut canvas = TextCanvas::new(2, 6);
+
+        canvas.draw_text_vertical("hello\nworld!", 0, 0);
+
+        assert_eq!(
+            canvas.text_buffer,
+            [
+                ["h", "w"],
+                ["e", "o"],
+                ["l", "r"],
+                ["l", "l"],
+                ["o", "d"],
+                ["", "!"],
+            ],
             "Incorrect text buffer."
         );
     }
@@ -2503,6 +2559,23 @@ mod tests {
     }
 
     #[test]
+    fn merge_text_multiline() {
+        let mut canvas = TextCanvas::new(6, 2);
+
+        canvas.merge_text("@@@@@@\n@@@@@@", 0, 0);
+        canvas.merge_text("h ll \nw rld!", 0, 0);
+
+        assert_eq!(
+            canvas.text_buffer,
+            [
+                ["h", "@", "l", "l", "@", "@"],
+                ["w", "@", "r", "l", "d", "!"],
+            ],
+            "Incorrect text buffer."
+        );
+    }
+
+    #[test]
     fn merge_text_vertical() {
         let mut canvas = TextCanvas::new(1, 5);
 
@@ -2516,6 +2589,27 @@ mod tests {
         assert_eq!(
             canvas.text_buffer,
             [[""], ["b"], ["a"], ["z"], [""],],
+            "Incorrect text buffer."
+        );
+    }
+
+    #[test]
+    fn merge_text_vertical_multiline() {
+        let mut canvas = TextCanvas::new(2, 6);
+
+        canvas.merge_text_vertical("@@@@@@\n@@@@@@", 0, 0);
+        canvas.merge_text_vertical("h ll \nw rld!", 0, 0);
+
+        assert_eq!(
+            canvas.text_buffer,
+            [
+                ["h", "w"],
+                ["@", "@"],
+                ["l", "r"],
+                ["l", "l"],
+                ["@", "d"],
+                ["@", "!"],
+            ],
             "Incorrect text buffer."
         );
     }
