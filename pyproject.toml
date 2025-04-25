@@ -15,9 +15,6 @@ classifiers = [
 license = "MIT OR Apache-2.0"
 license-files = ["LICENSE-MIT", "LICENSE-APACHE"]
 keywords = ["tui", "canvas", "draw", "terminal", "console"]
-dependencies = [
-    "coverage>=7.6.12",
-]
 
 [project.urls]
 "Homepage" = "https://github.com/qrichert/textcanvas"
@@ -48,4 +45,9 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "\\.\\.\\.",
+]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.6.12",
 ]

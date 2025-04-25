@@ -43,11 +43,15 @@ wheels = [
 
 [[package]]
 name = "textcanvas"
-version = "3.7.2"
+version = "3.8.0"
 source = { virtual = "." }
-dependencies = [
+
+[package.dev-dependencies]
+dev = [
     { name = "coverage" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "coverage", specifier = ">=7.6.12" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "coverage", specifier = ">=7.6.12" }]
