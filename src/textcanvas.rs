@@ -766,7 +766,10 @@ impl TextCanvas {
             }
             String::new()
         } else {
-            self.color.format(&String::from(char))
+            // We use `char.encode_utf8(&mut [0; 4])` to treat `char`
+            // as a `&mut str`, instead of allocating an intermediary
+            // `&String::from(char)`.
+            self.color.format(char.encode_utf8(&mut [0; 4]))
         };
 
         let (ux, uy) = (to_usize!(x), to_usize!(y));
