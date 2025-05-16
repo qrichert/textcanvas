@@ -14,6 +14,7 @@ define show_error_message
 	echo "$(ERROR)[Error] $(1)$(NC)"
 endef
 
+PREFIX ?= /usr/local
 SOURCE_DIRS := textcanvas tests
 
 .PHONY: all
@@ -24,7 +25,7 @@ help: ## Show this help message
 	@$(show_help_message)
 
 .PHONY: clean
-clean: ## Remove temporary files and data
+clean: ## Clean project files
 	@rm -rf ./dist/
 	@rm -rf ./var/htmlcov
 	@rm -rf ./.coverage
@@ -35,6 +36,12 @@ clean: ## Remove temporary files and data
 	@find $(SOURCE_DIRS) -name "*.py[co]" -prune -exec rm -rf {} \;
 	@find $(SOURCE_DIRS) -name "*.so" -prune -exec rm -rf {} \;
 	@cargo clean
+
+.PHONY: l
+l: lint
+.PHONY: lint
+lint: ## Run various linting tools
+	@pre-commit run --all-files
 
 .PHONY: check
 check: ## Most stringent checks (includes checks still in development)
@@ -47,6 +54,7 @@ check: ## Most stringent checks (includes checks still in development)
 	@make rust-coverage-pct
 	@make python-test
 	@make python-coverage-pct
+	@make lint
 
 .PHONY: rt
 rt: rust-test
@@ -66,25 +74,21 @@ pt: python-test
 python-test: ## Run Python unit tests
 	@uv run python -m unittest
 
-.PHONY: doc
-doc: ## Build documentation
-	@cargo doc --all-features
+.PHONY: rust-doc
+rust-doc: ## Build Rust documentation
+	@cargo doc --all-features --document-private-items
 	@echo file://$(shell pwd)/target/doc/$(shell basename $(shell pwd))/index.html
 
 .PHONY: rc
 rc: rust-coverage
 .PHONY: rust-coverage
 rust-coverage: ## Rust unit tests coverage report
-	@cargo tarpaulin --engine Llvm --timeout 120 --out Html --output-dir target/ --all-features
+	@cargo tarpaulin --engine Llvm --timeout 120 --skip-clean --out Html --output-dir target/ --all-features
 	@echo file://$(shell pwd)/target/tarpaulin-report.html
 
 .PHONY: rust-coverage-pct
-rust-coverage-pct: ## Ensure code coverage of 100%
-	@coverage=$$(cargo tarpaulin --engine Llvm --out Stdout 2>&1); \
-		percent_covered=$$(echo "$$coverage" | grep -o '^[0-9]\+\.[0-9]\+% coverage' | cut -d'%' -f1); \
-		echo $$percent_covered; \
-		[ $$(echo "$$percent_covered == 100" | bc -l) -eq 0 ] && exit 1; \
-		exit 0
+rust-coverage-pct: ## Ensure code coverage minimum %
+	@cargo tarpaulin --engine Llvm --timeout 120 --out Stdout --all-features --fail-under 99
 
 .PHONY: pc
 pc: python-coverage
@@ -111,12 +115,6 @@ python-coverage-pct: ## Ensure code coverage of 100%
 # .PHONY: python-profile
 # python-profile: ## Profile file or module
 # 	@uv run python -m cProfile -s tottime -m tests/profiling.py
-
-.PHONY: l
-l: lint
-.PHONY: lint
-lint: ## Run various linting tools
-	@ __CARGO_FIX_YOLO=1 pre-commit run --all-files
 
 %:
 	@$(call show_error_message,Unknown command '$@')

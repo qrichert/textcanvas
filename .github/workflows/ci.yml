@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - lint
+          - rust-test
+          - rust-coverage-pct
+          - rust-doc
+          - python-test
+          - python-coverage-pct
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        if: ${{ ! startsWith(matrix.target, 'python-') }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        if: ${{ ! startsWith(matrix.target, 'python-') && matrix.target != 'rust-coverage-pct' }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key:
+            ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Install Tarpaulin
+        if: ${{ matrix.target == 'rust-coverage-pct' }}
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+
+      - name: Set up Python
+        if: ${{ startsWith(matrix.target, 'python-') || matrix.target == 'lint' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Set up `uv`
+        if: ${{ startsWith(matrix.target, 'python-') }}
+        uses: astral-sh/setup-uv@v6
+
+      - name: Cache pre-commits
+        if: ${{ matrix.target == 'lint' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit/
+          key:
+            ${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: Install pre-commit
+        if: ${{ matrix.target == 'lint' }}
+        run: python -m pip install --upgrade pre-commit
+
+      - name: Run Makefile target
+        run: make ${{ matrix.target }}

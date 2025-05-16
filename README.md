@@ -4,7 +4,7 @@
 ![GitHub Tag](https://img.shields.io/github/v/tag/qrichert/textcanvas?sort=semver&filter=*.*.*&label=release)
 [![tokei (loc)](https://tokei.rs/b1/github/qrichert/textcanvas?label=loc&style=flat)](https://github.com/XAMPPRocky/tokei)
 [![crates.io](https://img.shields.io/crates/d/textcanvas?logo=rust&logoColor=white&color=orange)](https://crates.io/crates/textcanvas)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/qrichert/textcanvas/run-tests.yml?label=tests)](https://github.com/qrichert/textcanvas/actions)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/qrichert/textcanvas/ci.yml?label=tests)](https://github.com/qrichert/textcanvas/actions)
 
 TextCanvas is an HTML Canvas-like surface that can be used to draw to
 the terminal. Other use cases include visual checks for mathematical
