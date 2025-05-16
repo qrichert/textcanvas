@@ -112,6 +112,7 @@ enum ColorMode {
 /// ## See Also
 ///
 /// - <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
+#[allow(clippy::struct_field_names)]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Color {
     mode: ColorMode,

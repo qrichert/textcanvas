@@ -105,6 +105,7 @@ fn main() {
     });
 }
 
+#[allow(clippy::manual_midpoint)]
 fn world_to_screen(point: Vec3D) -> Vec2D {
     // [-1, 1] + 1 -> [0, 2] / 2 -> [0, 1] * screen
     // Flip Y because screen coordinates are inverted.
