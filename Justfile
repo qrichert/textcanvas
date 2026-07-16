@@ -32,7 +32,7 @@ check:
 alias rt := rust-test
 # Run Rust unit tests
 rust-test:
-    cargo test
+    NO_COLOR= cargo test
 
 alias lrt := light-rust-test
 # Run light Rust unit tests
@@ -42,7 +42,7 @@ light-rust-test:
 alias pt := python-test
 # Run Python unit tests
 python-test:
-    uv run python -m unittest
+    NO_COLOR= uv run python -m unittest
 
 # Build Rust documentation
 rust-doc:
