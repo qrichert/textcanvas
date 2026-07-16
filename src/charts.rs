@@ -924,8 +924,8 @@ impl Plot {
         px.push(to_x);
         py.push(f(to_x));
 
-        debug_assert!(px.len() == nb_values);
-        debug_assert!(px.len() == py.len());
+        debug_assert_eq!(px.len(), nb_values);
+        debug_assert_eq!(px.len(), py.len());
 
         (px, py)
     }

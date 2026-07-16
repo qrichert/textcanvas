@@ -849,7 +849,7 @@ impl TextCanvas {
         pixel_char
     }
 
-    fn iter_buffer_by_blocks_lrtb(&self) -> IterPixelBufferByBlocksLRTB {
+    fn iter_buffer_by_blocks_lrtb(&self) -> IterPixelBufferByBlocksLRTB<'_> {
         IterPixelBufferByBlocksLRTB::new(&self.buffer, &self.screen)
     }
 

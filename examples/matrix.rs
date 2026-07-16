@@ -121,7 +121,7 @@ impl Droplet {
 
     pub fn draw_onto(&mut self, canvas: &mut TextCanvas) {
         let chars = self.to_string();
-        debug_assert!(chars.chars().count() == STREAM_LENGTH as usize);
+        debug_assert_eq!(chars.chars().count(), STREAM_LENGTH as usize);
 
         let i_tip = self.iy() + self.length - 1;
 
@@ -181,8 +181,7 @@ impl fmt::Display for Droplet {
             "{}{}{}",
             " ".repeat(window_start),
             // Equivalent to `&self.chars[window_start..=window_end]`, but with `chars()`.
-            &self
-                .chars
+            self.chars
                 .chars()
                 .skip(window_start)
                 .take(window_end - window_start + 1)

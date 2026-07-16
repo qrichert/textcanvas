@@ -15,6 +15,12 @@ pub struct GameLoop<'a> {
     stdout: io::StdoutLock<'a>,
 }
 
+impl Default for GameLoop<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GameLoop<'_> {
     /// Run a game loop with fixed time step.
     ///
