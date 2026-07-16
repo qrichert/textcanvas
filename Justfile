@@ -76,4 +76,4 @@ python-coverage-pct:
 alias l := lint
 # Run various linting tools
 lint:
-    pre-commit run --all-files
+    prek run --all-files
