@@ -1469,8 +1469,8 @@ impl TextCanvas {
 
 impl Default for TextCanvas {
     fn default() -> Self {
-        let (width, heigt) = Self::get_default_size();
-        Self::new(width, heigt)
+        let (width, height) = Self::get_default_size();
+        Self::new(width, height)
     }
 }
 

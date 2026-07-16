@@ -1053,7 +1053,7 @@ class Resampling:
 
         Mean downsampling reduces the number of values by averaging them
         out. The data points are split into `n` buckets (where `n` is
-        the target resolution), and for each bucket we keep the meanof
+        the target resolution), and for each bucket we keep the mean of
         the values.
 
         Compared to min/max downsampling for instance, mean will
