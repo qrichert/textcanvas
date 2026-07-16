@@ -339,7 +339,7 @@ impl TextCanvas {
     ///
     /// # Errors
     ///
-    /// If either or both `WIDTH` and `HEIGHT` variables cannot be read
+    /// If either or both `COLUMNS` and `LINES` variables cannot be read
     /// from the environment.
     pub fn new_auto() -> Result<Self, TextCanvasError> {
         let (width, height) = Self::get_auto_size()?;
@@ -355,23 +355,23 @@ impl TextCanvas {
         (80, 24)
     }
 
-    /// Read canvas size from `WIDTH` and `HEIGHT` env variables.
+    /// Read canvas size from `COLUMNS` and `LINES` env variables.
     ///
     /// This value is used by [`TextCanvas::new_auto()`], but it may be
     /// useful to query it separately.
     ///
     /// # Errors
     ///
-    /// If either or both `WIDTH` and `HEIGHT` variables cannot be read
+    /// If either or both `COLUMNS` and `LINES` variables cannot be read
     /// from the environment.
     pub fn get_auto_size() -> Result<(i32, i32), TextCanvasError> {
-        let Some(width) = env::var("WIDTH").ok().and_then(|w| w.parse().ok()) else {
+        let Some(width) = env::var("COLUMNS").ok().and_then(|w| w.parse().ok()) else {
             return Err(TextCanvasError(
                 "cannot read terminal width from environment",
             ));
         };
 
-        let Some(height) = env::var("HEIGHT").ok().and_then(|h| h.parse().ok()) else {
+        let Some(height) = env::var("LINES").ok().and_then(|h| h.parse().ok()) else {
             return Err(TextCanvasError(
                 "cannot read terminal height from environment",
             ));
@@ -1673,46 +1673,49 @@ mod tests {
         // This is fine, as long as this is the only test that modifies
         // the environment.
         unsafe {
-            env::remove_var("WIDTH");
-            env::remove_var("HEIGHT");
+            env::remove_var("COLUMNS");
+            env::remove_var("LINES");
         }
 
         assert!(
             TextCanvas::new_auto().is_err(),
-            "`WIDTH` and `HEIGHT` don't exist."
+            "`COLUMNS` and `LINES` don't exist."
         );
         assert!(TextCanvas::get_auto_size().is_err());
 
         unsafe {
-            env::set_var("WIDTH", "1");
-            env::set_var("HEIGHT", "2147483648");
+            env::set_var("COLUMNS", "1");
+            env::set_var("LINES", "2147483648");
         }
 
         assert!(
             TextCanvas::new_auto().is_err(),
-            "`HEIGHT` is too large for an `i32`."
+            "`LINES` is too large for an `i32`."
         );
         assert!(TextCanvas::get_auto_size().is_err());
 
         unsafe {
-            env::set_var("WIDTH", "abc");
-            env::set_var("HEIGHT", "1");
+            env::set_var("COLUMNS", "abc");
+            env::set_var("LINES", "1");
         }
 
-        assert!(TextCanvas::new_auto().is_err(), "`WIDTH` is not a number.");
+        assert!(
+            TextCanvas::new_auto().is_err(),
+            "`COLUMNS` is not a number."
+        );
         assert!(TextCanvas::get_auto_size().is_err());
 
         unsafe {
-            env::set_var("WIDTH", "1");
-            env::set_var("HEIGHT", "abc");
+            env::set_var("COLUMNS", "1");
+            env::set_var("LINES", "abc");
         }
 
-        assert!(TextCanvas::new_auto().is_err(), "`HEIGHT` is not a number.");
+        assert!(TextCanvas::new_auto().is_err(), "`LINES` is not a number.");
         assert!(TextCanvas::get_auto_size().is_err());
 
         unsafe {
-            env::set_var("WIDTH", "12");
-            env::set_var("HEIGHT", "5");
+            env::set_var("COLUMNS", "12");
+            env::set_var("LINES", "5");
         }
 
         let canvas = TextCanvas::new_auto().unwrap();

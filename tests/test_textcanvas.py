@@ -98,8 +98,8 @@ class TestTextCanvas(unittest.TestCase):
             TextCanvas(-1, -1)
 
     def test_auto_size(self) -> None:
-        os.environ["WIDTH"] = "12"
-        os.environ["HEIGHT"] = "5"
+        os.environ["COLUMNS"] = "12"
+        os.environ["LINES"] = "5"
 
         canvas = TextCanvas.auto()
 
@@ -108,34 +108,34 @@ class TestTextCanvas(unittest.TestCase):
 
         self.assertEqual(TextCanvas.get_auto_size(), (12, 5))
 
-    def test_auto_size_width_and_height_variables_dont_exist(self) -> None:
-        os.environ.pop("WIDTH", None)
-        os.environ.pop("HEIGHT", None)
+    def test_auto_size_columns_and_lines_variables_dont_exist(self) -> None:
+        os.environ.pop("COLUMNS", None)
+        os.environ.pop("LINES", None)
 
         with self.assertRaises(LookupError) as ctx:
-            ctx.msg = "`WIDTH` and `HEIGHT` don't exist."
+            ctx.msg = "`COLUMNS` and `LINES` don't exist."
             TextCanvas.auto()
 
         with self.assertRaises(LookupError):
             TextCanvas.get_auto_size()
 
-    def test_auto_size_cannot_parse_width_variable(self) -> None:
-        os.environ["WIDTH"] = "abc"
-        os.environ["HEIGHT"] = "1"
+    def test_auto_size_cannot_parse_columns_variable(self) -> None:
+        os.environ["COLUMNS"] = "abc"
+        os.environ["LINES"] = "1"
 
         with self.assertRaises(LookupError) as ctx:
-            ctx.msg = "`WIDTH` is not a number."
+            ctx.msg = "`COLUMNS` is not a number."
             TextCanvas.auto()
 
         with self.assertRaises(LookupError):
             TextCanvas.get_auto_size()
 
-    def test_auto_size_cannot_parse_height_variable(self) -> None:
-        os.environ["WIDTH"] = "1"
-        os.environ["HEIGHT"] = "abc"
+    def test_auto_size_cannot_parse_lines_variable(self) -> None:
+        os.environ["COLUMNS"] = "1"
+        os.environ["LINES"] = "abc"
 
         with self.assertRaises(LookupError) as ctx:
-            ctx.msg = "`HEIGHT` is not a number."
+            ctx.msg = "`LINES` is not a number."
             TextCanvas.auto()
 
         with self.assertRaises(LookupError):

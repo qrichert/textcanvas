@@ -221,7 +221,7 @@ class TextCanvas:
         """Create new `TextCanvas` by reading size from environment.
 
         Raises:
-            LookupError: If either or both `WIDTH` and `HEIGHT`
+            LookupError: If either or both `COLUMNS` and `LINES`
                 variables cannot be read from the environment.
         """
         (width, height) = TextCanvas.get_auto_size()
@@ -238,22 +238,22 @@ class TextCanvas:
 
     @staticmethod
     def get_auto_size() -> tuple[int, int]:
-        """Read canvas size from `WIDTH` and `HEIGHT` env variables.
+        """Read canvas size from `COLUMNS` and `LINES` env variables.
 
         This value is used by `TextCanvas.auto()`, but it may be useful
         to query it separately.
 
         Raises:
-            LookupError: If either or both `WIDTH` and `HEIGHT`
+            LookupError: If either or both `COLUMNS` and `LINES`
                 variables cannot be read from the environment.
         """
         try:
-            width: int = int(os.environ.get("WIDTH", ""))
+            width: int = int(os.environ.get("COLUMNS", ""))
         except ValueError:
             raise LookupError("Cannot read terminal width from environment.")
 
         try:
-            height: int = int(os.environ.get("HEIGHT", ""))
+            height: int = int(os.environ.get("LINES", ""))
         except ValueError:
             raise LookupError("Cannot read terminal height from environment.")
 
