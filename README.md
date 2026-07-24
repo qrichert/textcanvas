@@ -20,9 +20,9 @@ The API is inspired by JavaScript's Canvas API.
 ## Examples
 
 <p align="center">
-  <img src="./examples/game_of_life.png" alt="Game of Life" style="width: 31%;" />
-  <img src="./examples/graph.png" alt="Graph" style="width: 31%;" />
-  <img src="./examples/matrix.png" alt="Matrix" style="width: 31%;" />
+  <img src="https://raw.githubusercontent.com/qrichert/textcanvas/main/examples/game_of_life.png" alt="Game of Life" style="width: 31%;" />
+  <img src="https://raw.githubusercontent.com/qrichert/textcanvas/main/examples/graph.png" alt="Graph" style="width: 31%;" />
+  <img src="https://raw.githubusercontent.com/qrichert/textcanvas/main/examples/matrix.png" alt="Matrix" style="width: 31%;" />
 </p>
 
 ```
