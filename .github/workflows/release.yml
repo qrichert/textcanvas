@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Create GitHub Release
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # `actions/checkout@v4` somehow transforms annotated tags into
+      # lightweight tags, which prevents us from reading release notes.
+      # This fetches annotated tags and overrides existing mangled tags.
+      - name: Fetch annotated tags
+        run: git fetch --tags --force
+
+      - name: Extract tag annotation
+        id: tag
+        run: |
+          title=$(git tag -l --format='%(contents:subject)' ${{ github.ref_name }})
+          body=$(git tag -l --format='%(contents:body)' ${{ github.ref_name }})
+          echo "title=$title" >> $GITHUB_OUTPUT
+          echo 'body<<EOF' >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ steps.tag.outputs.title }}
+          body: ${{ steps.tag.outputs.body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
