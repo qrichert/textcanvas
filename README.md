@@ -570,20 +570,12 @@ on the last row like so:
 
 [^1]: <https://github.com/asciimoo/drawille>
 
-## Installation
+## Packages
 
-TextCanvas provides the same API for both Python and Rust.
+TextCanvas provides the same API for both Python and Rust. The Python
+package is available on [PyPI], and the Rust crate is available on
+[crates.io] with its API [documentation] on docs.rs.
 
-To install for Python, run this:
-
-```shell
-pip install textcanvas
-pip install git+https://github.com/qrichert/textcanvas.git
-```
-
-For Rust, run one of these:
-
-```shell
-cargo add textcanvas
-cargo add --git https://github.com/qrichert/textcanvas.git
-```
+[PyPI]: https://pypi.org/project/textcanvas/
+[crates.io]: https://crates.io/crates/textcanvas
+[documentation]: https://docs.rs/textcanvas

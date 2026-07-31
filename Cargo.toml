@@ -7,8 +7,8 @@ description = "Draw to the terminal like an HTML Canvas."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/qrichert/textcanvas.git"
 readme = "README.md"
-keywords = ["tui", "canvas", "draw", "terminal", "console"]
-categories = ["command-line-interface", "rendering::engine"]
+keywords = ["terminal-graphics", "braille", "canvas", "drawing", "visualization"]
+categories = ["command-line-interface", "graphics", "rendering::engine", "visualization"]
 
 [profile.release]
 strip = true
