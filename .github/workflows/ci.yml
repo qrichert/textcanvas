@@ -31,6 +31,10 @@ jobs:
       - name: Set up Just
         uses: taiki-e/install-action@just
 
+      - name: Set up Bun
+        if: matrix.target == 'lint'
+        uses: oven-sh/setup-bun@v2
+
       - name: Cache cargo registry and build
         if: ${{ ! startsWith(matrix.target, 'python-') && matrix.target != 'rust-coverage-pct' }}
         uses: actions/cache@v4
