@@ -50,7 +50,7 @@ macro_rules! to_i32 {
     };
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TextCanvasError(pub &'static str);
 
 impl fmt::Display for TextCanvasError {
@@ -64,7 +64,7 @@ impl Error for TextCanvasError {}
 /// Grid-like area with a width and a height.
 ///
 /// This is an abstract way to define the renderable buffers.
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Surface {
     width: i32,
     height: i32,
@@ -102,7 +102,7 @@ impl Surface {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct IterPixelBuffer<T> {
     width: T,
     height: T,
@@ -156,7 +156,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct IterPixelBufferByBlocksLRTB<'a> {
     buffer: &'a PixelBuffer,
     screen: &'a Surface,
@@ -205,6 +205,9 @@ impl Iterator for IterPixelBufferByBlocksLRTB<'_> {
 
 /// Draw to the terminal like an HTML Canvas.
 ///
+/// Cloning a canvas duplicates its pixel, color, and text buffers, so
+/// it may be expensive for large canvases.
+///
 /// # Examples
 ///
 /// ```rust
@@ -235,7 +238,7 @@ impl Iterator for IterPixelBufferByBlocksLRTB<'_> {
 /// "
 /// );
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TextCanvas {
     /// Properties of the output surface, whose size is given as
     /// parameter to the constructor. One unit in width and in height
@@ -1502,6 +1505,14 @@ mod tests {
         assert_eq!(error.to_string(), "an error has occurred");
     }
 
+    #[test]
+    fn textcanvaserror_clone() {
+        let error = TextCanvasError("an error has occurred");
+        let cloned = error.clone();
+
+        assert_eq!(cloned.to_string(), error.to_string());
+    }
+
     // Surface.
 
     #[test]
@@ -1513,6 +1524,18 @@ mod tests {
 
         assert_eq!(surface.width(), 15);
         assert_eq!(surface.height(), 9);
+    }
+
+    #[test]
+    fn surface_is_copy() {
+        let surface = Surface {
+            width: 15,
+            height: 9,
+        };
+        let copied = surface;
+
+        assert_eq!(surface.width(), 15);
+        assert_eq!(copied.width(), 15);
     }
 
     #[test]
@@ -1539,6 +1562,35 @@ mod tests {
     }
 
     // Canvas.
+
+    #[test]
+    fn clone_is_independent() {
+        let mut canvas = TextCanvas::new(2, 1);
+        canvas.set_color(Color::new().red());
+        canvas.set_pixel(0, 0, true);
+        canvas.draw_text("a", 0, 0);
+        canvas.invert();
+
+        let mut cloned = canvas.clone();
+
+        assert_eq!(cloned.output.width, canvas.output.width);
+        assert_eq!(cloned.output.height, canvas.output.height);
+        assert_eq!(cloned.screen.width, canvas.screen.width);
+        assert_eq!(cloned.screen.height, canvas.screen.height);
+        assert_eq!(cloned.buffer, canvas.buffer);
+        assert_eq!(cloned.color_buffer, canvas.color_buffer);
+        assert_eq!(cloned.text_buffer, canvas.text_buffer);
+        assert_eq!(cloned.is_inverted, canvas.is_inverted);
+        assert_eq!(cloned.color, canvas.color);
+
+        cloned.buffer[0][0] = false;
+        cloned.color_buffer[0][0] = Color::new();
+        cloned.text_buffer[0][0].clear();
+
+        assert!(canvas.buffer[0][0]);
+        assert_ne!(cloned.color_buffer[0][0], canvas.color_buffer[0][0]);
+        assert_eq!(canvas.text_buffer[0][0], "\x1b[0;31ma\x1b[0m");
+    }
 
     #[test]
     fn output_size() {
@@ -2099,6 +2151,17 @@ mod tests {
     }
 
     #[test]
+    fn iter_buffer_by_blocks_lrtb_clone_preserves_position() {
+        let canvas = TextCanvas::new(3, 2);
+        let mut iter = canvas.iter_buffer_by_blocks_lrtb();
+
+        _ = iter.next();
+        let mut cloned = iter.clone();
+
+        assert_eq!(cloned.next(), iter.next());
+    }
+
+    #[test]
     fn iter_buffer() {
         let canvas = TextCanvas::new(3, 2);
 
@@ -2113,6 +2176,17 @@ mod tests {
             (0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6),
             (0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7),
         ], "Incorrect X and Y pairs, or in wrong order.");
+    }
+
+    #[test]
+    fn iter_buffer_clone_preserves_position() {
+        let canvas = TextCanvas::new(3, 2);
+        let mut iter = canvas.iter_buffer();
+
+        _ = iter.next();
+        let mut cloned = iter.clone();
+
+        assert_eq!(cloned.next(), iter.next());
     }
 
     #[test]
