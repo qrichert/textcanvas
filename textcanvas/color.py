@@ -1,6 +1,6 @@
 import enum
 import os
-from typing import Any, Self
+from typing import Self
 
 # `True` if `NO_COLOR` is set and is non-empty.
 NO_COLOR: bool = bool(os.environ.get("NO_COLOR"))
@@ -98,7 +98,7 @@ class Color:
         self._is_italic: bool = False
         self._is_underlined: bool = False
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return self.to_string() == other
 
     def to_string(self) -> str:
@@ -128,7 +128,7 @@ class Color:
         return self._mode == ColorMode.NO_COLOR and not self._has_display_attributes()
 
     def _has_colors(self) -> bool:
-        return not self._mode == ColorMode.NO_COLOR
+        return self._mode != ColorMode.NO_COLOR
 
     # Display Attributes.
 
@@ -187,8 +187,7 @@ class Color:
 
     @staticmethod
     def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
-        if hex_color.startswith("#"):
-            hex_color = hex_color[1:]
+        hex_color = hex_color.removeprefix("#")
 
         if len(hex_color) != 6:
             return 0, 0, 0

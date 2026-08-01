@@ -1,7 +1,7 @@
 import datetime as dt
 import sys
 import time
-from typing import Callable
+from collections.abc import Callable
 
 
 class GameLoop:

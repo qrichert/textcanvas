@@ -6,7 +6,7 @@ $ python -m examples.graph
 """
 
 import math
-from typing import Callable
+from collections.abc import Callable
 
 from textcanvas.textcanvas import Color, TextCanvas
 
@@ -51,8 +51,8 @@ def graph_function(func: Callable) -> None:
     x_start: int = -half_screen_x
     x_end: int = half_screen_x
 
-    graph_x_to_screen = lambda x: x + half_screen_x  # noqa: E731
-    graph_y_to_screen = lambda y: height - 1 - int((y + 1) * half_screen_y)  # noqa: E731
+    graph_x_to_screen = lambda x: x + half_screen_x
+    graph_y_to_screen = lambda y: height - 1 - int((y + 1) * half_screen_y)
 
     prev_x: int | None = None
     prev_y: int | None = None

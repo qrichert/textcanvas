@@ -57,7 +57,7 @@ class TestPlot(unittest.TestCase):
     def test_stroke_x_axis_at_bottom_boundary(self) -> None:
         canvas = TextCanvas(15, 5)
 
-        y: list[float] = list(range(0, 6))
+        y: list[float] = list(range(6))
 
         Plot.stroke_x_axis(canvas, y)
 
@@ -75,7 +75,7 @@ class TestPlot(unittest.TestCase):
     def test_stroke_y_axis_at_left_boundary(self) -> None:
         canvas = TextCanvas(15, 5)
 
-        x: list[float] = list(range(0, 6))
+        x: list[float] = list(range(6))
 
         Plot.stroke_y_axis(canvas, x)
 

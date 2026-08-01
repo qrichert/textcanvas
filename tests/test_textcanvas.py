@@ -17,10 +17,8 @@ def load_tests(
 
 
 def stroke_line_accros_canvas(canvas: TextCanvas) -> None:
-    y = 0
-    for x in range(canvas.screen.width):
+    for y, x in enumerate(range(canvas.screen.width)):
         canvas.set_pixel(x, y, True)
-        y += 1
 
 
 class TestSurface(unittest.TestCase):

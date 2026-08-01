@@ -85,8 +85,9 @@ on the last row like so:
 
 import math
 import os
+from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Generator, Self
+from typing import Self
 
 from .color import Color
 
@@ -710,8 +711,8 @@ class TextCanvas:
             ⠀⠀⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠇⠀⠀
             ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
         """
-        for y in range(y, y + height):
-            self.stroke_line(x, y, x + width - 1, y)
+        for row_y in range(y, y + height):
+            self.stroke_line(x, row_y, x + width - 1, row_y)
 
     def stroke_triangle(
         self, x1: int, y1: int, x2: int, y2: int, x3: int, y3: int
@@ -929,7 +930,7 @@ class TextCanvas:
             theta: float = vertex * slice_ + angle
             x = cx + (math.cos(theta) * radius)
             y = cy - (math.sin(theta) * radius)  # Screen Y coordinates are inverted.
-            point = (int(round(x)), int(round(y)))
+            point = (round(x), round(y))
             vertices.append(point)
         return vertices
 

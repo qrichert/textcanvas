@@ -1,7 +1,7 @@
 import enum
 import itertools
 import math
-from typing import Callable
+from collections.abc import Callable
 
 from .textcanvas import TextCanvas
 
@@ -739,12 +739,12 @@ class Plot:
         # 1   2   3   4   5
         step: float = range_ / (nb_values - 1)
 
-        nb_values = int(math.ceil(nb_values))
+        nb_values = math.ceil(nb_values)
         px: list[float] = []
         py: list[T] = []
 
         x = from_x
-        for _ in range(0, nb_values - 1):
+        for _ in range(nb_values - 1):
             px.append(x)
             py.append(f(x))
 
@@ -1119,7 +1119,7 @@ class Resampling:
         nb_buckets = max_nb_points - 2
 
         # _ceil_ so `bucket_size` is large enough to never leave rest.
-        bucket_size: int = int(math.ceil(nb_points / nb_buckets))
+        bucket_size: int = math.ceil(nb_points / nb_buckets)
 
         downsampled_points: list[tuple[float, float]] = [points[0]]
 
@@ -1220,7 +1220,7 @@ class Resampling:
         nb_buckets = (max_nb_points - 2) / 2  # Buckets yield 2 points: min/max
 
         # _ceil_ so `bucket_size` is large enough to never leave rest.
-        bucket_size: int = int(math.ceil(nb_points / nb_buckets))
+        bucket_size: int = math.ceil(nb_points / nb_buckets)
 
         downsampled_points: list[tuple[float, float]] = [points[0]]
 
